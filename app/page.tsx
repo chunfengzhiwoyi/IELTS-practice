@@ -1,10 +1,8 @@
 /**
- * 首页 / 助手入口
+ * 首页：四类核心能力入口 + 学习助手对话模块
  */
 import Link from "next/link";
-
-import { AgentChat } from "@/components/agent/AgentChat";
-import { currentPrimaryProviderKind } from "@/lib/env";
+import { ChatSection } from "@/components/chat/chat-section";
 
 const ENTRIES = [
   {
@@ -20,7 +18,7 @@ const ENTRIES = [
   {
     href: "/speaking" as const,
     title: "口语训练",
-    desc: "文字版 Part 1/2/3，每轮聚焦一个改善点",
+    desc: "文字版口语练习，每轮聚焦一个改善点",
   },
   {
     href: "/report" as const,
@@ -30,17 +28,11 @@ const ENTRIES = [
 ];
 
 export default function HomePage() {
-  const provider = currentPrimaryProviderKind();
-  const providerLabel = provider === "deepseek" ? "DeepSeek" : provider === "bailian" ? "百炼" : "本地模拟";
-
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-6 py-10">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">英语高效学习助手</h1>
-        <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-          <span className="rounded-full border border-slate-200 px-2.5 py-0.5">AI 服务：{providerLabel}</span>
-          <span className="rounded-full border border-slate-200 px-2.5 py-0.5">学习数据：保存在当前浏览器</span>
-        </div>
+        <p className="mt-1 text-sm text-slate-500">随时学、随时练、随时看进展</p>
       </header>
 
       <section>
@@ -60,8 +52,8 @@ export default function HomePage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">智能对话</h2>
-        <AgentChat />
+        <h2 className="mb-3 text-lg font-medium">和学习助手聊聊</h2>
+        <ChatSection />
       </section>
     </main>
   );
