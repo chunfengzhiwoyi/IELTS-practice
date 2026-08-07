@@ -121,4 +121,20 @@ describe("未启用 Provider 缺 Key 不阻塞", () => {
     expect(() => getServerEnv()).not.toThrow();
     expect(() => getProvider("mock")).not.toThrow();
   });
+
+  it("browser-demo + deepseek + 无 Supabase 变量可正常启动", () => {
+    process.env.LLM_PRIMARY_PROVIDER = "deepseek";
+    process.env.LLM_FALLBACK_ENABLED = "false";
+    process.env.AUTH_MODE = "demo";
+    process.env.DATA_PROVIDER = "memory";
+    setDeepSeekEnv();
+    // 确保没有 Supabase 变量
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    expect(() => getServerEnv()).not.toThrow();
+    const env = getServerEnv();
+    expect(env.deepseek).not.toBeNull();
+    expect(env.supabase).toBeNull();
+  });
 });

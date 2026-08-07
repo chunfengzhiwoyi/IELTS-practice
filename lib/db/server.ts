@@ -25,11 +25,14 @@ import type { Database } from "@/lib/db/types";
  */
 export async function createServerClient() {
   const env = getServerEnv();
+  if (!env.supabase) {
+    throw new Error("[db] Supabase 未配置（AUTH_MODE 或 DATA_PROVIDER 未设为 supabase）");
+  }
   const cookieStore = await cookies();
 
   return createSSRServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.supabase.NEXT_PUBLIC_SUPABASE_URL,
+    env.supabase.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -56,7 +59,10 @@ export async function createServerClient() {
  */
 export function createServiceRoleClient() {
   const env = getServerEnv();
-  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  if (!env.supabase) {
+    throw new Error("[db] Supabase 未配置");
+  }
+  return createClient<Database>(env.supabase.NEXT_PUBLIC_SUPABASE_URL, env.supabase.SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
