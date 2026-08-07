@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { LearnSubmitResponse, WordCardResponse } from "@/lib/learning/types";
-import { getWordCard, submitLearnAnswer } from "@/lib/client/demo-service";
+import { submitLearnAnswer } from "@/lib/client/demo-service";
 import { LearningResult } from "@/components/learn/learning-result";
 import { RecallTask } from "@/components/learn/recall-task";
 import { TermInput } from "@/components/learn/term-input";
@@ -24,14 +24,25 @@ export function LearnPage() {
   const handleTermSubmit = async (term: string) => {
     setState({ kind: "LOADING_CARD" });
     try {
-      const result = await getWordCard(term);
-      if (!result.ok) {
-        setState({ kind: "ITEM_NOT_FOUND", term });
+      // 调用服务端 API Route（服务端检查 seed，miss 时调 DeepSeek）
+      const res = await fetch("/api/learn/card", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ term }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (json?.error?.kind === "DEMO_ITEM_NOT_FOUND" || res.status === 404) {
+          // seed miss 且 LLM 也失败时
+          setState({ kind: "ITEM_NOT_FOUND", term });
+          return;
+        }
+        setState({ kind: "REQUEST_ERROR", message: json?.error?.message ?? `错误 ${res.status}` });
         return;
       }
-      setState({ kind: "CARD_READY", card: result.data, usedHint: false });
+      setState({ kind: "CARD_READY", card: json as WordCardResponse, usedHint: false });
     } catch (err) {
-      setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "加载失败" });
+      setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "网络错误" });
     }
   };
 
@@ -71,7 +82,7 @@ export function LearnPage() {
       {state.kind === "LOADING_CARD" && (
         <div className="py-8 text-center text-sm text-slate-500">
           <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600"></div>
-          <p className="mt-2">正在查找词条…</p>
+          <p className="mt-2">正在查找词条…不在本地词库时将由 AI 生成词卡（约 5-15 秒）</p>
         </div>
       )}
 

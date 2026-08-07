@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import type { SpeakingAnalysisResult, SpeakingPart, SpeakingSession, SpeakingQuestion } from "@/lib/speaking/types";
-import { createSpeakingSession, analyzeSpeakingLocally } from "@/lib/client/demo-service";
 import { TopicSelector } from "@/components/speaking/topic-selector";
 import { AnswerInput } from "@/components/speaking/answer-input";
 import { SpeakingFeedback } from "@/components/speaking/speaking-feedback";
@@ -26,8 +25,18 @@ export function SpeakingPage() {
   const handleStartSession = async (part: SpeakingPart) => {
     setState({ kind: "LOADING_SESSION" });
     try {
-      const data = await createSpeakingSession(part);
-      setState({ kind: "FIRST_ANSWER", session: data.session, questionData: data.questionData });
+      // 调用服务端 API Route 创建会话（服务端存储以便后续 analyze 可查到）
+      const res = await fetch("/api/speaking/session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ part }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setState({ kind: "ERROR", message: json?.error?.message ?? `创建失败 (${res.status})` });
+        return;
+      }
+      setState({ kind: "FIRST_ANSWER", session: json.session, questionData: json.questionData });
     } catch (err) {
       setState({ kind: "ERROR", message: err instanceof Error ? err.message : "创建失败" });
     }
@@ -38,10 +47,20 @@ export function SpeakingPage() {
     const { session, questionData } = state;
     setState({ kind: "ANALYZING" });
     try {
-      const data = await analyzeSpeakingLocally(session.id, answer, isSecond);
-      setState({ kind: "FEEDBACK", session: data.session, questionData, analysis: data.analysis, isSecond });
+      // 调用服务端 API Route（DeepSeek 深度分析，降级到规则引擎）
+      const res = await fetch("/api/speaking/analyze", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId: session.id, answer, isSecondAnswer: isSecond }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setState({ kind: "ERROR", message: json?.error?.message ?? `分析失败 (${res.status})` });
+        return;
+      }
+      setState({ kind: "FEEDBACK", session: json.session, questionData, analysis: json.analysis, isSecond });
     } catch (err) {
-      setState({ kind: "ERROR", message: err instanceof Error ? err.message : "分析失败" });
+      setState({ kind: "ERROR", message: err instanceof Error ? err.message : "网络错误" });
     }
   };
 
