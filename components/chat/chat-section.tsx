@@ -25,7 +25,6 @@ export function ChatSection() {
   const [input, setInput] = useState("");
   const [loaded, setLoaded] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -42,12 +41,19 @@ export function ChatSection() {
     if (loaded) saveConversationState(convState);
   }, [convState, loaded]);
 
-  // Auto-scroll
+  const hasInteracted = useRef(false);
+
+  // 只在用户主动发消息后滚动聊天容器内部，不滚动页面
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!hasInteracted.current) return;
+    const container = feedRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages, isLoading]);
 
   const sendMessage = useCallback(async (text: string) => {
+    hasInteracted.current = true;
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text, timestamp: Date.now() };
     const updated = [...messages, userMsg];
     setMessages(updated);
@@ -139,7 +145,6 @@ export function ChatSection() {
               ),
             )}
             {isLoading && <TypingIndicator />}
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
