@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Lint / Typecheck / Unit / Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare .env for CI (placeholder values)
+        run: |
+          cp .env.example .env.local
+          # 使用交接单允许的占位值，让 build/test 不依赖真实凭据
+          sed -i 's|https://your-project.supabase.co|https://placeholder.supabase.co|g' .env.local
+          sed -i 's|your-anon-key|placeholder-anon-key|g' .env.local
+          sed -i 's|your-service-role-key|placeholder-service-role-key|g' .env.local
+          sed -i 's|sk-your-openai-key|sk-placeholder|g' .env.local
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,29 @@
+# Kiro 索引忽略清单
+# 与 .gitignore 保持一致的敏感文件保护策略
+
+# 环境变量文件（含 API Key）
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# 依赖与构建产物
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# IDE 与 OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 缓存
+*.tsbuildinfo
+.supabase/

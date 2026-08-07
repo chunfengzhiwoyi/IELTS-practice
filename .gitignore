@@ -1,0 +1,50 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Testing
+/coverage
+/playwright-report
+/test-results
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts.bak
+
+# Production
+/build
+/dist
+
+# Environment - 严禁将真实 Key 提交
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+!.env.example
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase
+.supabase/
+
+# Misc
+*.tsbuildinfo
