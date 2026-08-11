@@ -115,18 +115,18 @@ export function ChatSection() {
   const handleClear = () => { clearChat(); setMessages([]); setConvState({}); };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="border border-line bg-paper">
       {/* Feed area with fixed height */}
       <div ref={feedRef} className="h-[400px] overflow-y-auto px-4 py-4">
         {loaded && messages.length === 0 && !isLoading ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <p className="text-sm text-slate-500">直接输入或选择一个话题开始</p>
+            <p className="text-sm text-ink-meta">直接输入或选择一个话题开始</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {QUICK_ACTIONS.map((qa) => (
                 <button
                   key={qa.message}
                   onClick={() => sendMessage(qa.message)}
-                  className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-400 hover:text-brand-700"
+                  className="rounded-full border border-line px-3 py-1.5 text-xs text-ink-soft transition hover:border-accent hover:text-accent"
                 >
                   {qa.label}
                 </button>
@@ -150,7 +150,7 @@ export function ChatSection() {
       </div>
 
       {/* Composer fixed at bottom of this module */}
-      <div className="border-t border-slate-100 px-4 py-3">
+      <div className="border-t border-line px-4 py-3">
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -160,12 +160,12 @@ export function ChatSection() {
             disabled={isLoading}
             rows={1}
             placeholder="告诉我今天想练什么…"
-            className="flex-1 resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50"
+            className="flex-1 resize-none rounded-md border border-line-strong px-3 py-2 text-sm outline-none focus:border-accent disabled:bg-paper-3 placeholder:text-ink-meta"
           />
           <button
             onClick={handleSubmit}
             disabled={isLoading || !input.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700 disabled:bg-slate-300"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-contrast transition hover:bg-accent-deep disabled:opacity-40"
             aria-label="发送"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -174,7 +174,7 @@ export function ChatSection() {
           </button>
         </div>
         {messages.length > 0 && (
-          <button onClick={handleClear} className="mt-2 text-xs text-slate-400 hover:text-slate-600">
+          <button onClick={handleClear} className="mt-2 text-xs text-ink-meta hover:text-ink-soft">
             清除对话
           </button>
         )}

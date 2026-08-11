@@ -36,9 +36,9 @@ export function ReviewPage({ initialItemId }: Props) {
   const [stats, setStats] = useState<SessionStats>({ total: 0, independent: 0, hinted: 0, incorrect: 0, skipped: 0, incorrectTerms: [] });
   const [answer, setAnswer] = useState("");
   const [hintRevealed, setHintRevealed] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
 
-  useEffect(() => { loadSession(); // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { loadSession(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const loadSession = async () => {
     setState({ kind: "LOADING" });
@@ -63,6 +63,7 @@ export function ReviewPage({ initialItemId }: Props) {
   const handleSubmit = async () => {
     const task = tasks[taskIndex];
     if (!task || !answer.trim()) return;
+    setConfirmExit(false);
     setState({ kind: "SUBMITTING" });
     try {
       const res = await submitReviewAnswer({ itemId: task.itemId, answer: answer.trim(), usedHint: hintRevealed, skipped: false, task });
@@ -76,6 +77,7 @@ export function ReviewPage({ initialItemId }: Props) {
   const handleSkip = async () => {
     const task = tasks[taskIndex];
     if (!task) return;
+    setConfirmExit(false);
     setState({ kind: "SUBMITTING" });
     try {
       const res = await submitReviewAnswer({ itemId: task.itemId, answer: "", usedHint: false, skipped: true, task });
@@ -99,6 +101,7 @@ export function ReviewPage({ initialItemId }: Props) {
 
   const handleNext = () => {
     const next = taskIndex + 1;
+    setConfirmExit(false);
     if (next >= tasks.length) {
       setState({ kind: "SUMMARY" });
     } else {
@@ -109,17 +112,41 @@ export function ReviewPage({ initialItemId }: Props) {
     }
   };
 
+  // 退出复习：两步确认，避免误触丢失当前复习进度
+  const renderExit = () =>
+    !confirmExit ? (
+      <button
+        type="button"
+        onClick={() => setConfirmExit(true)}
+        className="btn btn--quiet btn--sm whitespace-nowrap"
+      >
+        退出复习
+      </button>
+    ) : (
+      <span className="exit-confirm">
+        <span className="font-ui text-xs text-ink-meta whitespace-nowrap">确认退出本次复习？</span>
+        <Link href="/" className="btn btn--quiet btn--sm whitespace-nowrap">确认退出</Link>
+        <button
+          type="button"
+          onClick={() => setConfirmExit(false)}
+          className="btn btn--ghost btn--sm whitespace-nowrap"
+        >
+          继续
+        </button>
+      </span>
+    );
+
   // --- Render ---
 
   if (state.kind === "LOADING") {
-    return <div className="py-12 text-center text-sm text-slate-500">加载中…</div>;
+    return <div className="py-12 text-center text-sm text-ink-meta">加载中…</div>;
   }
 
   if (state.kind === "ERROR") {
     return (
-      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+      <div className="note note--accent">
         {state.message}
-        <button onClick={loadSession} className="ml-2 underline">重试</button>
+        <button onClick={loadSession} className="ml-2 font-semibold text-accent underline">重试</button>
       </div>
     );
   }
@@ -127,48 +154,40 @@ export function ReviewPage({ initialItemId }: Props) {
   if (state.kind === "EMPTY") {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-lg font-semibold text-slate-800">今天暂时没有需要复习的内容</h2>
-        <p className="mt-2 text-sm text-slate-500">目前学过的表达还没到下一次复习时间。</p>
-        <Link href="/learn" className="mt-6 inline-block rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          学习一个新表达
-        </Link>
+        <h2 className="text-lg font-semibold text-ink">今天暂时没有需要复习的内容</h2>
+        <p className="mt-2 text-sm text-ink-soft">目前学过的表达还没到下一次复习时间。</p>
+        <Link href="/learn" className="btn btn--primary mt-6">学习一个新表达</Link>
       </div>
     );
   }
 
   if (state.kind === "SUMMARY") {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-slate-800">今日复习完成</h2>
-          <p className="mt-1 text-sm text-slate-500">共复习 {stats.total} 个表达</p>
+          <h2 className="text-xl font-semibold text-ink">今日复习完成</h2>
+          <p className="mt-1 text-sm text-ink-soft">共复习 {stats.total} 个表达</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="独立想起来" value={stats.independent} color="text-emerald-700 bg-emerald-50" />
-          <StatCard label="在提示下想起来" value={stats.hinted} color="text-amber-700 bg-amber-50" />
-          <StatCard label="还需巩固" value={stats.incorrect} color="text-rose-700 bg-rose-50" />
-          <StatCard label="跳过" value={stats.skipped} color="text-slate-600 bg-slate-50" />
+        <div className="grid grid-cols-2 gap-0 sm:grid-cols-4">
+          <StatCard label="独立想起来" value={stats.independent} tone="good" />
+          <StatCard label="在提示下想起来" value={stats.hinted} tone="warn" />
+          <StatCard label="还需巩固" value={stats.incorrect} tone="bad" />
+          <StatCard label="跳过" value={stats.skipped} tone="muted" />
         </div>
         {stats.incorrectTerms.length > 0 && (
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-sm font-medium text-slate-700">还值得再看看：</p>
+          <div className="note note--bronze">
+            <p className="text-sm font-medium text-ink">还值得再看看：</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {stats.incorrectTerms.map((t, i) => (
-                <span key={i} className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700">{t}</span>
+                <span key={i} className="pill pill--accent">{t}</span>
               ))}
             </div>
           </div>
         )}
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <button onClick={loadSession} className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            继续复习
-          </button>
-          <Link href="/learn" className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            学习一个新表达
-          </Link>
-          <Link href="/" className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            返回首页
-          </Link>
+          <button onClick={loadSession} className="btn btn--ghost">继续复习</button>
+          <Link href="/learn" className="btn btn--ghost">学习一个新表达</Link>
+          <Link href="/" className="btn btn--ghost">返回首页</Link>
         </div>
       </div>
     );
@@ -180,16 +199,20 @@ export function ReviewPage({ initialItemId }: Props) {
 
     return (
       <div className="space-y-4">
-        <ProgressBar current={taskIndex + 1} total={tasks.length} />
-        <div className={`rounded-xl border p-5 ${feedbackConfig.colorClass}`}>
-          <p className="text-base font-semibold text-slate-800">{feedbackConfig.title}</p>
-          <p className="mt-1 text-sm text-slate-700">{feedbackConfig.body}</p>
-          <div className="mt-3 rounded-md bg-white/60 px-3 py-2">
-            <p className="text-sm"><span className="font-medium">{term}</span> = {coreMeaning}</p>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">下次复习：{nextTime}</p>
+        <div className="flex items-center justify-between gap-3">
+          <ProgressBar current={taskIndex + 1} total={tasks.length} />
+          {renderExit()}
         </div>
-        <button onClick={handleNext} className="w-full rounded-md bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700">
+        <div className={`feedback-card feedback-card--${feedbackConfig.tone}`}>
+          <p className="feedback-card__title">{feedbackConfig.title}</p>
+          <p className="feedback-card__body">{feedbackConfig.body}</p>
+          <div className="feedback-card__pair">
+            <span className="k">标准答案</span>
+            <p className="mt-1 text-ink"><span className="font-medium">{term}</span> = {coreMeaning}</p>
+          </div>
+          <p className="mt-2 text-xs text-ink-meta">下次复习：{nextTime}</p>
+        </div>
+        <button onClick={handleNext} className="btn btn--primary w-full">
           {taskIndex + 1 >= tasks.length ? "查看总结" : "下一个"}
         </button>
       </div>
@@ -203,21 +226,24 @@ export function ReviewPage({ initialItemId }: Props) {
   const minutes = Math.max(1, Math.ceil(tasks.length * 0.5));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {taskIndex === 0 && (
-        <p className="text-sm text-slate-600">
-          今天有 {tasks.length} 个表达需要巩固 · 预计约 {minutes} 分钟
+        <p className="text-sm text-ink-soft">
+          今天还有 {tasks.length} 个表达等待巩固 · 预计约 {minutes} 分钟
         </p>
       )}
-      <ProgressBar current={taskIndex + 1} total={tasks.length} />
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <p className="text-2xl font-bold text-slate-900">{task.term}</p>
-        <p className="mt-3 text-sm text-slate-500">你还记得这个表达的核心意思吗？</p>
+      <div className="flex items-center justify-between gap-3">
+        <ProgressBar current={taskIndex + 1} total={tasks.length} />
+        {renderExit()}
+      </div>
+      <div className="recall-card">
+        <p className="recall-card__term">{task.term}</p>
+        <p className="recall-card__hint-q">请给出释义 / 翻译</p>
       </div>
 
       {hintRevealed && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
-          💡 提示：和「{buildHintText(task)}」有关
+        <div className="note note--bronze">
+          提示：和「{buildHintText(task)}」有关
         </div>
       )}
 
@@ -228,14 +254,14 @@ export function ReviewPage({ initialItemId }: Props) {
           disabled={isSubmitting}
           rows={2}
           placeholder="输入你记得的含义…"
-          className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50"
+          className="field-input resize-none"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
         />
         <div className="flex items-center justify-between">
           <button
             onClick={() => setHintRevealed(true)}
             disabled={hintRevealed || isSubmitting}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            className="btn btn--ghost px-4 py-1.5 text-sm"
           >
             {hintRevealed ? "提示已显示" : "查看提示"}
           </button>
@@ -243,14 +269,14 @@ export function ReviewPage({ initialItemId }: Props) {
             <button
               onClick={handleSkip}
               disabled={isSubmitting}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+              className="btn btn--ghost px-4 py-1.5 text-sm"
             >
               跳过
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !answer.trim()}
-              className="rounded-md bg-brand-600 px-5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:opacity-40"
+              className="btn btn--primary px-6 py-1.5"
             >
               {isSubmitting ? "提交中…" : "提交"}
             </button>
@@ -268,7 +294,6 @@ export function ReviewPage({ initialItemId }: Props) {
 function buildHintText(task: ReviewTask): string {
   // 给关键词线索而非完整答案
   if (task.answerKeywords.length > 0) return task.answerKeywords[0]!;
-  // fallback: 取 coreMeaning 的前几个字
   return task.coreMeaning.slice(0, 4) + "…";
 }
 
@@ -284,55 +309,45 @@ function formatNextTime(isoTime: string): string {
 interface FeedbackConfig {
   title: string;
   body: string;
-  colorClass: string;
+  tone: "good" | "warn" | "bad" | "muted";
 }
 
 function getFeedbackConfig(result: ReviewResult): FeedbackConfig {
   switch (result) {
     case "CORRECT_INDEPENDENT":
-      return {
-        title: "记住了 👏",
-        body: "你这次可以不看提示回忆出核心意思。",
-        colorClass: "border-emerald-200 bg-emerald-50",
-      };
+      return { title: "记住了", body: "你这次可以不看提示回忆出核心意思。", tone: "good" };
     case "CORRECT_WITH_HINT":
-      return {
-        title: "在提示下想起来了",
-        body: "核心意思已经找回来了，不过这次还需要一点帮助。",
-        colorClass: "border-amber-200 bg-amber-50",
-      };
+      return { title: "在提示下想起来了", body: "核心意思已经找回来了，不过这次还需要一点帮助。", tone: "warn" };
     case "INCORRECT":
-      return {
-        title: "这次还没完全想起来",
-        body: "先重新看一下核心意思，之后会更快再次遇到它。",
-        colorClass: "border-rose-200 bg-rose-50",
-      };
+      return { title: "这次还没完全想起来", body: "先重新看一下核心意思，之后会更快再次遇到它。", tone: "bad" };
     case "SKIPPED":
-      return {
-        title: "先放一放",
-        body: "这个表达之后会再次安排复习。",
-        colorClass: "border-slate-200 bg-slate-100",
-      };
+      return { title: "先放一放", body: "这个表达之后会再次安排复习。", tone: "muted" };
   }
 }
 
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = Math.round((current / total) * 100);
   return (
-    <div className="flex items-center gap-3 text-xs text-slate-500">
-      <span className="font-medium">{current} / {total}</span>
-      <div className="h-1.5 flex-1 rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-brand-500 transition-all duration-300" style={{ width: `${pct}%` }} />
+    <div className="flex items-center gap-3 text-xs text-ink-meta">
+      <span className="font-medium font-ui">{current} / {total}</span>
+      <div className="progress-rule flex-1">
+        <i style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({ label, value, tone }: { label: string; value: number; tone: "good" | "warn" | "bad" | "muted" }) {
+  const toneClass = {
+    good: "text-[oklch(42%_0.09_150)]",
+    warn: "text-[oklch(52%_0.12_75)]",
+    bad: "text-[oklch(46%_0.16_25)]",
+    muted: "text-ink-soft",
+  }[tone];
   return (
-    <div className={`rounded-lg px-3 py-3 text-center ${color}`}>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="mt-0.5 text-xs">{label}</div>
+    <div className="report-row" style={{ borderTop: "none" }}>
+      <div className="report-row__k">{label}</div>
+      <div className={`report-row__v ${toneClass}`}>{value}</div>
     </div>
   );
 }

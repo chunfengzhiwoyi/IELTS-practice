@@ -10,11 +10,11 @@ import { requireUser } from "@/lib/auth/session";
 import {
   findSeedItem,
   getRepository,
-  normalizeTerm,
   seedToLearningItem,
   type WordCardResponse,
   type SeedLearningItem,
 } from "@/lib/learning";
+import { normalizeTerm } from "@/lib/learning/item-id";
 import { generateWordCardWithLlm } from "@/lib/llm/tasks/generate-word-card";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";

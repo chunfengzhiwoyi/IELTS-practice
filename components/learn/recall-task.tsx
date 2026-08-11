@@ -19,22 +19,22 @@ export function RecallTask({ prompt, disabled, onSubmit }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-      <div className="text-sm font-medium text-blue-800">{prompt}</div>
+    <form onSubmit={handleSubmit} className="panel">
+      <div className="font-ui text-sm font-medium text-ink">{prompt}</div>
       <textarea
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
         rows={2}
         disabled={disabled}
-        className="mt-2 w-full resize-none rounded-md border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-slate-100"
-        placeholder="输入你的回答..."
+        className="field-input mt-3"
+        placeholder="输入你的回答…"
         aria-label="回忆答案"
       />
-      <div className="mt-2 flex justify-end">
+      <div className="mt-3 flex justify-end">
         <button
           type="submit"
           disabled={disabled || !answer.trim()}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="btn btn--primary"
         >
           提交
         </button>

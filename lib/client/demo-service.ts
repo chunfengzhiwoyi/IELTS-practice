@@ -7,6 +7,7 @@
  * 所有逻辑确定性执行，不调 LLM。
  */
 import { getItem, setItem } from "@/lib/client/storage";
+import { normalizeTerm, stableItemId } from "@/lib/learning/item-id";
 import type {
   SeedLearningItem,
   LearningItem,
@@ -65,6 +66,38 @@ function saveSpeakingSessions(sessions: SpeakingSession[]) {
 }
 
 // ============================================================
+// Item Cache (els_items) — 动态词卡持久化
+// ============================================================
+
+function getItemsCache(): Record<string, SeedLearningItem> {
+  return getItem<Record<string, SeedLearningItem>>("items") ?? {};
+}
+
+export function saveItemToCache(item: SeedLearningItem): void {
+  const cache = getItemsCache();
+  cache[item.normalizedTerm] = item;
+  setItem("items", cache);
+}
+
+/**
+ * 统一 item 内容查找：seed 优先 → els_items 缓存 fallback。
+ * 所有需要根据 itemId 获取词条内容的地方都走这里。
+ */
+async function findItemContent(itemId: string): Promise<SeedLearningItem | null> {
+  // 1. seed 查找
+  const seeds = await loadSeedItems();
+  const fromSeed = seeds.find((s) => s.itemId === itemId);
+  if (fromSeed) return fromSeed;
+
+  // 2. els_items 缓存查找（动态生成的词条）
+  const cache = getItemsCache();
+  const fromCache = Object.values(cache).find(
+    (c) => stableItemId(c.normalizedTerm) === itemId,
+  );
+  return fromCache ?? null;
+}
+
+// ============================================================
 // Learn Service
 // ============================================================
 
@@ -72,31 +105,63 @@ export async function getWordCard(term: string): Promise<
   | { ok: true; data: WordCardResponse }
   | { ok: false; error: string }
 > {
-  const seeds = await loadSeedItems();
-  const normalized = term.trim().toLowerCase().replace(/\s+/g, " ");
-  const seed = seeds.find((s) => s.normalizedTerm === normalized);
+  const normalized = normalizeTerm(term);
 
-  if (!seed) {
-    return { ok: false, error: `词库中未找到「${term}」。Demo 模式仅支持预设词条。` };
+  // 1. 先查 seed
+  const seeds = await loadSeedItems();
+  const seed = seeds.find((s) => s.normalizedTerm === normalized);
+  if (seed) {
+    const item = seedToItem(seed);
+    const states = getStates();
+    const state = states[item.id] ?? null;
+    return {
+      ok: true,
+      data: {
+        item,
+        task: {
+          taskType: "MEANING_RECALL",
+          prompt: `请回忆「${item.canonicalForm}」的核心含义（中文）。`,
+          acceptedAnswerHint: seed.coreMeaning,
+        },
+        alreadyLearned: state !== null,
+        currentState: state,
+      },
+    };
   }
 
-  const item = seedToItem(seed);
-  const states = getStates();
-  const state = states[item.id] ?? null;
-
-  return {
-    ok: true,
-    data: {
-      item,
-      task: {
-        taskType: "MEANING_RECALL",
-        prompt: `请回忆「${item.canonicalForm}」的核心含义（中文）。`,
-        acceptedAnswerHint: seed.coreMeaning,
+  // 2. 查 els_items 缓存（之前 LLM 生成过的）
+  const cache = getItemsCache();
+  const cached = cache[normalized];
+  if (cached) {
+    const itemId = stableItemId(normalized);
+    const item: LearningItem = {
+      id: itemId,
+      itemType: cached.itemType,
+      canonicalForm: cached.term,
+      normalizedTerm: cached.normalizedTerm,
+      contentJson: cached,
+      topicTags: cached.topicTags,
+      createdAt: new Date().toISOString(),
+    };
+    const states = getStates();
+    const state = states[itemId] ?? null;
+    return {
+      ok: true,
+      data: {
+        item,
+        task: {
+          taskType: "MEANING_RECALL",
+          prompt: `请回忆「${item.canonicalForm}」的核心含义（中文）。`,
+          acceptedAnswerHint: cached.coreMeaning,
+        },
+        alreadyLearned: state !== null,
+        currentState: state,
       },
-      alreadyLearned: state !== null,
-      currentState: state,
-    },
-  };
+    };
+  }
+
+  // 3. 本地都没有 → 返回 not found（前端会调 /api/learn/card 走 LLM）
+  return { ok: false, error: `NOT_IN_LOCAL_CACHE` };
 }
 
 export async function submitLearnAnswer(params: {
@@ -105,13 +170,14 @@ export async function submitLearnAnswer(params: {
   usedHint: boolean;
 }): Promise<LearnSubmitResponse> {
   const { itemId, answer, usedHint } = params;
-  const seeds = await loadSeedItems();
-  const seed = seeds.find((s) => s.itemId === itemId);
-  const term = seed?.term ?? itemId;
-  const coreMeaning = seed?.coreMeaning ?? "";
+
+  // 统一查找 item 内容（seed + els_items 缓存）
+  const itemContent = await findItemContent(itemId);
+  const term = itemContent?.term ?? itemId;
+  const coreMeaning = itemContent?.coreMeaning ?? "";
 
   // Judge
-  const isCorrect = seed ? judgeCorrect(answer, seed) : false;
+  const isCorrect = itemContent ? judgeCorrect(answer, itemContent) : false;
   let correctness: EventCorrectness;
   let status: LearningStatus;
   let feedback: string;
@@ -198,21 +264,20 @@ export async function getReviewSession(mode: "DUE" | "MANUAL", itemId?: string):
   tasks: ReviewTask[];
   totalDue: number;
 }> {
-  const seeds = await loadSeedItems();
   const states = getStates();
   const now = new Date().toISOString();
 
   if (mode === "MANUAL" && itemId) {
-    const seed = seeds.find((s) => s.itemId === itemId);
-    if (!seed) return { tasks: [], totalDue: 0 };
+    const content = await findItemContent(itemId);
+    if (!content) return { tasks: [], totalDue: 0 };
     return {
       tasks: [{
-        itemId: seed.itemId,
-        term: seed.term,
-        prompt: `请回忆「${seed.term}」的核心含义（中文）。`,
-        coreMeaning: seed.coreMeaning,
-        acceptedAnswers: seed.acceptedAnswers,
-        answerKeywords: seed.answerKeywords,
+        itemId,
+        term: content.term,
+        prompt: `请回忆「${content.term}」的核心含义（中文）。`,
+        coreMeaning: content.coreMeaning,
+        acceptedAnswers: content.acceptedAnswers,
+        answerKeywords: content.answerKeywords,
       }],
       totalDue: Object.values(states).filter((s) => s.nextReviewAt <= now).length,
     };
@@ -224,20 +289,21 @@ export async function getReviewSession(mode: "DUE" | "MANUAL", itemId?: string):
     .sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))
     .slice(0, 10);
 
-  const tasks: ReviewTask[] = dueItems
-    .map((s) => {
-      const seed = seeds.find((sd) => sd.itemId === s.itemId);
-      if (!seed) return null;
-      return {
-        itemId: seed.itemId,
-        term: seed.term,
-        prompt: `请回忆「${seed.term}」的核心含义（中文）。`,
-        coreMeaning: seed.coreMeaning,
-        acceptedAnswers: seed.acceptedAnswers,
-        answerKeywords: seed.answerKeywords,
-      };
-    })
-    .filter(Boolean) as ReviewTask[];
+  // 统一查找每个 item 的内容（seed + els_items）
+  const taskPromises = dueItems.map(async (s) => {
+    const content = await findItemContent(s.itemId);
+    if (!content) return null;
+    return {
+      itemId: s.itemId,
+      term: content.term,
+      prompt: `请回忆「${content.term}」的核心含义（中文）。`,
+      coreMeaning: content.coreMeaning,
+      acceptedAnswers: content.acceptedAnswers,
+      answerKeywords: content.answerKeywords,
+    };
+  });
+  const resolved = await Promise.all(taskPromises);
+  const tasks: ReviewTask[] = resolved.filter(Boolean) as ReviewTask[];
 
   return { tasks, totalDue: dueItems.length };
 }
@@ -265,9 +331,9 @@ export async function submitReviewAnswer(params: {
   } else if (!answer.trim()) {
     result = "INCORRECT";
   } else {
-    const seeds = await loadSeedItems();
-    const seed = seeds.find((s) => s.itemId === itemId);
-    const correct = seed ? judgeCorrect(answer, seed) : judgeByKeywords(answer, task.answerKeywords);
+    // 统一查找 item 内容，用于判题
+    const content = await findItemContent(itemId);
+    const correct = content ? judgeCorrect(answer, content) : judgeByKeywords(answer, task.answerKeywords);
     result = correct ? (usedHint ? "CORRECT_WITH_HINT" : "CORRECT_INDEPENDENT") : "INCORRECT";
   }
 

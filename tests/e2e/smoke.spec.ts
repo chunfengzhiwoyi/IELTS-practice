@@ -8,13 +8,24 @@
  */
 import { expect, test } from "@playwright/test";
 
-test("首页正常渲染", async ({ page }) => {
+test("首页以四张功能卡为唯一入口", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "英语高效学习助手" })).toBeVisible();
-  await expect(page.getByText("新词学习")).toBeVisible();
-  await expect(page.getByText("今日复习")).toBeVisible();
-  await expect(page.getByText("口语训练")).toBeVisible();
-  await expect(page.getByText("学习报告")).toBeVisible();
+  // 四个核心功能卡入口（冻结决策：首页主入口）
+  await expect(page.getByRole("link", { name: /新词学习/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /今日复习/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /口语训练/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /学习报告/ })).toBeVisible();
+  // 首页不渲染持久导航 tab / 菜单触发，避免与功能卡形成重复入口
+  await expect(page.getByRole("button", { name: "菜单" })).toHaveCount(0);
+});
+
+test("子页渲染菜单浮层触发与返回主页", async ({ page }) => {
+  await page.goto("/learn");
+  // 子页才出现紧凑「菜单」触发器（替代常驻 tab）
+  await expect(page.getByRole("button", { name: "菜单" })).toBeVisible();
+  // 子页提供显式「返回主页」
+  await expect(page.getByRole("link", { name: /主页/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新词学习" })).toBeVisible();
 });
 
 test("登录页正常渲染", async ({ page }) => {

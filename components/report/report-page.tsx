@@ -63,18 +63,16 @@ export function ReportPage() {
     setSpeakingInsight({ text, isPattern });
   };
 
-  if (!report) return <div className="py-8 text-center text-sm text-slate-500">生成中…</div>;
+  if (!report) return <div className="py-8 text-center font-ui text-sm text-ink-meta">生成中…</div>;
 
   const hasData = report.totalItems > 0 || report.speakingCount > 0;
 
   if (!hasData) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-lg font-semibold text-slate-800">暂无学习记录</h2>
-        <p className="mt-2 text-sm text-slate-500">开始学习新表达后，报告会自动生成。</p>
-        <Link href="/learn" className="mt-6 inline-block rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          学习一个新表达
-        </Link>
+        <h2 className="font-display text-lg text-ink">暂无学习记录</h2>
+        <p className="mt-2 text-ink-meta">开始学习新表达后，报告会自动生成。</p>
+        <Link href="/learn" className="btn btn--primary mt-6">学习一个新表达</Link>
       </div>
     );
   }
@@ -95,8 +93,8 @@ export function ReportPage() {
     <div className="space-y-8">
       {/* 概览 */}
       <section>
-        <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">概览</h3>
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        <h3 className="section-label">概览</h3>
+        <div className="progress-band">
           <OverviewStat label="已学习表达" value={report.totalItems} />
           <OverviewStat label="待复习" value={report.dueSoon} />
           <OverviewStat label="口语练习" value={report.speakingCount} />
@@ -105,20 +103,20 @@ export function ReportPage() {
 
       {/* 词汇与记忆 */}
       <section>
-        <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">词汇与记忆</h3>
-        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
-          <div className="flex gap-4 text-sm">
-            <span className="text-emerald-700">可独立回忆 <b>{report.correctIndependent}</b></span>
-            <span className="text-amber-700">需要提示 <b>{report.correctWithHint}</b></span>
-            <span className="text-rose-700">还需巩固 <b>{report.incorrect}</b></span>
-          </div>
+        <h3 className="section-label">词汇与记忆</h3>
+        <div className="note">
+          <MemoryBreakdown
+            independent={report.correctIndependent}
+            withHint={report.correctWithHint}
+            incorrect={report.incorrect}
+          />
           {attentionItems.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium text-slate-500">需要关注的表达：</p>
+            <div className="mt-5 space-y-2">
+              <p className="font-ui text-xs font-medium text-ink-meta">需要关注的表达：</p>
               {attentionItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="font-medium text-slate-800">{item.term}</span>
-                  <span className="text-slate-500">— {item.reason}</span>
+                <div key={i} className="flex items-baseline gap-2 text-sm">
+                  <span className="font-medium text-ink">{item.term}</span>
+                  <span className="text-ink-meta">— {item.reason}</span>
                 </div>
               ))}
             </div>
@@ -128,12 +126,12 @@ export function ReportPage() {
 
       {/* 复习情况 */}
       <section>
-        <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">复习情况</h3>
-        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-700">{reviewAssessment()}</p>
+        <h3 className="section-label">复习情况</h3>
+        <div className="note">
+          <p className="text-ink-soft">{reviewAssessment()}</p>
           {report.reviewTotal > 0 && (
-            <p className="mt-1 text-xs text-slate-500">
-              共复习 {report.reviewTotal} 次，正确率 {Math.round(report.correctRate * 100)}%
+            <p className="mt-1 font-ui text-xs text-ink-meta">
+              共复习 {report.reviewTotal} 次，本周复习正确率 {Math.round(report.correctRate * 100)}%
             </p>
           )}
         </div>
@@ -142,11 +140,11 @@ export function ReportPage() {
       {/* 口语表现 */}
       {report.speakingCount > 0 && (
         <section>
-          <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">口语表现</h3>
-          <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-sm text-slate-700">完成 {report.speakingCount} 次口语练习</p>
+          <h3 className="section-label">口语表现</h3>
+          <div className="note">
+            <p className="text-ink-soft">完成 {report.speakingCount} 次口语练习</p>
             {speakingInsight && (
-              <p className={`mt-2 text-sm ${speakingInsight.isPattern ? "font-medium text-amber-700" : "text-slate-600"}`}>
+              <p className={`mt-2 text-sm ${speakingInsight.isPattern ? "font-medium text-warn" : "text-ink-meta"}`}>
                 {speakingInsight.text}
               </p>
             )}
@@ -156,15 +154,13 @@ export function ReportPage() {
 
       {/* 推荐 */}
       <section>
-        <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">接下来最值得做</h3>
-        <div className="mt-3 space-y-3">
+        <h3 className="section-label">接下来最值得做</h3>
+        <div className="space-y-3">
           {recommendations.map((rec, i) => (
-            <div key={i} className="rounded-lg border border-slate-200 bg-white p-4">
-              <p className="font-medium text-slate-800">{rec.title}</p>
-              <p className="mt-1 text-sm text-slate-500">{rec.reason}</p>
-              <Link href={rec.link} className="mt-2 inline-block text-sm font-medium text-brand-600 hover:underline">
-                {rec.buttonText} →
-              </Link>
+            <div key={i} className="note note--accent">
+              <p className="font-display text-base text-ink">{rec.title}</p>
+              <p className="mt-1 text-ink-soft">{rec.reason}</p>
+              <Link href={rec.link} className="btn--quiet mt-2">{rec.buttonText}</Link>
             </div>
           ))}
         </div>
@@ -177,9 +173,43 @@ export function ReportPage() {
 
 function OverviewStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 text-center">
-      <div className="text-2xl font-bold text-slate-800">{value}</div>
-      <div className="text-xs text-slate-500">{label}</div>
+    <div className="stat">
+      <div className="stat__num">{value}</div>
+      <div className="stat__label">{label}</div>
+    </div>
+  );
+}
+
+function MemoryBreakdown({
+  independent,
+  withHint,
+  incorrect,
+}: {
+  independent: number;
+  withHint: number;
+  incorrect: number;
+}) {
+  const total = independent + withHint + incorrect;
+  if (total === 0) {
+    return <p className="text-sm text-ink-meta">还没有记忆记录，学过的词条会出现在这里。</p>;
+  }
+  const pct = (n: number) => `${Math.round((n / total) * 100)}%`;
+  return (
+    <div>
+      <div
+        className="memory-bar"
+        role="img"
+        aria-label={`记忆分布：独立回忆 ${independent}，需要提示 ${withHint}，还需巩固 ${incorrect}`}
+      >
+        <i className="seg-pos" style={{ width: pct(independent) }} />
+        <i className="seg-warn" style={{ width: pct(withHint) }} />
+        <i className="seg-neg" style={{ width: pct(incorrect) }} />
+      </div>
+      <div className="memory-legend">
+        <span><i className="dot dot--pos" />可独立回忆 <b>{independent}</b></span>
+        <span><i className="dot dot--warn" />需要提示 <b>{withHint}</b></span>
+        <span><i className="dot dot--neg" />还需巩固 <b>{incorrect}</b></span>
+      </div>
     </div>
   );
 }

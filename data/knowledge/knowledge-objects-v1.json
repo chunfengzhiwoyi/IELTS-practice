@@ -1,0 +1,319 @@
+[
+  {
+    "id": "oer-speaking-format",
+    "type": "official_exam_rule",
+    "title": "IELTS Speaking Test 考试结构",
+    "content": {
+      "scope": "Speaking Test Format",
+      "rules": [
+        "口语考试共 11-14 分钟，分为三个 Part",
+        "Part 1（4-5 分钟）：考官就日常话题提问，考生简要作答",
+        "Part 2（3-4 分钟）：考生根据话题卡独白 1-2 分钟，考官可追问",
+        "Part 3（4-5 分钟）：考官就 Part 2 话题延伸提出抽象问题，考生展开讨论"
+      ],
+      "skills": ["speaking"],
+      "sections": ["Part 1", "Part 2", "Part 3"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Speaking test format",
+      "sourceId": "https://www.ielts.org/about-ielts/how-ielts-works/test-format",
+      "retrievedAt": "2026-08-09"
+    },
+    "tags": ["speaking", "format", "structure"]
+  },
+  {
+    "id": "oer-speaking-fc",
+    "type": "official_exam_rule",
+    "title": "Speaking: Fluency and Coherence 评分标准",
+    "content": {
+      "scope": "Speaking Band Descriptors — Fluency and Coherence",
+      "rules": [
+        "评估语速的稳定性和自然停顿",
+        "评估话语的逻辑连接和推进（discourse markers、connectives）",
+        "高分：语速稳定，极少自我修正或犹豫；话语连贯自如",
+        "低分：频繁停顿、重复、自我修正；缺乏连接手段"
+      ],
+      "skills": ["speaking"],
+      "sections": ["Part 1", "Part 2", "Part 3"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Speaking Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Fluency and Coherence"
+    },
+    "tags": ["speaking", "fluency-coherence", "assessment"]
+  },
+  {
+    "id": "oer-speaking-lr",
+    "type": "official_exam_rule",
+    "title": "Speaking: Lexical Resource 评分标准",
+    "content": {
+      "scope": "Speaking Band Descriptors — Lexical Resource",
+      "rules": [
+        "评估考生使用词汇的范围、准确性和灵活性",
+        "高分要求：能够使用不常见词汇（less common vocabulary）并展示对搭配的意识",
+        "高分要求：能够有效使用 paraphrase 避免重复",
+        "低分特征：词汇量有限，频繁重复，搭配不当"
+      ],
+      "skills": ["speaking"],
+      "sections": ["Part 1", "Part 2", "Part 3"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Speaking Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Lexical Resource"
+    },
+    "tags": ["speaking", "lexical-resource", "assessment"]
+  },
+  {
+    "id": "oer-speaking-gra",
+    "type": "official_exam_rule",
+    "title": "Speaking: Grammatical Range and Accuracy 评分标准",
+    "content": {
+      "scope": "Speaking Band Descriptors — Grammatical Range and Accuracy",
+      "rules": [
+        "评估句式结构的多样性和复杂性",
+        "评估语法错误的频率及其对理解的影响",
+        "高分：灵活使用复杂结构，错误极少且不影响理解",
+        "低分：仅使用简单句式，频繁出现基础语法错误"
+      ],
+      "skills": ["speaking"],
+      "sections": ["Part 1", "Part 2", "Part 3"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Speaking Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Grammatical Range and Accuracy"
+    },
+    "tags": ["speaking", "grammatical-range", "assessment"]
+  },
+  {
+    "id": "oer-speaking-pron",
+    "type": "official_exam_rule",
+    "title": "Speaking: Pronunciation 评分标准",
+    "content": {
+      "scope": "Speaking Band Descriptors — Pronunciation",
+      "rules": [
+        "评估可理解度（intelligibility）",
+        "评估语调、重音和节奏的自然度",
+        "高分：发音清晰自然，第一语言口音对可理解度影响极小",
+        "低分：发音频繁导致误解，缺乏自然语调变化"
+      ],
+      "skills": ["speaking"],
+      "sections": ["Part 1", "Part 2", "Part 3"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Speaking Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Pronunciation"
+    },
+    "tags": ["speaking", "pronunciation", "assessment"]
+  },
+  {
+    "id": "oer-writing-format",
+    "type": "official_exam_rule",
+    "title": "IELTS Academic Writing Test 考试结构",
+    "content": {
+      "scope": "Academic Writing Test Format",
+      "rules": [
+        "写作考试共 60 分钟，包含 Task 1 和 Task 2",
+        "Task 1（建议 20 分钟）：描述图表、流程或地图，至少 150 词",
+        "Task 2（建议 40 分钟）：针对观点或问题写一篇议论文，至少 250 词",
+        "Task 2 分值权重高于 Task 1"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1", "Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Academic Writing test format",
+      "sourceId": "https://www.ielts.org/about-ielts/how-ielts-works/test-format",
+      "retrievedAt": "2026-08-09"
+    },
+    "tags": ["writing", "format", "structure", "academic"]
+  },
+  {
+    "id": "oer-writing-ta",
+    "type": "official_exam_rule",
+    "title": "Writing: Task Achievement / Task Response 评分标准",
+    "content": {
+      "scope": "Writing Band Descriptors — Task Achievement (T1) / Task Response (T2)",
+      "rules": [
+        "Task 1：评估是否充分描述了所有关键特征和趋势",
+        "Task 2：评估是否充分回应了题目所有部分，立场是否清晰",
+        "高分：完整回应题目要求，观点充分展开且有支撑",
+        "低分：偏题、遗漏题目要求、观点不充分或缺乏支撑"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1", "Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Writing Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Task Achievement / Task Response"
+    },
+    "tags": ["writing", "task-response", "assessment"]
+  },
+  {
+    "id": "oer-writing-cc",
+    "type": "official_exam_rule",
+    "title": "Writing: Coherence and Cohesion 评分标准",
+    "content": {
+      "scope": "Writing Band Descriptors — Coherence and Cohesion",
+      "rules": [
+        "评估段落组织和逻辑推进",
+        "评估衔接手段（cohesive devices）的使用准确性和多样性",
+        "高分：段落划分合理，逻辑清晰，衔接手段使用自然到读者不会注意",
+        "低分：缺乏段落结构，衔接词使用不当或过度堆砌"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1", "Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Writing Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Coherence and Cohesion"
+    },
+    "tags": ["writing", "coherence-cohesion", "assessment"]
+  },
+  {
+    "id": "oer-writing-lr",
+    "type": "official_exam_rule",
+    "title": "Writing: Lexical Resource 评分标准",
+    "content": {
+      "scope": "Writing Band Descriptors — Lexical Resource",
+      "rules": [
+        "评估词汇范围、准确性和适切性",
+        "高分：使用不常见词汇且拼写和搭配准确，展示对词汇细微差别的意识",
+        "高分：有效使用学术词汇，语域一致（academic/semi-formal/neutral）",
+        "低分：词汇有限，拼写错误影响理解，语域不当"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1", "Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Writing Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Lexical Resource"
+    },
+    "tags": ["writing", "lexical-resource", "assessment"]
+  },
+  {
+    "id": "oer-writing-gra",
+    "type": "official_exam_rule",
+    "title": "Writing: Grammatical Range and Accuracy 评分标准",
+    "content": {
+      "scope": "Writing Band Descriptors — Grammatical Range and Accuracy",
+      "rules": [
+        "评估句式结构的多样性",
+        "评估语法和标点的准确性",
+        "高分：多数句子无误，灵活使用复杂结构",
+        "低分：仅使用简单句式，错误频繁且影响理解"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1", "Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Writing Band Descriptors (public version)",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Grammatical Range and Accuracy"
+    },
+    "tags": ["writing", "grammatical-range", "assessment"]
+  },
+  {
+    "id": "oer-writing-task2-style",
+    "type": "official_exam_rule",
+    "title": "Writing Task 2: 语域与风格要求",
+    "content": {
+      "scope": "Academic Writing Task 2 Style Requirements",
+      "rules": [
+        "Task 2 要求 academic/semi-formal/neutral style",
+        "不要求绝对正式（不禁止第一人称），但需避免过于口语化的表达",
+        "语域一致性是 Lexical Resource 评分的重要考量"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 2"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Academic Writing Task 2 descriptors",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Task 2, style and register references"
+    },
+    "tags": ["writing", "task2", "register", "style"]
+  },
+  {
+    "id": "oer-writing-task1-style",
+    "type": "official_exam_rule",
+    "title": "Writing Task 1: 语域与风格要求",
+    "content": {
+      "scope": "Academic Writing Task 1 Style Requirements",
+      "rules": [
+        "Task 1 要求客观描述数据/过程/地图，不要求个人观点",
+        "语域为 academic/neutral，侧重准确性和清晰度",
+        "需使用适当的描述趋势/比较的词汇和句式"
+      ],
+      "skills": ["writing"],
+      "sections": ["Task 1"]
+    },
+    "provenance": {
+      "sourceType": "official",
+      "sourceTitle": "IELTS Academic Writing Task 1 descriptors",
+      "sourceId": "https://www.ielts.org/for-researchers/band-descriptors",
+      "retrievedAt": "2026-08-09",
+      "sourceLocator": "Task 1, Task Achievement"
+    },
+    "tags": ["writing", "task1", "register", "style"]
+  },
+  {"id":"pt-topic-technology","type":"project_taxonomy","title":"话题：Technology & Innovation","content":{"dimension":"topic","value":"technology","description":"人工智能、自动化、数字化、社交媒体、隐私、科技对社会影响","associatedTerms":["ubiquitous","artificial","automation","innovation","digital","algorithm","surveillance","virtual","obsolete","revolutionise"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","technology"]},
+  {"id":"pt-topic-environment","type":"project_taxonomy","title":"话题：Environment & Sustainability","content":{"dimension":"topic","value":"environment","description":"气候变化、可持续发展、污染、能源、生态保护、碳排放","associatedTerms":["sustainable","renewable","pollution","biodiversity","ecosystem","conservation","emission","carbon","mitigate","deteriorate","deforestation"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","environment"]},
+  {"id":"pt-topic-society","type":"project_taxonomy","title":"话题：Society & Social Issues","content":{"dimension":"topic","value":"society","description":"社会不平等、犯罪、全球化、文化多样性、人口","associatedTerms":["prevalent","inequality","discrimination","cohesion","marginalise","demographic","urbanisation","welfare","stigma","segregation"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","society"]},
+  {"id":"pt-topic-education","type":"project_taxonomy","title":"话题：Education & Learning","content":{"dimension":"topic","value":"education","description":"教育体系、在线学习、考试制度、终身学习、教育公平","associatedTerms":["curriculum","pedagogy","tertiary","vocational","literacy","scholarship","rote","extracurricular","tuition","diploma"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","education"]},
+  {"id":"pt-topic-health","type":"project_taxonomy","title":"话题：Health & Wellbeing","content":{"dimension":"topic","value":"health","description":"公共卫生、心理健康、生活方式、医疗系统、流行病","associatedTerms":["sedentary","obesity","pandemic","wellbeing","nutrition","therapy","chronic","rehabilitation","vaccine","diagnosis"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","health"]},
+  {"id":"pt-topic-economy","type":"project_taxonomy","title":"话题：Economy & Employment","content":{"dimension":"topic","value":"economy","description":"经济发展、就业、通胀、全球贸易、创业","associatedTerms":["inflation","recession","unemployment","entrepreneur","subsidise","commodity","fiscal","tariff","deficit","prosperity"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","economy"]},
+  {"id":"pt-topic-government","type":"project_taxonomy","title":"话题：Government & Policy","content":{"dimension":"topic","value":"government","description":"政府政策、立法、公共服务、民主、官僚体系","associatedTerms":["allocate","legislation","bureaucracy","welfare","regulation","mandate","referendum","sovereignty","accountability","constituency"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","government"]},
+  {"id":"pt-topic-globalisation","type":"project_taxonomy","title":"话题：Globalisation & Culture","content":{"dimension":"topic","value":"globalisation","description":"全球化影响、文化同质化、多元文化、传统保护","associatedTerms":["indigenous","homogenisation","diversity","heritage","assimilate","cosmopolitan","multinational","exploit","interdependent","cultural"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","globalisation","culture"]},
+  {"id":"pt-topic-media","type":"project_taxonomy","title":"话题：Media & Communication","content":{"dimension":"topic","value":"media","description":"新闻自由、社交媒体、广告、信息传播、审查","associatedTerms":["censorship","propaganda","journalism","viral","misinformation","broadcast","impartial","sensationalise","influencer","clickbait"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","media"]},
+  {"id":"pt-topic-crime","type":"project_taxonomy","title":"话题：Crime & Law","content":{"dimension":"topic","value":"crime","description":"犯罪预防、司法制度、惩罚与改造、青少年犯罪","associatedTerms":["incarceration","rehabilitation","deterrent","juvenile","recidivism","offender","verdict","legislation","surveillance","parole"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","crime"]},
+  {"id":"pt-topic-transport","type":"project_taxonomy","title":"话题：Transport & Urban Planning","content":{"dimension":"topic","value":"transport","description":"交通拥堵、公共交通、城市规划、可持续出行","associatedTerms":["congestion","infrastructure","commute","pedestrian","subsidise","emission","metropolitan","sprawl","autonomous","transit"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","transport"]},
+  {"id":"pt-topic-food","type":"project_taxonomy","title":"话题：Food & Agriculture","content":{"dimension":"topic","value":"food","description":"食品安全、农业、有机食品、转基因、饮食文化","associatedTerms":["organic","genetically","famine","nutrition","pesticide","livestock","harvest","sustainability","cuisine","obesity"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","food"]},
+  {"id":"pt-topic-housing","type":"project_taxonomy","title":"话题：Housing & Architecture","content":{"dimension":"topic","value":"housing","description":"住房问题、城市化、建筑设计、可负担住房","associatedTerms":["affordable","renovation","urbanisation","sprawl","tenant","mortgage","demolish","infrastructure","heritage","gentrification"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","housing"]},
+  {"id":"pt-topic-arts","type":"project_taxonomy","title":"话题：Arts & Creativity","content":{"dimension":"topic","value":"arts","description":"艺术价值、创造力、文化遗产、政府资助艺术","associatedTerms":["aesthetic","contemporary","heritage","patron","exhibition","sculpture","innovative","subsidise","censorship","inspiration"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","arts"]},
+  {"id":"pt-topic-work","type":"project_taxonomy","title":"话题：Work & Career","content":{"dimension":"topic","value":"work","description":"工作生活平衡、远程办公、职业发展、自动化对就业的影响","associatedTerms":["compromise","autonomy","hierarchy","freelance","burnout","redundancy","outsource","incentive","mentorship","remote"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","work"]},
+  {"id":"pt-topic-travel","type":"project_taxonomy","title":"话题：Travel & Tourism","content":{"dimension":"topic","value":"travel","description":"旅游业影响、生态旅游、文化体验、旅行的教育价值","associatedTerms":["ecotourism","itinerary","destination","hospitality","souvenir","expedition","backpacking","sustainable","heritage","immerse"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","travel"]},
+  {"id":"pt-topic-family","type":"project_taxonomy","title":"话题：Family & Relationships","content":{"dimension":"topic","value":"family","description":"家庭结构、代际关系、养育方式、老龄化","associatedTerms":["nurture","upbringing","sibling","generation","elderly","divorce","nuclear","extended","bond","obligation"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","family"]},
+  {"id":"pt-topic-science","type":"project_taxonomy","title":"话题：Science & Research","content":{"dimension":"topic","value":"science","description":"科学研究方法、伦理、太空探索、科技进步","associatedTerms":["hypothesis","empirical","phenomenon","methodology","ethics","breakthrough","experiment","innovation","peer-reviewed","replication"]},"provenance":{"sourceType":"project_authored","sourceId":"taxonomy-v1","sourceTitle":"项目内部话题分类 V1","updatedAt":"2026-08-09"},"tags":["topic","science"]},
+  {"id":"lg-register-writing-task2","type":"lexical_guidance","title":"Writing Task 2 语域指导","content":{"guidanceType":"register_note","appliesTo":{"contexts":["writing-task2"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"Writing Task 2 要求 academic/semi-formal/neutral 语域。生成例句和搭配时应避免过于口语化表达（gonna, wanna, stuff, a lot of），优先使用中性或学术表述。但不要求绝对正式，第一人称和适度的半正式表达可以接受。","examples":["It is widely acknowledged that...","A significant proportion of...","This can be attributed to..."],"antiExamples":["Lots of people think...","It's like really bad...","Stuff like pollution..."]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["register","writing","task2"]},
+  {"id":"lg-register-writing-task1","type":"lexical_guidance","title":"Writing Task 1 语域指导","content":{"guidanceType":"register_note","appliesTo":{"contexts":["writing-task1"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"Writing Task 1 要求客观中性语域。描述数据趋势时使用准确的动词和副词，避免主观评价和个人观点。","examples":["increased significantly","remained stable","accounted for approximately"],"antiExamples":["I think the graph shows...","It's obvious that..."]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["register","writing","task1"]},
+  {"id":"lg-appropriacy-speaking","type":"lexical_guidance","title":"Speaking 用词适切度指导","content":{"guidanceType":"appropriacy_rule","appliesTo":{"contexts":["speaking-part1","speaking-part2","speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"Speaking 中可使用中性到半正式语域。Part 1 允许较自然口语；Part 3 可偏学术但需自然。词卡搭配和例句应体现口语中自然使用方式。","examples":["To be honest, I reckon...","From my perspective...","What strikes me is..."],"antiExamples":["It is widely acknowledged that... (过于书面)","The aforementioned... (过于正式)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["appropriacy","speaking","register"]},
+  {"id":"lg-collocation-guidance","type":"lexical_guidance","title":"搭配生成指导","content":{"guidanceType":"collocation_pattern","appliesTo":{"topics":["environment","technology","society","education","health","economy","government","globalisation","media","crime","transport","food","housing","arts","work","travel","family","science"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"生成 collocations 时应选择在学术写作和口语讨论中真实常见的搭配。每个词卡提供 3-5 个搭配，覆盖动词+名词、形容词+名词、副词+动词等多种模式。","examples":["mitigate the effects of...","pose a significant threat","address the underlying causes"],"antiExamples":["mitigate the thing (过于泛化)","very mitigate (语法错误)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["collocation","writing","speaking"]},
+  {"id":"lg-paraphrase-guidance","type":"lexical_guidance","title":"同义替换策略指导","content":{"guidanceType":"paraphrase_strategy","appliesTo":{"contexts":["writing-task2","speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"词卡的 commonMistake 和 usageContext 应提示该词可以替换哪些常见表达。Lexical Resource 高分要求有效的同义替换。注意替换时含义精确匹配。","examples":["mitigate 可替换 reduce/lessen/alleviate","ubiquitous 可替换 widespread/pervasive"],"antiExamples":["mitigate = stop (含义偏差，mitigate 是减轻非消除)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["paraphrase","writing","speaking","lexical-resource"]},
+  {"id":"lg-cause-effect","type":"lexical_guidance","title":"因果关系搭配模式","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task2","speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"因果关系是 IELTS 写作和口语中最常见的逻辑关系。词卡如涉及因果关系词汇，应在搭配和例句中体现因果表达模式。","examples":["give rise to","result in","stem from","be attributed to","lead to"],"antiExamples":["make something happen (过于简单)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["collocation","cause-effect","writing","speaking"]},
+  {"id":"lg-comparison-contrast","type":"lexical_guidance","title":"比较与对比搭配模式","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task2","speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"比较对比结构在 IELTS 议论文和 Part 3 讨论中频繁出现。相关词汇的搭配应体现比较关系。","examples":["in contrast to","outweigh","whereas","on the other hand","compared with"],"antiExamples":["is more better than (语法错误)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["collocation","comparison","writing","speaking"]},
+  {"id":"lg-opinion-expression","type":"lexical_guidance","title":"观点表达搭配模式","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task2","speaking-part3"],"itemTypes":["PHRASE","CHUNK"]},"guidance":"表达观点时应使用多样化的引入方式，避免反复使用 I think。","examples":["from my perspective","it seems to me that","I am convinced that","one could argue that"],"antiExamples":["I think (过度重复)","in my opinion I think (冗余)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["collocation","opinion","writing","speaking"]},
+  {"id":"lg-hedging-writing","type":"lexical_guidance","title":"学术写作中 hedging 表达","content":{"guidanceType":"idiomatic_usage","appliesTo":{"contexts":["writing-task2"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"学术写作中避免过于绝对的表述，使用 hedging 表达（可能、倾向于、在一定程度上）体现学术严谨。","examples":["tend to","it is likely that","to some extent","arguably"],"antiExamples":["always","never","definitely (过于绝对)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["hedging","writing","academic","register"]},
+  {"id":"lg-exemplification","type":"lexical_guidance","title":"举例论证搭配模式","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task2","speaking-part2","speaking-part3"],"itemTypes":["PHRASE","CHUNK"]},"guidance":"举例是论证和独白中必不可少的手段。词卡应在搭配或 usageContext 中体现举例表达。","examples":["for instance","a case in point is","this is exemplified by","take...as an example"],"antiExamples":["like (过于口语，写作中避免)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["exemplification","writing","speaking"]},
+  {"id":"lg-concession","type":"lexical_guidance","title":"让步与转折搭配模式","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task2","speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"让步转折是展示论证深度的关键手段。相关词汇应在搭配中体现让步逻辑。","examples":["nevertheless","notwithstanding","albeit","while it is true that","having said that"],"antiExamples":["but (单独使用过于简单)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["concession","writing","speaking","coherence"]},
+  {"id":"lg-idiomatic-speaking","type":"lexical_guidance","title":"Speaking 中适度习语使用","content":{"guidanceType":"idiomatic_usage","appliesTo":{"contexts":["speaking-part1","speaking-part2","speaking-part3"],"itemTypes":["PHRASE","CHUNK"]},"guidance":"Speaking 中适度使用习语（idioms）可体现词汇丰富度，但不宜过度堆砌。词卡如为习语类表达，应说明自然使用的语境。","examples":["a blessing in disguise","take something for granted","the tip of the iceberg"],"antiExamples":["连续使用 3 个以上习语（不自然）"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["idiom","speaking","vocabulary"]},
+  {"id":"lg-appropriacy-speaking-p1","type":"lexical_guidance","title":"Speaking Part 1 简短回答指导","content":{"guidanceType":"appropriacy_rule","appliesTo":{"contexts":["speaking-part1"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"Part 1 回答应自然简短（2-4句），不需要展示过于学术的词汇。词卡在 Part 1 语境下的搭配和例句应体现日常交流风格。","examples":["To be honest, I quite enjoy...","I'd say I'm more of a...","Not really, I tend to..."],"antiExamples":["It is widely acknowledged that... (Part 1 中不自然)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["speaking","part1","appropriacy"]},
+  {"id":"lg-appropriacy-speaking-p3","type":"lexical_guidance","title":"Speaking Part 3 深入讨论指导","content":{"guidanceType":"appropriacy_rule","appliesTo":{"contexts":["speaking-part3"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"Part 3 允许使用更学术的表达，但需保持口语自然度。词卡在 Part 3 语境下应体现抽象讨论中的自然用法。","examples":["I'd argue that...","One possible explanation is...","From a broader perspective..."],"antiExamples":["The aforementioned hypothesis... (书面感过强)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["speaking","part3","appropriacy"]},
+  {"id":"lg-quantification","type":"lexical_guidance","title":"量化与程度表达指导","content":{"guidanceType":"collocation_pattern","appliesTo":{"contexts":["writing-task1","writing-task2"],"itemTypes":["WORD","PHRASE","CHUNK"]},"guidance":"写作中需要准确量化或表达程度。词卡涉及程度/量化时应提供对应搭配。","examples":["a significant proportion","the vast majority","to a certain extent","marginally higher"],"antiExamples":["a lot of (口语化)","very very big (非学术)"]},"provenance":{"sourceType":"project_authored","sourceId":"lexical-guidance-v1","sourceTitle":"词卡生成教学指导规则 V1","updatedAt":"2026-08-09"},"tags":["quantification","writing","task1","task2"]}
+]

@@ -8,11 +8,19 @@ interface Props {
 export default async function ReviewRoute({ searchParams }: Props) {
   const params = await searchParams;
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">今日复习</h1>
-        <Link href="/" className="text-sm text-slate-500 hover:text-brand-600">← 返回</Link>
-      </div>
+    <main className="subpage">
+      <header className="subhead">
+        <div className="subhead__bar">
+          <Link href="/" className="btn btn--quiet btn--quiet--back btn--sm">← 主页</Link>
+        </div>
+        <div className="subhead__grid">
+          <span className="folio">02</span>
+          <div>
+            <h1>今日复习</h1>
+            <p className="lead">聚焦待巩固词条，完成主动回忆。</p>
+          </div>
+        </div>
+      </header>
       <ReviewPage initialItemId={params.itemId} />
     </main>
   );

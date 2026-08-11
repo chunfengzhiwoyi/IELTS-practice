@@ -1,6 +1,7 @@
 "use client";
 
-import type { SpeakingAnalysisResult } from "@/lib/speaking/types";
+import Link from "next/link";
+import type { SpeakingAnalysisResult, SpeakingPart } from "@/lib/speaking/types";
 
 interface Props {
   analysis: SpeakingAnalysisResult;
@@ -8,20 +9,22 @@ interface Props {
   onViewDrill?: () => void;
   onTryAgain?: () => void;
   onFinish: () => void;
+  nextPart?: SpeakingPart;
+  onContinuePart?: () => void;
 }
 
-export function SpeakingFeedback({ analysis, isSecondAnswer, onViewDrill, onTryAgain, onFinish }: Props) {
-  const mainColor = analysis.mainIssue.severity === "major"
-    ? "border-amber-200 bg-amber-50"
-    : "border-emerald-200 bg-emerald-50";
+export function SpeakingFeedback({ analysis, isSecondAnswer, onViewDrill, onTryAgain, onFinish, nextPart, onContinuePart }: Props) {
+  const issueClass = analysis.mainIssue.severity === "major"
+    ? "feedback-card feedback-card--warn"
+    : "feedback-card feedback-card--good";
 
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-800">分析结果</h3>
-        <p className="mt-1 text-sm text-slate-600">{analysis.summary}</p>
-        <div className="mt-2 flex gap-3 text-xs text-slate-500">
+      <div className="note note--accent">
+        <h3 className="font-display text-base text-ink">分析结果</h3>
+        <p className="mt-1 text-ink-soft">{analysis.summary}</p>
+        <div className="mt-2 flex gap-3 font-ui text-xs text-ink-meta">
           <span>{analysis.metrics.wordCount} 词</span>
           <span>{analysis.metrics.sentenceCount} 句</span>
           <span>{analysis.metrics.connectorCount} 个连接词</span>
@@ -29,34 +32,30 @@ export function SpeakingFeedback({ analysis, isSecondAnswer, onViewDrill, onTryA
       </div>
 
       {/* Main Issue */}
-      <div className={`rounded-lg border p-4 ${mainColor}`}>
+      <div className={issueClass}>
         <div className="flex items-center gap-2">
-          <span className="rounded bg-white/70 px-2 py-0.5 text-xs font-medium">
-            {analysis.mainIssue.dimension}
-          </span>
-          <span className="rounded bg-white/70 px-2 py-0.5 text-xs">
-            {analysis.mainIssue.severity === "major" ? "主要问题" : "可优化"}
-          </span>
+          <span className="pill">{analysis.mainIssue.dimension}</span>
+          <span className="pill">{analysis.mainIssue.severity === "major" ? "主要问题" : "可优化"}</span>
         </div>
-        <p className="mt-2 text-sm">{analysis.mainIssue.description}</p>
-        <p className="mt-1 text-sm font-medium">{analysis.mainIssue.suggestion}</p>
+        <p className="mt-2 text-ink-soft">{analysis.mainIssue.description}</p>
+        <p className="mt-1 font-medium text-ink">{analysis.mainIssue.suggestion}</p>
       </div>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
         {!isSecondAnswer && onViewDrill && (
-          <button onClick={onViewDrill} className="rounded-md border border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100">
-            查看微训练
-          </button>
+          <button onClick={onViewDrill} className="btn btn--ghost">查看微训练</button>
         )}
         {!isSecondAnswer && onTryAgain && (
-          <button onClick={onTryAgain} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-            重新回答
-          </button>
+          <button onClick={onTryAgain} className="btn btn--ghost">重新回答</button>
         )}
-        <button onClick={onFinish} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+        {!isSecondAnswer && nextPart && onContinuePart && (
+          <button onClick={onContinuePart} className="btn btn--primary">继续 {nextPart} →</button>
+        )}
+        <button onClick={onFinish} className="btn btn--quiet">
           {isSecondAnswer ? "完成" : "跳过重答，结束"}
         </button>
+        <Link href="/" className="btn btn--quiet">返回主页</Link>
       </div>
     </div>
   );

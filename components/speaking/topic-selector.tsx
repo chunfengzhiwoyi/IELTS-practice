@@ -15,16 +15,17 @@ const PARTS: Array<{ part: SpeakingPart; label: string; desc: string }> = [
 export function TopicSelector({ onSelect }: Props) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">选择一个题型开始练习：</p>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {PARTS.map((p) => (
+      <p className="text-sm text-ink-soft">选择一个题型开始练习：</p>
+      <div className="grid gap-0 sm:grid-cols-3">
+        {PARTS.map((p, i) => (
           <button
             key={p.part}
             onClick={() => onSelect(p.part)}
-            className="rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-brand-500 hover:shadow-md"
+            className="border-line bg-paper p-5 text-left transition hover:border-accent"
+            style={{ borderTop: i === 0 ? "1.5px solid var(--line-strong)" : "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}
           >
-            <div className="font-medium text-slate-900">{p.label}</div>
-            <div className="mt-1 text-xs text-slate-500">{p.desc}</div>
+            <div className="font-medium text-ink">{p.label}</div>
+            <div className="mt-1 text-xs text-ink-meta">{p.desc}</div>
           </button>
         ))}
       </div>

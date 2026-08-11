@@ -27,6 +27,21 @@ export interface SeedLearningItem {
   topicTags: string[];
   acceptedAnswers: string[];
   answerKeywords: string[];
+  /** IELTS 学习元数据（Knowledge Layer V1，可选） */
+  ielts?: {
+    skills?: Array<"speaking" | "writing" | "reading" | "listening">;
+    contexts?: Array<"speaking-part1" | "speaking-part2" | "speaking-part3" | "writing-task1" | "writing-task2">;
+    topics?: string[];
+    lexicalFunctions?: string[];
+    register?: "formal" | "neutral" | "informal";
+    descriptorFocus?: string[];
+  };
+  /** 生成元数据（记录用了哪些知识对象生成） */
+  generationMeta?: {
+    knowledgeLayerVersion: string;
+    knowledgeObjectIds: string[];
+    promptVersion: string;
+  };
 }
 
 /** 数据库 / Memory 中持久化的知识项 */

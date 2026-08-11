@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { LearnSubmitResponse, WordCardResponse } from "@/lib/learning/types";
-import { submitLearnAnswer } from "@/lib/client/demo-service";
+import { getWordCard, submitLearnAnswer, saveItemToCache } from "@/lib/client/demo-service";
 import { LearningResult } from "@/components/learn/learning-result";
 import { RecallTask } from "@/components/learn/recall-task";
 import { TermInput } from "@/components/learn/term-input";
@@ -14,17 +14,33 @@ type PageState =
   | { kind: "LOADING_CARD" }
   | { kind: "CARD_READY"; card: WordCardResponse; usedHint: boolean }
   | { kind: "SUBMITTING"; card: WordCardResponse }
-  | { kind: "RESULT_SUCCESS"; result: LearnSubmitResponse }
+  | { kind: "RESULT_SUCCESS"; result: LearnSubmitResponse; card: WordCardResponse }
   | { kind: "ITEM_NOT_FOUND"; term: string }
   | { kind: "REQUEST_ERROR"; message: string };
+
+const INPUT_STATES: PageState["kind"][] = [
+  "EMPTY",
+  "LOADING_CARD",
+  "ITEM_NOT_FOUND",
+  "REQUEST_ERROR",
+];
 
 export function LearnPage() {
   const [state, setState] = useState<PageState>({ kind: "EMPTY" });
 
+  const showInput = INPUT_STATES.includes(state.kind);
+
   const handleTermSubmit = async (term: string) => {
     setState({ kind: "LOADING_CARD" });
     try {
-      // 调用服务端 API Route（服务端检查 seed，miss 时调 DeepSeek）
+      // 1. 先尝试本地（seed + els_items 缓存）
+      const localResult = await getWordCard(term);
+      if (localResult.ok) {
+        setState({ kind: "CARD_READY", card: localResult.data, usedHint: false });
+        return;
+      }
+
+      // 2. 本地没有 → 调服务端 API Route（seed 再检查一次 + LLM 生成）
       const res = await fetch("/api/learn/card", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -32,15 +48,22 @@ export function LearnPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        if (json?.error?.kind === "DEMO_ITEM_NOT_FOUND" || res.status === 404) {
-          // seed miss 且 LLM 也失败时
+        if (json?.error?.kind === "DEMO_ITEM_NOT_FOUND" || json?.error?.kind === "MODEL_ERROR" || res.status === 404 || res.status === 502) {
           setState({ kind: "ITEM_NOT_FOUND", term });
           return;
         }
         setState({ kind: "REQUEST_ERROR", message: json?.error?.message ?? `错误 ${res.status}` });
         return;
       }
-      setState({ kind: "CARD_READY", card: json as WordCardResponse, usedHint: false });
+
+      const card = json as WordCardResponse;
+
+      // 3. LLM 生成的词卡 → 保存到 localStorage els_items 缓存
+      if (card.item.contentJson && !card.item.id.startsWith("seed-")) {
+        saveItemToCache(card.item.contentJson);
+      }
+
+      setState({ kind: "CARD_READY", card, usedHint: false });
     } catch (err) {
       setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "网络错误" });
     }
@@ -62,7 +85,7 @@ export function LearnPage() {
         answer,
         usedHint,
       });
-      setState({ kind: "RESULT_SUCCESS", result });
+      setState({ kind: "RESULT_SUCCESS", result, card });
     } catch (err) {
       setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "提交失败" });
     }
@@ -74,23 +97,34 @@ export function LearnPage() {
 
   return (
     <div className="space-y-6">
-      <TermInput
-        onSubmit={handleTermSubmit}
-        disabled={state.kind === "LOADING_CARD" || state.kind === "SUBMITTING"}
-      />
+      {showInput && (
+        <TermInput
+          onSubmit={handleTermSubmit}
+          disabled={state.kind === "LOADING_CARD"}
+        />
+      )}
 
       {state.kind === "LOADING_CARD" && (
-        <div className="py-8 text-center text-sm text-slate-500">
-          <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600"></div>
-          <p className="mt-2">正在查找词条…不在本地词库时将由 AI 生成词卡（约 5-15 秒）</p>
+        <div className="py-8 text-center text-sm text-ink-meta">
+          <div className="rec-dot mx-auto"></div>
+          <p className="mt-3">正在查找词条…不在本地词库时将由 AI 生成词卡（约 5-15 秒）</p>
         </div>
       )}
 
       {state.kind === "CARD_READY" && (
         <>
-          <WordCard content={state.card.item.contentJson} onHintRevealed={handleHintRevealed} />
+          <div className="flex items-center justify-between">
+            <span className="section-label">新词学习</span>
+            <button onClick={handleContinue} className="btn btn--quiet btn--sm">换个词</button>
+          </div>
+          <WordCard
+            content={state.card.item.contentJson}
+            revealed={false}
+            hintUsed={state.usedHint}
+            onHint={handleHintRevealed}
+          />
           {state.card.alreadyLearned && (
-            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            <div className="note note--bronze text-sm">
               你之前已经学过这个词条。再次练习会创建新的学习记录。
             </div>
           )}
@@ -99,26 +133,29 @@ export function LearnPage() {
       )}
 
       {state.kind === "SUBMITTING" && (
-        <div className="py-4 text-center text-sm text-slate-500">提交中…</div>
+        <div className="py-4 text-center text-sm text-ink-meta">提交中…</div>
       )}
 
       {state.kind === "RESULT_SUCCESS" && (
-        <LearningResult result={state.result} onContinue={handleContinue} />
+        <>
+          <WordCard content={state.card.item.contentJson} revealed />
+          <LearningResult result={state.result} onContinue={handleContinue} />
+        </>
       )}
 
       {state.kind === "ITEM_NOT_FOUND" && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">词库中未找到「{state.term}」</p>
-          <p className="mt-1 text-xs">Demo 模式仅支持预设词条。试试：sustainable、take something for granted、play a vital role 等。</p>
-          <button onClick={handleContinue} className="mt-2 text-xs text-brand-600 underline">换一个词</button>
+        <div className="note note--bronze">
+          <p className="font-medium text-ink">词库中未找到「{state.term}」</p>
+          <p className="mt-1 text-sm">Demo 模式仅支持预设词条。试试：sustainable、take something for granted、play a vital role 等。</p>
+          <button onClick={handleContinue} className="btn btn--quiet mt-2">换一个词</button>
         </div>
       )}
 
       {state.kind === "REQUEST_ERROR" && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-          <p className="font-medium">请求失败</p>
-          <p className="mt-1">{state.message}</p>
-          <button onClick={handleContinue} className="mt-2 text-xs text-brand-600 underline">重试</button>
+        <div className="note note--accent">
+          <p className="font-medium text-ink">请求失败</p>
+          <p className="mt-1 text-sm">{state.message}</p>
+          <button onClick={handleContinue} className="btn btn--quiet mt-2">重试</button>
         </div>
       )}
     </div>

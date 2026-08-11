@@ -20,7 +20,7 @@ function makeSpeakRepo() {
   return new MemorySpeakingRepository();
 }
 
-const NOW = new Date("2026-08-07T12:00:00.000Z");
+const NOW = new Date(Date.now() + 60_000); // 比当前时间晚1分钟，确保包含所有新建事件
 const USER = "demo-user-001";
 
 async function seedLearningData(repo: MemoryLearningRepository) {
