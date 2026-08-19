@@ -15,8 +15,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-/** 受保护路由（AUTH_MODE=supabase 时需要登录） */
-const PROTECTED_PATHS = ["/learn", "/review", "/speaking", "/report", "/account"];
+/** 需要登录才能访问的路由（仅账户相关） */
+const PROTECTED_PATHS = ["/account"];
 
 export async function middleware(request: NextRequest) {
   // 必须带上 request headers，避免 cookie 操作后响应头失效
