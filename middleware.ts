@@ -35,15 +35,21 @@ export async function middleware(request: NextRequest) {
   // CSP: 开发模式宽松，生产模式收紧
   const isDev = process.env.NODE_ENV === "development";
   if (!isDev) {
+    // 放行必需的第三方：Google Fonts(样式/字体) + Supabase API(登录/数据)。
+    // 其余保持 'self' 严格策略。Supabase 域名从 env 动态读取，避免写死。
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const supabaseHost = supabaseUrl
+      .replace(/^https?:\/\//, "")
+      .replace(/\/.*$/, "");
     response.headers.set(
       "Content-Security-Policy",
       [
         "default-src 'self'",
         "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: blob:",
-        "font-src 'self'",
-        "connect-src 'self'",
+        "font-src 'self' https://fonts.gstatic.com",
+        "connect-src 'self'" + (supabaseHost ? ` https://${supabaseHost}` : ""),
         "frame-ancestors 'none'",
       ].join("; "),
     );
