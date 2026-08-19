@@ -261,10 +261,11 @@ export function LoginForm() {
 
       <button
         type="button"
-        onClick={() => void openQr()}
-        className="btn btn--ghost w-full"
+        disabled
+        className="btn btn--ghost w-full opacity-50 cursor-not-allowed"
+        title="个人开发者暂不支持微信扫码登录"
       >
-        微信扫码登录
+        微信扫码登录（暂未开放）
       </button>
 
       {status.kind === "sent" ? (
