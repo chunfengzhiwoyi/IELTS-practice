@@ -4,7 +4,7 @@
  */
 import { z } from "zod";
 
-import { callLlmStructured } from "@/lib/llm/structured-output";
+import { callLlmStructured, type CallStructuredOptions } from "@/lib/llm/structured-output";
 import { analyzeSpeakingAnswer as ruleBasedAnalysis } from "@/lib/speaking/analysis";
 import { logger } from "@/lib/observability/logger";
 import type { SpeakingAnalysisResult, SpeakingQuestion } from "@/lib/speaking/types";
@@ -49,6 +49,7 @@ export async function analyzeSpeakingWithLlm(
   answer: string,
   question: SpeakingQuestion,
   traceId: string,
+  opts?: { overrideProviders?: CallStructuredOptions["overrideProviders"] },
 ): Promise<SpeakingAnalysisResult> {
   try {
     const result = await callLlmStructured({
@@ -84,7 +85,7 @@ export async function analyzeSpeakingWithLlm(
       jsonExample: JSON_EXAMPLE,
       traceId,
       temperature: 0.3,
-    });
+    }, { overrideProviders: opts?.overrideProviders });
 
     const llmData = result.data;
     const wordCount = answer.trim().split(/\s+/).filter(Boolean).length;

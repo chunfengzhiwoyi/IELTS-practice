@@ -26,6 +26,10 @@ export interface Database {
           email: string;
           target_exam: string | null;
           preferences_json: Json | null;
+          display_name: string | null;
+          wechat_openid: string | null;
+          avatar_url: string | null;
+          last_login_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -34,11 +38,65 @@ export interface Database {
           email: string;
           target_exam?: string | null;
           preferences_json?: Json | null;
+          display_name?: string | null;
+          wechat_openid?: string | null;
+          avatar_url?: string | null;
+          last_login_at?: string | null;
         };
         Update: Partial<{
           email: string;
           target_exam: string | null;
           preferences_json: Json | null;
+          display_name: string | null;
+          wechat_openid: string | null;
+          avatar_url: string | null;
+          last_login_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      wechat_login_states: {
+        Row: {
+          state: string;
+          status: string;
+          session_json: Json | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          state: string;
+          status?: string;
+          session_json?: Json | null;
+          expires_at?: string;
+        };
+        Update: Partial<{
+          state: string;
+          status: string;
+          session_json: Json | null;
+          expires_at: string;
+        }>;
+        Relationships: [];
+      };
+      user_secrets: {
+        Row: {
+          user_id: string;
+          model_config_cipher: Json | null;
+          ima_config_cipher: Json | null;
+          kek_version: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          model_config_cipher?: Json | null;
+          ima_config_cipher?: Json | null;
+          kek_version?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          model_config_cipher: Json | null;
+          ima_config_cipher: Json | null;
+          kek_version: number;
         }>;
         Relationships: [];
       };
@@ -47,6 +105,7 @@ export interface Database {
           id: string;
           item_type: "WORD" | "PHRASE" | "CHUNK";
           canonical_form: string;
+          normalized_term: string | null;
           content_json: Json;
           topic_tags: string[] | null;
           created_at: string;
@@ -55,12 +114,14 @@ export interface Database {
           id?: string;
           item_type: "WORD" | "PHRASE" | "CHUNK";
           canonical_form: string;
+          normalized_term?: string | null;
           content_json: Json;
           topic_tags?: string[] | null;
         };
         Update: Partial<{
           item_type: "WORD" | "PHRASE" | "CHUNK";
           canonical_form: string;
+          normalized_term: string | null;
           content_json: Json;
           topic_tags: string[] | null;
         }>;
@@ -70,6 +131,7 @@ export interface Database {
         Row: {
           user_id: string;
           item_id: string;
+          status: string;
           recognition_level: number;
           recall_level: number;
           application_level: number;
@@ -81,6 +143,7 @@ export interface Database {
         Insert: {
           user_id: string;
           item_id: string;
+          status?: string;
           recognition_level?: number;
           recall_level?: number;
           application_level?: number;
@@ -89,6 +152,7 @@ export interface Database {
           next_review_at?: string;
         };
         Update: Partial<{
+          status: string;
           recognition_level: number;
           recall_level: number;
           application_level: number;
@@ -104,11 +168,13 @@ export interface Database {
           user_id: string;
           item_id: string;
           event_type: "NEW" | "REVIEW";
+          task_type: "MEANING_RECALL" | "PERSONAL_SENTENCE";
           answer: string | null;
           correctness: "FAIL" | "HINTED" | "INDEPENDENT" | "SKIPPED";
           hint_level: number;
           result_json: Json;
           client_event_id: string;
+          trace_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -116,11 +182,13 @@ export interface Database {
           user_id: string;
           item_id: string;
           event_type: "NEW" | "REVIEW";
+          task_type: "MEANING_RECALL" | "PERSONAL_SENTENCE";
           answer?: string | null;
           correctness: "FAIL" | "HINTED" | "INDEPENDENT" | "SKIPPED";
           hint_level?: number;
           result_json?: Json;
           client_event_id: string;
+          trace_id?: string | null;
         };
         Update: never;
         Relationships: [];

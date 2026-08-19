@@ -11,6 +11,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { getQuestionById, getSpeakingRepository } from "@/lib/speaking";
 import { analyzeSpeakingWithLlm } from "@/lib/llm/tasks/analyze-speaking";
+import { getUserOverrideProviders } from "@/lib/llm/user-config";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 
@@ -45,8 +46,10 @@ export async function POST(request: Request) {
       throw new AppError("INTERNAL", `题目数据丢失: ${session.questionId}`, traceId);
     }
 
-    // LLM 深度分析（含降级到规则引擎）
-    const analysis = await analyzeSpeakingWithLlm(answer, questionData, traceId);
+    // LLM 深度分析（含降级到规则引擎）；优先使用用户自有模型
+    const analysis = await analyzeSpeakingWithLlm(answer, questionData, traceId, {
+      overrideProviders: await getUserOverrideProviders() ?? undefined,
+    });
 
     // Update session
     let updatedSession;

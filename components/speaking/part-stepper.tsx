@@ -13,7 +13,7 @@ interface Props {
 export function PartStepper({ current, visited, onSelect }: Props) {
   const idx = current ? PARTS.indexOf(current) : -1;
   return (
-    <div className="part-stepper" role="tablist" aria-label="口语 Part 切换">
+    <div className="part-stepper" role="group" aria-label="口语 Part 切换">
       {PARTS.map((p, i) => {
         const state =
           i === idx ? "current" : visited.includes(p) ? "visited" : "todo";
@@ -21,8 +21,7 @@ export function PartStepper({ current, visited, onSelect }: Props) {
           <button
             key={p}
             type="button"
-            role="tab"
-            aria-selected={i === idx}
+            aria-pressed={i === idx}
             className={`part-stepper__item part-stepper__item--${state}`}
             onClick={() => onSelect(p)}
           >

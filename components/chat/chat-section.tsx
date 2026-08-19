@@ -18,7 +18,7 @@ const QUICK_ACTIONS = [
   { label: "看看学习情况", message: "看看我最近的学习情况" },
 ];
 
-export function ChatSection() {
+export function ChatSection({ fill = false }: { fill?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [convState, setConvState] = useState<ConversationState>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +26,9 @@ export function ChatSection() {
   const [loaded, setLoaded] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   useEffect(() => {
     setMessages(loadMessages());
@@ -52,15 +55,12 @@ export function ChatSection() {
     }
   }, [messages, isLoading]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    hasInteracted.current = true;
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text, timestamp: Date.now() };
-    const updated = [...messages, userMsg];
-    setMessages(updated);
+  const attempt = useCallback(async () => {
     setIsLoading(true);
-
+    setChatError(null);
+    const fullMessages = messagesRef.current;
     try {
-      const apiMessages = updated.slice(-20).map((m) => ({ role: m.role, content: m.text }));
+      const apiMessages = fullMessages.slice(-20).map((m) => ({ role: m.role, content: m.text }));
       const res = await fetch("/api/agent/message", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -70,7 +70,7 @@ export function ChatSection() {
       if (!res.ok) {
         const errJson = await res.json().catch(() => null);
         const errMsg = errJson?.error?.message ?? `请求失败 (${res.status})`;
-        setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", text: `抱歉，出了点问题：${errMsg}`, timestamp: Date.now() }]);
+        setChatError(errMsg);
         return;
       }
 
@@ -81,17 +81,30 @@ export function ChatSection() {
         text: data.assistant_text,
         ui_action: data.ui_action,
         timestamp: Date.now(),
+        fallback: data.fallback === true,
       };
       setMessages((prev) => [...prev, assistantMsg]);
       if (data.conversation_state_patch) {
         setConvState((prev) => ({ ...prev, ...data.conversation_state_patch }));
       }
     } catch {
-      setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", text: "网络错误，请稍后重试。", timestamp: Date.now() }]);
+      setChatError("网络错误，请稍后重试。");
     } finally {
       setIsLoading(false);
     }
-  }, [messages, convState]);
+  }, [convState]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    hasInteracted.current = true;
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text, timestamp: Date.now() };
+    messagesRef.current = [...messagesRef.current, userMsg];
+    setMessages(messagesRef.current);
+    await attempt();
+  }, [attempt]);
+
+  const retry = useCallback(() => {
+    void attempt();
+  }, [attempt]);
 
   const handleSubmit = () => {
     const trimmed = input.trim();
@@ -115,9 +128,9 @@ export function ChatSection() {
   const handleClear = () => { clearChat(); setMessages([]); setConvState({}); };
 
   return (
-    <div className="border border-line bg-paper">
+    <div className={fill ? "flex h-full min-h-0 flex-col bg-paper" : "border border-line bg-paper"}>
       {/* Feed area with fixed height */}
-      <div ref={feedRef} className="h-[400px] overflow-y-auto px-4 py-4">
+      <div ref={feedRef} className={fill ? "flex-1 min-h-0 overflow-y-auto px-4 py-4" : "h-[400px] overflow-y-auto px-4 py-4"}>
         {loaded && messages.length === 0 && !isLoading ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="text-sm text-ink-meta">直接输入或选择一个话题开始</p>
@@ -140,14 +153,26 @@ export function ChatSection() {
                 <UserMessage key={msg.id} text={msg.text} />
               ) : (
                 <div key={msg.id} className="space-y-2">
-                  <AssistantMessage text={msg.text} uiAction={msg.ui_action} onChoiceClick={sendMessage} />
+                  <AssistantMessage
+                    text={msg.text}
+                    uiAction={msg.ui_action}
+                    onChoiceClick={sendMessage}
+                    fallback={msg.fallback}
+                  />
                 </div>
-              ),
+              )
             )}
             {isLoading && <TypingIndicator />}
           </div>
         )}
       </div>
+
+      {chatError && (
+        <div className="note border-l-2 border-neg" role="alert">
+          <p className="text-sm text-ink">{chatError}</p>
+          <button onClick={retry} className="btn btn--ghost mt-2 px-3 py-1.5 text-sm">重试</button>
+        </div>
+      )}
 
       {/* Composer fixed at bottom of this module */}
       <div className="border-t border-line px-4 py-3">

@@ -25,6 +25,22 @@ type PageState =
 
 const PART_ORDER: SpeakingPart[] = ["P1", "P2", "P3"];
 
+function SpeakingLoader({ kind }: { kind: "LOADING_SESSION" | "ANALYZING" }) {
+  const step = kind === "LOADING_SESSION" ? 1 : 2;
+  const label = kind === "LOADING_SESSION" ? "正在生成题目…" : "正在分析你的回答…";
+  return (
+    <div className="speaking-loader" role="status" aria-live="polite">
+      <div className="speaking-loader__rule">
+        <span className="speaking-loader__fill" />
+      </div>
+      <div className="speaking-loader__meta">
+        <span className="speaking-loader__step">步骤 {step} / 2</span>
+        <span className="speaking-loader__label">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export function SpeakingPage() {
   const [state, setState] = useState<PageState>({ kind: "TOPIC_SELECT" });
   const [currentPart, setCurrentPart] = useState<SpeakingPart | null>(null);
@@ -138,9 +154,7 @@ export function SpeakingPage() {
       {state.kind === "TOPIC_SELECT" && <TopicSelector onSelect={handleStartSession} />}
 
       {state.kind === "LOADING_SESSION" || state.kind === "ANALYZING" ? (
-        <div className="py-8 text-center font-ui text-sm text-ink-meta">
-          {state.kind === "LOADING_SESSION" ? "准备题目…" : "分析回答…"}
-        </div>
+        <SpeakingLoader kind={state.kind} />
       ) : null}
 
       {state.kind === "ERROR" && (

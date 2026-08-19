@@ -45,6 +45,8 @@ export interface ChatMessage {
   text: string;
   ui_action?: UiAction;
   timestamp: number;
+  /** 该 assistant 消息是否为本地兜底回复 */
+  fallback?: boolean;
 }
 
 /** API 请求 */
@@ -58,4 +60,6 @@ export interface ChatResponse {
   assistant_text: string;
   ui_action: UiAction;
   conversation_state_patch?: Partial<ConversationState>;
+  /** 当真实 LLM 不可用时，服务端返回的本地兜底回复 */
+  fallback?: boolean;
 }

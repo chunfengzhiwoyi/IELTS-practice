@@ -25,5 +25,7 @@ export function resolveModelName(provider: ProviderKind, tier: ModelTier): strin
       }
       return tier === "fast" ? env.deepseek.DEEPSEEK_FAST_MODEL : env.deepseek.DEEPSEEK_MAIN_MODEL;
     }
+    default:
+      throw new Error(`[model-router] 未知 Provider: ${provider}`);
   }
 }

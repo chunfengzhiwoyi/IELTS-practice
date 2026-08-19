@@ -57,7 +57,7 @@ export function AgentChat() {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={3}
-        className="mt-2 w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+        className="mt-2 w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         placeholder="例如：帮我练一道 Part 2 / 我有五分钟复习 / 看看我最近学得怎么样"
       />
       <div className="mt-3 flex items-center justify-between">
@@ -65,7 +65,7 @@ export function AgentChat() {
         <button
           onClick={send}
           disabled={loading || !message.trim()}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="btn btn--primary disabled:cursor-not-allowed"
         >
           {loading ? "发送中…" : "发送"}
         </button>

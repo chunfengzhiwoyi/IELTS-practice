@@ -12,7 +12,7 @@ export default function ReportRoute() {
           <span className="folio">04</span>
           <div>
             <h1>学习报告</h1>
-            <p className="lead">根据你最近的学习记录生成。</p>
+            <p className="lead">最近七天的学习手记。</p>
           </div>
         </div>
       </header>

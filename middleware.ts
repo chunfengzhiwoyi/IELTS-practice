@@ -13,12 +13,14 @@
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 /** 受保护路由（AUTH_MODE=supabase 时需要登录） */
-const PROTECTED_PATHS = ["/learn", "/review", "/speaking", "/report"];
+const PROTECTED_PATHS = ["/learn", "/review", "/speaking", "/report", "/account"];
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // 必须带上 request headers，避免 cookie 操作后响应头失效
+  let response = NextResponse.next({ request: { headers: request.headers } });
 
   // --- 安全 Headers ---
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -57,12 +59,31 @@ export function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
     if (isProtected) {
-      // 检查 Supabase session cookie
-      const hasSession = request.cookies.getAll().some(
-        (c) => c.name.includes("supabase") && c.name.includes("auth"),
-      );
-      if (!hasSession) {
-        return NextResponse.redirect(new URL("/login", request.url));
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (url && anonKey) {
+        const supabase = createServerClient(url, anonKey, {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
+            },
+            setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                request.cookies.set(name, value);
+                response.cookies.set(name, value, options);
+              });
+            },
+          },
+        });
+
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (!user || error) {
+          return NextResponse.redirect(new URL("/login", request.url));
+        }
       }
     }
   }

@@ -52,6 +52,7 @@ export function AnswerInput({ question, questionZh, part, topic, onSubmit, label
         <button
           type="submit"
           disabled={submitting || !answer.trim()}
+          aria-busy={submitting}
           className="btn btn--primary"
         >
           {submitting ? "分析中…" : "提交回答"}

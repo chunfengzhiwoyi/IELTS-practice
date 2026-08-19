@@ -1,12 +1,7 @@
 import Link from "next/link";
-import { ReviewPage } from "@/components/review/review-page";
+import { ReviewClient } from "@/components/review/review-client";
 
-interface Props {
-  searchParams: Promise<{ itemId?: string }>;
-}
-
-export default async function ReviewRoute({ searchParams }: Props) {
-  const params = await searchParams;
+export default function ReviewRoute() {
   return (
     <main className="subpage">
       <header className="subhead">
@@ -21,7 +16,7 @@ export default async function ReviewRoute({ searchParams }: Props) {
           </div>
         </div>
       </header>
-      <ReviewPage initialItemId={params.itemId} />
+      <ReviewClient />
     </main>
   );
 }

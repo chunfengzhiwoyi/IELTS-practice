@@ -2,10 +2,12 @@
  * Learning Service — Repository 工厂
  * ------------------------------------------------------------
  * 根据 DATA_PROVIDER 环境变量返回对应 Repository 实例。
- * 当前 P1 只实现 memory；supabase 实现留作后续。
+ *   - memory   ：进程内实现（重启即丢，演示用）
+ *   - supabase ：Supabase 持久化实现，跨端记忆的同步底座（P2）
  */
 import type { LearningRepository } from "@/lib/learning/repository";
 import { MemoryLearningRepository } from "@/lib/learning/repositories/memory-learning-repository";
+import { SupabaseLearningRepository } from "@/lib/learning/repositories/supabase-learning-repository";
 import { seedDemoReviewItems } from "@/lib/learning/demo-review-seed";
 
 let instance: LearningRepository | null = null;
@@ -18,8 +20,8 @@ export function getRepository(): LearningRepository {
       instance = new MemoryLearningRepository();
       break;
     case "supabase":
-      // TODO P1+: import { SupabaseLearningRepository } from "./repositories/supabase-learning-repository";
-      throw new Error("[learning] DATA_PROVIDER=supabase 尚未实现，请使用 memory");
+      instance = new SupabaseLearningRepository();
+      break;
     default:
       throw new Error(`[learning] 未知 DATA_PROVIDER: ${provider}`);
   }

@@ -248,7 +248,11 @@ export function ReviewPage({ initialItemId }: Props) {
       )}
 
       <div className="space-y-3">
+        <label htmlFor="review-answer" className="font-ui text-sm font-medium text-ink-soft">
+          你的回答
+        </label>
         <textarea
+          id="review-answer"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           disabled={isSubmitting}

@@ -7,11 +7,11 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="text-center">
-        <h1 className="text-6xl font-bold text-slate-200">404</h1>
-        <p className="mt-4 text-lg text-slate-600">页面不存在</p>
+        <h1 className="text-6xl font-bold text-ink-meta">404</h1>
+        <p className="mt-4 text-lg text-ink-soft">页面不存在</p>
         <Link
           href="/"
-          className="mt-6 inline-block rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
+          className="mt-6 inline-block btn btn--primary"
         >
           返回首页
         </Link>

@@ -22,20 +22,20 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           页面遇到了意外错误。你的学习数据不会受到影响。
         </p>
         {error.digest && (
-          <p className="mt-2 font-mono text-xs text-slate-400">
+          <p className="mt-2 font-mono text-xs text-ink-meta">
             错误码: {error.digest}
           </p>
         )}
         <div className="mt-4 flex gap-3">
           <button
             onClick={reset}
-            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
+            className="btn btn--primary"
           >
             重试
           </button>
           <Link
             href="/"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            className="btn btn--ghost"
           >
             返回首页
           </Link>

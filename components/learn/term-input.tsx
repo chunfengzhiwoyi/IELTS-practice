@@ -19,23 +19,28 @@ export function TermInput({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="输入单词或语块，例如：sustainable"
-        className="field-input"
-        disabled={disabled}
-        aria-label="输入要学习的单词或语块"
-      />
-      <button
-        type="submit"
-        disabled={disabled || !value.trim()}
-        className="btn btn--primary"
-      >
-        查词
-      </button>
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <label htmlFor="term-input" className="font-ui text-sm font-medium text-ink-soft">
+        新词 / 语块
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="term-input"
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="例如：sustainable"
+          className="field-input"
+          disabled={disabled}
+        />
+        <button
+          type="submit"
+          disabled={disabled || !value.trim()}
+          className="btn btn--primary"
+        >
+          查词
+        </button>
+      </div>
     </form>
   );
 }

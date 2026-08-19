@@ -28,13 +28,15 @@ const supabaseEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // 密钥保险库主密钥（KEK）：仅服务端使用，建议 openssl rand -hex 32 生成 64 位 hex
+  SECRET_ENCRYPTION_KEY: z.string().min(16, "SECRET_ENCRYPTION_KEY 至少 16 字符（建议 64 位 hex）"),
 });
 
 const boolLike = z
   .union([z.literal("true"), z.literal("false"), z.literal("1"), z.literal("0"), z.undefined()])
   .transform((v) => v === "true" || v === "1");
 
-export const ProviderKindSchema = z.enum(["mock", "bailian", "deepseek"]);
+export const ProviderKindSchema = z.enum(["mock", "bailian", "deepseek", "user"]);
 export type ProviderKind = z.infer<typeof ProviderKindSchema>;
 
 const llmRoutingSchema = z.object({

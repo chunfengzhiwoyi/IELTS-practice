@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Masthead } from "@/components/layout/masthead";
+import { AssistantDock } from "@/components/assistant/assistant-dock";
+import { AuthProvider } from "@/components/auth/useAuth";
+import { LlmStatusProvider } from "@/components/llm/llm-status";
 
 export const metadata: Metadata = {
   title: "灵犀 · IELTS 英语高效学习助手",
@@ -23,8 +26,13 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-paper text-ink antialiased">
-        <Masthead />
-        {children}
+        <AuthProvider>
+          <LlmStatusProvider>
+            <Masthead />
+            {children}
+            <AssistantDock />
+          </LlmStatusProvider>
+        </AuthProvider>
       </body>
     </html>
   );

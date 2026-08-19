@@ -9,6 +9,8 @@ import { CHAT_SYSTEM_PROMPT, CHAT_JSON_EXAMPLE } from "@/lib/agent/chat-instruct
 import type { ChatResponse } from "@/lib/agent/chat-schema";
 import { callLlmStructured } from "@/lib/llm/structured-output";
 import { isMockPrimary } from "@/lib/env";
+import { getUserOverrideProviders, getUserImaConfig } from "@/lib/llm/user-config";
+import { searchImaKnowledge } from "@/lib/knowledge/ima";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 
@@ -39,44 +41,85 @@ const ResponseSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+
+  // 1. 输入校验（独立处理，不走兜底）
+  let parsed: z.infer<typeof RequestSchema>;
   try {
     const bodyRaw = await request.json().catch(() => null);
-    const parsed = RequestSchema.safeParse(bodyRaw);
-    if (!parsed.success) {
-      throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
+    const parseResult = RequestSchema.safeParse(bodyRaw);
+    if (!parseResult.success) {
+      throw new AppError(
+        "INVALID_INPUT",
+        parseResult.error.issues.map((i) => i.message).join("; "),
+        traceId,
+      );
     }
+    parsed = parseResult.data;
+  } catch (err) {
+    const appErr = toAppError(err, traceId);
+    const status = appErr.kind === "INVALID_INPUT" ? 400 : 502;
+    return NextResponse.json(
+      { error: appErr.toPayload() },
+      { status, headers: { "x-trace-id": traceId } },
+    );
+  }
 
-    const { messages, conversation_state } = parsed.data;
+  const { messages, conversation_state } = parsed;
+  const lastUser = messages.filter((m) => m.role === "user").pop()?.content ?? "";
 
-    // Mock 模式快速回退
-    if (isMockPrimary()) {
-      const lastUser = messages.filter((m) => m.role === "user").pop()?.content ?? "";
-      const mockResp = buildMockResponse(lastUser);
-      return NextResponse.json(mockResp, { status: 200, headers: { "x-trace-id": traceId } });
+  // 2. 用户自有模型（优先于环境变量 Provider）
+  const override = await getUserOverrideProviders();
+
+  // 3. 用户 ima 知识库检索上下文（仅当用户已配置 ima）
+  let imaContext: string | null = null;
+  const imaCfg = await getUserImaConfig();
+  if (imaCfg && lastUser) {
+    try {
+      imaContext = await searchImaKnowledge(lastUser, imaCfg);
+    } catch {
+      imaContext = null;
     }
+  }
 
-    // 构造 LLM messages
-    const stateContext = conversation_state
-      ? `\n当前对话状态：${JSON.stringify(conversation_state)}`
-      : "";
+  // 4. Mock 模式快速回退（仅在未配置自有模型时）
+  if (isMockPrimary() && !override) {
+    const mockResp = buildMockResponse(lastUser);
+    return NextResponse.json(mockResp, { status: 200, headers: { "x-trace-id": traceId } });
+  }
 
-    const llmMessages = [
-      { role: "system" as const, content: CHAT_SYSTEM_PROMPT + stateContext },
-      ...messages.slice(-20).map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-    ];
+  // 5. 构造 LLM messages
+  const stateContext = conversation_state
+    ? `\n当前对话状态：${JSON.stringify(conversation_state)}`
+    : "";
+  const knowledgeContext = imaContext
+    ? `\n\n参考用户知识库（ima）：\n${imaContext}`
+    : "";
 
-    const result = await callLlmStructured({
-      tier: "fast",
-      messages: llmMessages,
-      schema: ResponseSchema,
-      schemaName: "ChatResponse",
-      jsonExample: CHAT_JSON_EXAMPLE,
-      traceId,
-      temperature: 0.5,
-    });
+  const llmMessages = [
+    {
+      role: "system" as const,
+      content: CHAT_SYSTEM_PROMPT + stateContext + knowledgeContext,
+    },
+    ...messages.slice(-20).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    })),
+  ];
+
+  // 6. 调用 LLM；任何失败都返回本地兜底回复，不抛 502
+  try {
+    const result = await callLlmStructured(
+      {
+        tier: "fast",
+        messages: llmMessages,
+        schema: ResponseSchema,
+        schemaName: "ChatResponse",
+        jsonExample: CHAT_JSON_EXAMPLE,
+        traceId,
+        temperature: 0.5,
+      },
+      { overrideProviders: override ?? undefined },
+    );
 
     const resp: ChatResponse = {
       assistant_text: result.data.assistant_text,
@@ -85,10 +128,12 @@ export async function POST(request: Request) {
     };
 
     return NextResponse.json(resp, { status: 200, headers: { "x-trace-id": traceId } });
-  } catch (err) {
-    const appErr = toAppError(err, traceId);
-    const status = appErr.kind === "INVALID_INPUT" ? 400 : 502;
-    return NextResponse.json({ error: appErr.toPayload() }, { status, headers: { "x-trace-id": traceId } });
+  } catch {
+    const fallback = buildMockResponse(lastUser);
+    return NextResponse.json(
+      { ...fallback, fallback: true },
+      { status: 200, headers: { "x-trace-id": traceId } },
+    );
   }
 }
 
