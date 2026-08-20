@@ -1,13 +1,7 @@
 /**
  * Supabase 服务端客户端
  * ------------------------------------------------------------
- * 交接单 §9.2：
- *   - service role key 只在服务端使用
- *   - 前端不得持有 service role key
- *
- * 提供两种客户端：
- *   1. createServerClient()      基于登录 Cookie，走 RLS。用于 Route Handler / Server Action
- *   2. createServiceRoleClient() 绕过 RLS，仅用于系统级维护任务（迁移、后台清理）
+ * 直接从 process.env 读取，不依赖 getServerEnv().supabase（避免因缺某个变量导致全部不可用）。
  */
 import { cookies } from "next/headers";
 import {
@@ -16,53 +10,48 @@ import {
 } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
-import { getServerEnv } from "@/lib/env";
 import type { Database } from "@/lib/db/types";
 
 /**
  * 基于登录 Cookie 的服务端客户端。所有查询遵守 RLS。
- * 必须在 Server Component / Route Handler / Server Action 中调用。
  */
 export async function createServerClient() {
-  const env = getServerEnv();
-  if (!env.supabase) {
-    throw new Error("[db] Supabase 未配置（AUTH_MODE 或 DATA_PROVIDER 未设为 supabase）");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    throw new Error("[db] Supabase 未配置：缺少 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
   const cookieStore = await cookies();
 
-  return createSSRServerClient<Database>(
-    env.supabase.NEXT_PUBLIC_SUPABASE_URL,
-    env.supabase.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // Server Component 中不能 set cookie，忽略
-          }
-        },
+  return createSSRServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Server Component 中不能 set cookie，忽略
+        }
       },
     },
-  );
+  });
 }
 
 /**
  * Service Role 客户端 —— 绕过 RLS。
- * 仅用于系统级操作（迁移、种子数据、后台任务）；
- * 严禁传入用户输入直接执行查询。
+ * 仅用于系统级操作（profile 更新、admin 操作等）。
  */
 export function createServiceRoleClient() {
-  const env = getServerEnv();
-  if (!env.supabase) {
-    throw new Error("[db] Supabase 未配置");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    throw new Error("[db] Supabase 未配置：缺少 NEXT_PUBLIC_SUPABASE_URL 或 SUPABASE_SERVICE_ROLE_KEY");
   }
-  return createClient<Database>(env.supabase.NEXT_PUBLIC_SUPABASE_URL, env.supabase.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient<Database>(url, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
