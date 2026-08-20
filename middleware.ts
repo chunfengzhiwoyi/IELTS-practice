@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
         "default-src 'self'",
         "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "img-src 'self' data: blob:",
+        "img-src 'self' data: blob:" + (supabaseHost ? ` https://${supabaseHost}` : ""),
         "font-src 'self' https://fonts.gstatic.com",
         "connect-src 'self'" + (supabaseHost ? ` https://${supabaseHost}` : ""),
         "frame-ancestors 'none'",
