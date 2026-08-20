@@ -67,22 +67,25 @@ export async function GET() {
 
 async function probeServerProvider(
   primary: string,
-  env: ReturnType<typeof getServerEnv>,
+  _env: ReturnType<typeof getServerEnv>,
 ): Promise<ProviderProbe> {
   if (primary === "mock") {
     return { ok: true, provider: "mock" };
   }
   if (primary === "deepseek") {
-    if (!env.deepseek) return { ok: false, provider: "deepseek" };
-    const reachable = await pingUrl(env.deepseek.DEEPSEEK_BASE_URL, 4000);
+    const baseUrl = process.env.DEEPSEEK_BASE_URL;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!baseUrl || !apiKey) return { ok: false, provider: "deepseek" };
+    const reachable = await pingUrl(baseUrl, 4000);
     return { ok: reachable, provider: "deepseek" };
   }
   if (primary === "bailian") {
-    if (!env.bailian) return { ok: false, provider: "bailian" };
-    const reachable = await pingUrl(env.bailian.BAILIAN_BASE_URL, 4000);
+    const baseUrl = process.env.BAILIAN_BASE_URL;
+    const apiKey = process.env.BAILIAN_API_KEY;
+    if (!baseUrl || !apiKey) return { ok: false, provider: "bailian" };
+    const reachable = await pingUrl(baseUrl, 4000);
     return { ok: reachable, provider: "bailian" };
   }
-  // user / unknown：保守返回 offline
   return { ok: false, provider: primary };
 }
 
