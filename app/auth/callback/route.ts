@@ -12,7 +12,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { getServerEnv } from "@/lib/env";
 import type { Database } from "@/lib/db/types";
 
 export const runtime = "nodejs";
@@ -22,15 +21,17 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
-  const env = getServerEnv();
+  // callback 只需要 anon key（公开），不需要 service_role
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // 先构造响应，确保后续 setAll 写进的是「这个响应」
   let response = NextResponse.redirect(`${origin}${next}`);
 
-  if (code && env.supabase) {
+  if (code && supabaseUrl && supabaseAnonKey) {
     const supabase = createServerClient<Database>(
-      env.supabase.NEXT_PUBLIC_SUPABASE_URL,
-      env.supabase.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         cookies: {
           getAll() {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       // 交换失败（code 失效/已用过）→ 回登录页并带错误标记，避免静默死循环
       response = NextResponse.redirect(`${origin}/login?error=callback`);
     }
-  } else {
+  } else if (!code) {
     response = NextResponse.redirect(`${origin}/login?error=callback`);
   }
 
