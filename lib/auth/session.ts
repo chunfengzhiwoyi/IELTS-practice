@@ -14,22 +14,21 @@ export interface CurrentUser {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  // 优先尝试真实 Supabase session（即使 AUTH_MODE=demo，如果用户已登录也用真实身份）
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (supabaseUrl && supabaseAnonKey) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // 如果 Supabase 配好了，尝试读真实 session
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
       const { createServerClient } = await import("@/lib/db/server");
       const supabase = await createServerClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user && user.email) {
         return { id: user.id, email: user.email };
       }
+    } catch {
+      // 读取失败（未登录 / cookie 问题），不崩溃，走 fallback
     }
-  } catch {
-    // Supabase 不可用或未登录，继续 fallback
   }
 
   // Fallback：demo 模式

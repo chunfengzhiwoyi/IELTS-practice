@@ -13,14 +13,9 @@
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-
-/** 需要登录才能访问的路由（仅账户相关） */
-const PROTECTED_PATHS = ["/account"];
 
 export async function middleware(request: NextRequest) {
-  // 必须带上 request headers，避免 cookie 操作后响应头失效
-  let response = NextResponse.next({ request: { headers: request.headers } });
+  const response = NextResponse.next({ request: { headers: request.headers } });
 
   // --- 安全 Headers ---
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -59,40 +54,8 @@ export async function middleware(request: NextRequest) {
   const traceId = request.headers.get("x-trace-id") ?? generateTraceId();
   response.headers.set("x-trace-id", traceId);
 
-  // --- 路由保护 (仅 AUTH_MODE=supabase 时生效) ---
-  const authMode = process.env.AUTH_MODE ?? "demo";
-  if (authMode === "supabase") {
-    const path = request.nextUrl.pathname;
-    const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
-    if (isProtected) {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (url && anonKey) {
-        const supabase = createServerClient(url, anonKey, {
-          cookies: {
-            getAll() {
-              return request.cookies.getAll();
-            },
-            setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-              cookiesToSet.forEach(({ name, value, options }) => {
-                request.cookies.set(name, value);
-                response.cookies.set(name, value, options);
-              });
-            },
-          },
-        });
-
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-
-        if (!user || error) {
-          return NextResponse.redirect(new URL("/login", request.url));
-        }
-      }
-    }
-  }
+  // --- 路由保护：当前全部页面公开访问，不强制登录 ---
+  // 认证检查由各 API Route 自行负责（如 /api/account/profile）
 
   return response;
 }
