@@ -121,11 +121,13 @@ export function ReportPage() {
       report.thisWeek.speakingCompleted > 0,
   });
 
+  const hasSpeakingData = speakingProfile && speakingProfile.hasEnoughData;
+
   return (
     <div className="space-y-10">
       {/* ═══════════════════════════════════════════════════════
-          Section 1: AI Learning Summary
-          回答：我现在怎么样？
+          Section 1: 本周学习总结
+          用户问题：我最近学得怎么样？
           ═══════════════════════════════════════════════════════ */}
       <section className="space-y-5">
         <GoalOverview />
@@ -138,20 +140,38 @@ export function ReportPage() {
             activeDays: report.thisWeek.activeDays,
           }}
         />
+        {/* 学习习惯 + 连续天数（归入总结） */}
+        <div className="flex items-center gap-4 rounded-lg bg-surface-raised px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-purple-500" />
+            <span className="text-xs text-ink-meta">活跃 {report.thisWeek.activeDays}/7 天</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-accent" />
+            <span className="text-xs text-ink-meta">连续 {report.streak} 天</span>
+          </div>
+          {report.thisWeek.newItems > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span className="text-xs text-ink-meta">新学 {report.thisWeek.newItems} 个表达</span>
+            </div>
+          )}
+        </div>
         <MilestoneLine milestone={milestone} />
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          Section 2: Ability Profile
-          统一展示：Vocabulary + Speaking + Learning Habit
+          Section 2: 能力画像
+          用户问题：我的能力结构是什么？
+          两个清晰子模块：词汇能力 + 口语能力
           ═══════════════════════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">Ability Profile</h2>
+          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">能力画像</h2>
           <div className="flex-1 h-px bg-ink/5" />
         </div>
 
-        {/* Vocabulary 能力（基于复习数据） */}
+        {/* 词汇能力 */}
         <div className="rounded-xl border border-ink/8 bg-white p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -161,7 +181,7 @@ export function ReportPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-ink">Vocabulary</h3>
+                <h3 className="text-sm font-medium text-ink">词汇能力</h3>
                 <p className="text-xs text-ink-meta">{report.totalItems} 个表达</p>
               </div>
             </div>
@@ -178,68 +198,113 @@ export function ReportPage() {
             />
           </div>
           <div className="flex gap-4 text-xs text-ink-meta">
-            <span>本周新学 {report.thisWeek.newItems}</span>
-            <span>复习 {report.thisWeek.reviews} 次</span>
+            <span>本周复习 {report.thisWeek.reviews} 次</span>
             <span>待复习 {report.dueSoon}</span>
           </div>
         </div>
 
-        {/* Speaking 能力（使用 SpeakingGrowthCard） */}
-        {speakingProfile && speakingProfile.hasEnoughData && (
+        {/* 口语能力 */}
+        {hasSpeakingData ? (
           <SpeakingGrowthCard profile={speakingProfile} />
-        )}
-
-        {/* Learning Habit 学习稳定度 */}
-        <div className="rounded-xl border border-ink/8 bg-white p-5 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
+        ) : (
+          <div className="rounded-xl border border-dashed border-ink/10 bg-surface-raised p-5 space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-50">
-                <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ink/5">
+                <svg className="h-4 w-4 text-ink-meta" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-ink">Learning Habit</h3>
-                <p className="text-xs text-ink-meta">连续 {report.streak} 天</p>
+                <h3 className="text-sm font-medium text-ink-soft">口语能力</h3>
+                <p className="text-xs text-ink-meta">
+                  已完成 {speakingProfile?.totalSessions ?? 0}/2 次训练
+                </p>
               </div>
             </div>
-            <span className="text-xs font-mono text-ink-meta tabular-nums">
-              活跃 {report.thisWeek.activeDays}/7 天
-            </span>
+            <p className="text-xs text-ink-meta leading-relaxed">
+              完成 2 次口语训练后，AI 将展示流利度、词汇表达、语法复杂度三维评估。
+            </p>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-ink/5">
-            <div
-              className="h-full rounded-full bg-purple-500 transition-all duration-700"
-              style={{ width: `${Math.min(100, (report.thisWeek.activeDays / 7) * 100)}%` }}
-            />
-          </div>
-        </div>
+        )}
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          Section 3: AI Insights
-          回答：我哪里需要提升？
-          ═══════════════════════════════════════════════════════ */}
-      {speakingProfile && speakingProfile.hasEnoughData && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">AI Insights</h2>
-            <div className="flex-1 h-px bg-ink/5" />
-          </div>
-          <AbilitySummaryCard profile={speakingProfile} evaluations={evaluations} />
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════
-          Section 4: Next Action
-          回答：下一步做什么？
+          Section 3: AI 诊断
+          用户问题：为什么 AI 给出这个判断？
+          有数据 → AbilitySummaryCard；无数据 → Empty State
           ═══════════════════════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">Next Action</h2>
+          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">AI 诊断</h2>
           <div className="flex-1 h-px bg-ink/5" />
         </div>
-        {speakingProfile && speakingProfile.hasEnoughData ? (
+
+        {hasSpeakingData ? (
+          <AbilitySummaryCard profile={speakingProfile} evaluations={evaluations} />
+        ) : (
+          <div className="rounded-xl border border-dashed border-ink/10 bg-surface-raised p-5 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/8">
+                <svg className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-medium text-ink">AI 正在建立你的学习画像</h3>
+            </div>
+            <p className="text-sm text-ink-soft leading-relaxed">
+              完成更多训练后，AI 将识别：
+            </p>
+            <ul className="space-y-1.5 text-xs text-ink-soft">
+              <li className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5 text-accent/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                高频错误模式
+              </li>
+              <li className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5 text-accent/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                薄弱能力维度
+              </li>
+              <li className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5 text-accent/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                反馈是否有效
+              </li>
+              <li className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5 text-accent/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                下一阶段训练重点
+              </li>
+            </ul>
+            <div className="flex items-center gap-2 rounded-lg bg-white border border-ink/5 px-3 py-2">
+              <div className="h-1.5 flex-1 rounded-full bg-ink/5">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-700"
+                  style={{ width: `${Math.min(100, ((speakingProfile?.totalSessions ?? 0) / 2) * 100)}%` }}
+                />
+              </div>
+              <span className="text-xs font-mono text-ink-meta tabular-nums whitespace-nowrap">
+                {speakingProfile?.totalSessions ?? 0}/2 次训练
+              </span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          Section 4: 下一步行动
+          用户问题：我现在应该做什么？
+          ═══════════════════════════════════════════════════════ */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">下一步行动</h2>
+          <div className="flex-1 h-px bg-ink/5" />
+        </div>
+        {hasSpeakingData ? (
           <AiRecommendationCard profile={speakingProfile} />
         ) : (
           <NextStep nextStep={report.nextStep} />
@@ -247,12 +312,12 @@ export function ReportPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          Section 5: Detailed Records
-          详细学习记录（保留原有模块）
+          Section 5: 学习记录
+          用户问题：我想查看历史
           ═══════════════════════════════════════════════════════ */}
       <section className="space-y-8">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">Detailed Records</h2>
+          <h2 className="text-xs font-semibold text-ink-meta uppercase tracking-wide">学习记录</h2>
           <div className="flex-1 h-px bg-ink/5" />
         </div>
         <LexiconSection
