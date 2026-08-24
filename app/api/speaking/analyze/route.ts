@@ -21,6 +21,32 @@ const RequestSchema = z.object({
   sessionId: z.string().min(1),
   answer: z.string().min(1, "回答不能为空").max(5000),
   isSecondAnswer: z.boolean().default(false),
+  /** Phase 3: 音频元数据（语音回答时提供） */
+  audioMetadata: z.object({
+    duration: z.number(),
+    speakingTime: z.number(),
+    wpm: z.number(),
+    pauses: z.object({
+      pauseCount: z.number(),
+      totalPauseDuration: z.number(),
+      longestPause: z.number(),
+      averagePauseDuration: z.number(),
+    }),
+    wordTimestamps: z.array(z.object({
+      word: z.string(),
+      start: z.number(),
+      end: z.number(),
+    })).optional(),
+  }).optional(),
+  /** Phase 4.3: 用户历史能力上下文（客户端构建后传入） */
+  abilityContext: z.object({
+    weakestDimension: z.string().nullable(),
+    weakestLevel: z.string().nullable(),
+    recurringIssues: z.array(z.string()),
+    recentTrends: z.record(z.string(), z.enum(["improving", "stable", "declining"])),
+    nextFocusSummary: z.string().nullable(),
+    totalSessions: z.number(),
+  }).optional(),
 });
 
 export async function POST(request: Request) {
@@ -33,7 +59,7 @@ export async function POST(request: Request) {
     }
 
     await requireUser(traceId);
-    const { sessionId, answer, isSecondAnswer } = parsed.data;
+    const { sessionId, answer, isSecondAnswer, audioMetadata, abilityContext } = parsed.data;
     const repo = getSpeakingRepository();
 
     const session = await repo.getSession(sessionId);
@@ -47,9 +73,14 @@ export async function POST(request: Request) {
     }
 
     // LLM 深度分析（含降级到规则引擎）；优先使用用户自有模型
-    const analysis = await analyzeSpeakingWithLlm(answer, questionData, traceId, {
-      overrideProviders: await getUserOverrideProviders() ?? undefined,
-    });
+    const analysis = await analyzeSpeakingWithLlm(
+      answer,
+      questionData,
+      traceId,
+      audioMetadata ?? undefined,
+      abilityContext as import("@/lib/ability/memory-retriever").AbilityMemoryContext | undefined,
+      { overrideProviders: await getUserOverrideProviders() ?? undefined },
+    );
 
     // Update session
     let updatedSession;

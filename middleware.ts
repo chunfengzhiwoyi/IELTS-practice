@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
+    "camera=(), microphone=(self), geolocation=()",
   );
 
   // CSP: 开发模式宽松，生产模式收紧
@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: blob:" + (supabaseHost ? ` https://${supabaseHost}` : ""),
         "font-src 'self' https://fonts.gstatic.com",
+        "media-src 'self' blob:",
         "connect-src 'self'" + (supabaseHost ? ` https://${supabaseHost}` : ""),
         "frame-ancestors 'none'",
       ].join("; "),

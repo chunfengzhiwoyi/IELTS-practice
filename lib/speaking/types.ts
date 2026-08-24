@@ -49,10 +49,44 @@ export interface SpeakingAnalysisResult {
     sentenceCount: number;
     connectorCount: number;
     uniqueWordRatio: number;
-    paraphraseScore: number; // 0-1, 越高越好（越少重复题目原词）
+    paraphraseScore: number;
   };
   /** 整体简评（一句话） */
   summary: string;
+  /** Phase 3: IELTS 四维度深度分析（语音回答时填充，文字回答可能部分为 null） */
+  ieltsAnalysis?: IeltsSpeakingAnalysis;
+  /** Quality Gate: 质量警告（NEEDS_REVIEW 时附加） */
+  qualityWarning?: {
+    score: number;
+    issues: string[];
+  };
+}
+
+/** IELTS Speaking 四维度分析结果 */
+export interface IeltsSpeakingAnalysis {
+  fluency: DimensionAnalysis | null;
+  lexicalResource: DimensionAnalysis | null;
+  grammaticalRange: DimensionAnalysis | null;
+  /** pronunciation 需要专用 API（Phase 4），当前为 null */
+  pronunciation: DimensionAnalysis | null;
+  /** 综合诊断（不给分数，只给定位） */
+  overallDiagnosis: string;
+  /** 优先改善建议（排序） */
+  prioritizedSuggestions: string[];
+}
+
+/** 单维度分析 */
+export interface DimensionAnalysis {
+  /** 维度名称（用户可见） */
+  label: string;
+  /** 表现级别：strong / adequate / developing / weak */
+  level: "strong" | "adequate" | "developing" | "weak";
+  /** 具体证据（引用用户原话或数据） */
+  evidence: string[];
+  /** 问题诊断 */
+  issues: string[];
+  /** 改善建议 */
+  suggestions: string[];
 }
 
 /** 口语会话状态 */
