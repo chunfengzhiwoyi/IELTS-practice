@@ -1,5 +1,13 @@
 "use client";
-
+/**
+ * AI Speaking Coach — 回答输入组件
+ * -------------------------------------------------------
+ * Segmented tab 切换文字/语音模式
+ * 文字模式：练习空间风格 textarea + word count
+ * 语音模式：嵌入 AudioRecorder（AI Listening 风格）
+ *
+ * Props 不变：question, questionZh, part, topic, onSubmit, label
+ */
 import { useState } from "react";
 import type { SpeakingPart } from "@/lib/speaking/types";
 import type { AudioMetadata } from "@/lib/speaking/audio-types";
@@ -40,7 +48,6 @@ export function AnswerInput({ question, questionZh, part, topic, onSubmit, label
     if (!audioBlob) return;
     setSubmitting(true);
     try {
-      // 调用 STT API
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
 
@@ -65,10 +72,7 @@ export function AnswerInput({ question, questionZh, part, topic, onSubmit, label
         return;
       }
 
-      // 保存 audioMetadata 供后续 fluency 分析使用（Phase 3）
       setLastAudioMetadata(data.audioMetadata ?? null);
-
-      // 提交文本 + audioMetadata 进入分析流程
       onSubmit(transcript.trim(), data.audioMetadata ?? undefined);
     } catch {
       alert("网络错误，请重试。");
@@ -79,85 +83,99 @@ export function AnswerInput({ question, questionZh, part, topic, onSubmit, label
   const wordCount = answer.trim().split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="space-y-4">
-      {/* 题目卡片 */}
-      <div className="note">
-        <div className="flex items-center gap-2 font-ui text-xs text-ink-meta">
-          <span className="pill">{part}</span>
-          <span>{topic}</span>
+    <div className="space-y-5">
+      {/* ─── 题目卡片 ─── */}
+      <div className="rounded-xl border border-ink/8 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-ink-meta">
+          <span className="inline-flex items-center rounded-md bg-accent/8 px-2 py-0.5 font-medium text-accent">
+            {part}
+          </span>
+          <span className="text-ink-meta">{topic}</span>
         </div>
-        <p className="mt-2 text-base font-medium text-ink">{question}</p>
-        <p className="mt-1 text-sm text-ink-soft">{questionZh}</p>
+        <p className="mt-3 text-lg font-medium leading-relaxed text-ink">{question}</p>
+        <p className="mt-1.5 text-sm text-ink-soft">{questionZh}</p>
       </div>
 
-      {/* 输入模式切换 */}
-      <div className="flex gap-1 rounded-lg bg-surface-raised p-1">
-        <button
-          type="button"
-          onClick={() => setMode("text")}
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
-            mode === "text"
-              ? "bg-white text-ink shadow-sm"
-              : "text-ink-soft hover:text-ink"
-          }`}
-        >
-          ✍️ 文字回答
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("voice")}
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
-            mode === "voice"
-              ? "bg-white text-ink shadow-sm"
-              : "text-ink-soft hover:text-ink"
-          }`}
-        >
-          🎙️ 语音回答
-        </button>
+      {/* ─── 回答方式 ─── */}
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-ink-meta uppercase tracking-wide">回答方式</p>
+        <div className="inline-flex rounded-lg border border-ink/10 bg-surface-raised p-0.5">
+          <button
+            type="button"
+            onClick={() => setMode("text")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              mode === "text"
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            ✍️ 文字回答
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("voice")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              mode === "voice"
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            🎙️ 语音回答
+          </button>
+        </div>
       </div>
 
-      {/* 文字模式 */}
+      {/* ─── 文字模式 ─── */}
       {mode === "text" && (
         <form onSubmit={handleTextSubmit} className="space-y-3">
-          <div>
-            <label className="font-ui text-sm font-medium text-ink-soft">{label}</label>
+          <div className="rounded-xl border border-ink/8 bg-white p-4 shadow-sm focus-within:border-accent/40 transition">
+            <label className="block text-xs font-medium text-ink-meta mb-2">{label}</label>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               rows={6}
               disabled={submitting}
-              className="field-input mt-1"
-              placeholder="用英文回答..."
+              className="w-full resize-none bg-transparent text-ink text-[15px] leading-relaxed placeholder:text-ink-meta/50 focus:outline-none"
+              placeholder="Start your answer in English..."
             />
-            <div className="mt-1 font-ui text-xs text-ink-meta">{wordCount} 词</div>
+            <div className="mt-2 flex items-center justify-between border-t border-ink/5 pt-2">
+              <span className="font-mono text-xs text-ink-meta tabular-nums">
+                {wordCount} {wordCount === 1 ? "word" : "words"}
+              </span>
+              {wordCount > 0 && wordCount < 20 && (
+                <span className="text-xs text-amber-600">建议 30+ 词</span>
+              )}
+            </div>
           </div>
           <button
             type="submit"
             disabled={submitting || !answer.trim()}
             aria-busy={submitting}
-            className="btn btn--primary"
+            className="w-full rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 disabled:opacity-50"
           >
-            {submitting ? "分析中…" : "提交回答"}
+            {submitting ? "AI 分析中…" : "提交 AI 分析"}
           </button>
         </form>
       )}
 
-      {/* 语音模式 */}
+      {/* ─── 语音模式 ─── */}
       {mode === "voice" && (
-        <div className="space-y-4">
+        <div className="rounded-xl border border-ink/8 bg-white shadow-sm overflow-hidden">
           <AudioRecorder
             onRecordingComplete={handleRecordingComplete}
             disabled={submitting}
           />
           {audioBlob && (
-            <button
-              type="button"
-              onClick={handleVoiceSubmit}
-              disabled={submitting}
-              className="btn btn--primary w-full"
-            >
-              {submitting ? "正在识别…" : "提交录音"}
-            </button>
+            <div className="border-t border-ink/5 px-5 py-3">
+              <button
+                type="button"
+                onClick={handleVoiceSubmit}
+                disabled={submitting}
+                className="w-full rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 disabled:opacity-50"
+              >
+                {submitting ? "AI 识别中…" : "提交 AI 分析"}
+              </button>
+            </div>
           )}
         </div>
       )}

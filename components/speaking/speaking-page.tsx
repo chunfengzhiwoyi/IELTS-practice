@@ -32,17 +32,14 @@ type PageState =
 const PART_ORDER: SpeakingPart[] = ["P1", "P2", "P3"];
 
 function SpeakingLoader({ kind }: { kind: "LOADING_SESSION" | "ANALYZING" }) {
-  const step = kind === "LOADING_SESSION" ? 1 : 2;
-  const label = kind === "LOADING_SESSION" ? "正在生成题目…" : "正在分析你的回答…";
+  const label = kind === "LOADING_SESSION" ? "正在生成题目…" : "AI 正在分析你的回答…";
   return (
-    <div className="speaking-loader" role="status" aria-live="polite">
-      <div className="speaking-loader__rule">
-        <span className="speaking-loader__fill" />
+    <div className="flex flex-col items-center gap-4 py-12" role="status" aria-live="polite">
+      <div className="relative h-10 w-10">
+        <span className="absolute inset-0 rounded-full border-2 border-accent/20" />
+        <span className="absolute inset-0 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
-      <div className="speaking-loader__meta">
-        <span className="speaking-loader__step">步骤 {step} / 2</span>
-        <span className="speaking-loader__label">{label}</span>
-      </div>
+      <p className="text-sm text-ink-soft">{label}</p>
     </div>
   );
 }
@@ -173,44 +170,54 @@ export function SpeakingPage() {
     ? PART_ORDER[PART_ORDER.indexOf(currentPart) + 1]
     : undefined;
 
-  // 流程内头部：Part 步进器 + 返回选题型（仅在已进入会话后显示）
+  // 流程内头部：Part 步进器 + 返回（仅在已进入会话后显示）
   const showStepper = currentPart && state.kind !== "TOPIC_SELECT" && state.kind !== "ERROR";
-  const inSession =
-    state.kind === "FIRST_ANSWER" ||
-    state.kind === "SECOND_ANSWER" ||
-    state.kind === "FEEDBACK" ||
-    state.kind === "MICRO_DRILL" ||
-    state.kind === "ANALYZING" ||
-    state.kind === "LOADING_SESSION" ||
-    state.kind === "PREP";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* ─── 顶部导航 + 考试状态 ─── */}
       {showStepper && (
-        <div className="speech-head">
-          <PartStepper current={currentPart} visited={visited} onSelect={handleStartSession} />
-          {inSession && (
-            <button onClick={handleNewSession} className="btn btn--quiet btn--sm">
-              ← 返回选题型
-            </button>
-          )}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleNewSession}
+            className="text-sm font-medium text-ink-soft hover:text-ink transition"
+          >
+            ← 返回题型选择
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/8 px-3 py-1 text-xs font-medium text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+              Practice Mode
+            </span>
+          </div>
         </div>
       )}
 
+      {/* ─── Part 步进器（紧凑） ─── */}
+      {showStepper && (
+        <PartStepper current={currentPart} visited={visited} onSelect={handleStartSession} />
+      )}
+
+      {/* ─── 题型选择 ─── */}
       {state.kind === "TOPIC_SELECT" && <TopicSelector onSelect={handleStartSession} />}
 
-      {state.kind === "LOADING_SESSION" || state.kind === "ANALYZING" ? (
+      {/* ─── 加载状态 ─── */}
+      {(state.kind === "LOADING_SESSION" || state.kind === "ANALYZING") && (
         <SpeakingLoader kind={state.kind} />
-      ) : null}
+      )}
 
+      {/* ─── 错误 ─── */}
       {state.kind === "ERROR" && (
-        <div className="feedback-card feedback-card--bad">
-          <h3 className="feedback-card__title">出错了</h3>
-          <p className="feedback-card__body">{state.message}</p>
-          <button onClick={handleNewSession} className="btn btn--ghost mt-3">重试</button>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-center">
+          <p className="text-sm font-medium text-red-800">出错了</p>
+          <p className="mt-1 text-sm text-red-600">{state.message}</p>
+          <button onClick={handleNewSession} className="mt-3 text-sm font-medium text-accent hover:underline">
+            重试
+          </button>
         </div>
       )}
 
+      {/* ─── P2 构思准备 ─── */}
       {state.kind === "PREP" && (
         <SpeakingPrep
           question={state.questionData}
@@ -218,6 +225,7 @@ export function SpeakingPage() {
         />
       )}
 
+      {/* ─── 首答 ─── */}
       {state.kind === "FIRST_ANSWER" && (
         <AnswerInput
           question={state.questionData.question}
@@ -225,10 +233,11 @@ export function SpeakingPage() {
           part={state.questionData.part}
           topic={state.questionData.topic}
           onSubmit={(a, meta) => handleSubmitAnswer(a, false, meta)}
-          label="首答"
+          label="Your Answer"
         />
       )}
 
+      {/* ─── 重答 ─── */}
       {state.kind === "SECOND_ANSWER" && (
         <AnswerInput
           question={state.questionData.question}
@@ -236,10 +245,11 @@ export function SpeakingPage() {
           part={state.questionData.part}
           topic={state.questionData.topic}
           onSubmit={(a, meta) => handleSubmitAnswer(a, true, meta)}
-          label="重答（尝试改善主要问题）"
+          label="Try Again — 尝试改善主要问题"
         />
       )}
 
+      {/* ─── AI 反馈 ─── */}
       {state.kind === "FEEDBACK" && (
         <SpeakingFeedback
           analysis={state.analysis}
@@ -252,44 +262,61 @@ export function SpeakingPage() {
         />
       )}
 
+      {/* ─── 微训练 ─── */}
       {state.kind === "MICRO_DRILL" && (
         <MicroDrillCard drill={state.analysis.microDrill} onTryAgain={handleTryAgain} onFinish={handleFinish} />
       )}
 
+      {/* ─── 练习完成 ─── */}
       {state.kind === "COMPLETED" && (
-        <div className="panel">
-          <h3 className="font-display text-lg text-ink">本次口语练习完成</h3>
+        <div className="rounded-xl border border-ink/8 bg-white p-6 shadow-sm space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
+              <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-ink">练习完成</h3>
+          </div>
+
           {state.collected.length > 0 ? (
             <div className="space-y-3">
               {[...state.collected]
                 .sort((a, b) => PART_ORDER.indexOf(a.part) - PART_ORDER.indexOf(b.part))
                 .map(({ part, analysis }) => (
-                  <div key={part} className="feedback-card">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="pill">{part}</span>
-                      <span className="font-ui text-xs text-ink-meta">{analysis.metrics.wordCount} 词</span>
+                  <div key={part} className="rounded-lg border border-ink/5 bg-surface-raised p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center rounded-md bg-accent/8 px-2 py-0.5 text-xs font-medium text-accent">{part}</span>
+                      <span className="font-mono text-xs text-ink-meta">{analysis.metrics.wordCount} words</span>
                     </div>
-                    <p className="mt-2 text-ink-soft">{analysis.mainIssue.description}</p>
-                    <p className="mt-1 font-medium text-ink">{analysis.mainIssue.suggestion}</p>
+                    <p className="mt-2 text-sm text-ink-soft">{analysis.mainIssue.description}</p>
+                    <p className="mt-1 text-sm font-medium text-ink">{analysis.mainIssue.suggestion}</p>
                   </div>
                 ))}
             </div>
           ) : (
-            <p className="mt-2 text-ink-soft">
+            <p className="text-sm text-ink-soft">
               {state.lastAnalysis
                 ? `主要改善点：${state.lastAnalysis.mainIssue.description}`
-                : "本次练习已记录，去报告页看看趋势。"}
+                : "本次练习已记录，去报告页查看趋势。"}
             </p>
           )}
-          {nextPart && (
-            <button onClick={() => handleStartSession(nextPart)} className="btn btn--primary mt-4">
-              继续 {nextPart} →
+
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-ink/5">
+            {nextPart && (
+              <button onClick={() => handleStartSession(nextPart)} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-accent/90 transition">
+                继续 {nextPart} →
+              </button>
+            )}
+            <button onClick={handleNewSession} className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-ink hover:bg-surface-raised transition">
+              再练一题
             </button>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={handleNewSession} className="btn btn--ghost">再练一题</button>
-            <Link href="/report" className="btn btn--ghost">看报告</Link>
-            <Link href="/" className="btn btn--quiet">返回主页</Link>
+            <Link href="/report" className="rounded-lg border border-ink/10 px-4 py-2 text-sm font-medium text-ink hover:bg-surface-raised transition">
+              看报告
+            </Link>
+            <Link href="/" className="rounded-lg px-4 py-2 text-sm text-ink-soft hover:text-ink transition">
+              返回主页
+            </Link>
           </div>
         </div>
       )}
