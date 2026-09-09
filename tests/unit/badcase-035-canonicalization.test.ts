@@ -1,12 +1,23 @@
 /**
- * Bad Case 035 — Lexical Canonicalization Regression Tests
+ * Bad Case 035 Final — Lexical Canonicalization Regression Tests
  * ------------------------------------------------------------
- * 验证 well-being / wellbeing 等书写变体映射到同一个 canonical identity，
- * 同时确保不会无条件删除所有 lexical separators（collision safety）。
+ * Final Contract（Closure Blocker A）：
+ *   canonicalKey(raw) = normalizeTerm(raw) 命中 LEXICAL_VARIANTS 注册表 → 解析为规范形；
+ *                        未命中 → 保持原样（连字符、空格均保留）。
+ *
+ * 必须同时满足（确定性断言）：
+ *   1. well-being == wellbeing（同一 lexical identity，注册表解析）
+ *   2. re-cover != recover（不同词，禁止无条件去连字符合并）
+ *
+ * Safety fixtures 分两类：
+ *   MERGE     —— 已登记的同词变体（well-being/wellbeing、e-mail/email、co-operate/cooperate）
+ *   NON-MERGE —— 未登记的书写差异（re-cover/recover、co-op/coop、state-of-the-art 等）
+ *
+ * 不引入 LLM lexical identity judge；不做大型词典；注册表冻结且可审计。
  */
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { canonicalKey, normalizeTerm, stableItemId } from "@/lib/learning/item-id";
+import { LEXICAL_VARIANTS, canonicalKey, normalizeTerm, stableItemId } from "@/lib/learning/item-id";
 import { findSeedItem, seedToLearningItem } from "@/lib/learning/seed-catalog";
 import { MemoryLearningRepository } from "@/lib/learning/repositories/memory-learning-repository";
 import type { LearningItem } from "@/lib/learning/types";
@@ -19,73 +30,102 @@ import { _resetRepositories } from "@/lib/repository-factory";
 import { setTraceEnabled } from "@/lib/observability/trace-context";
 import { traceStore } from "@/lib/observability/trace-store";
 
-describe("Bad Case 035: canonicalKey — 连字符不敏感", () => {
-  it("well-being 和 wellbeing 生成相同 canonicalKey", () => {
-    expect(canonicalKey("well-being")).toBe("wellbeing");
-    expect(canonicalKey("wellbeing")).toBe("wellbeing");
+describe("Bad Case 035 Final: canonicalKey — 词法变体注册表", () => {
+  it("MERGE: well-being 和 wellbeing 生成相同 canonicalKey（解析为规范形 well-being）", () => {
+    expect(canonicalKey("well-being")).toBe("well-being");
+    expect(canonicalKey("wellbeing")).toBe("well-being");
     expect(canonicalKey("well-being")).toBe(canonicalKey("wellbeing"));
   });
 
-  it("well-being 和 wellbeing 生成相同 itemId", () => {
+  it("MERGE: well-being 和 wellbeing 生成相同 itemId", () => {
     const id1 = stableItemId(canonicalKey("well-being"));
     const id2 = stableItemId(canonicalKey("wellbeing"));
     expect(id1).toBe(id2);
   });
 
-  it("大小写和空格不影响 canonicalKey", () => {
-    expect(canonicalKey("  Well-Being  ")).toBe("wellbeing");
-    expect(canonicalKey("WELLBEING")).toBe("wellbeing");
+  it("大小写和空格不影响 canonicalKey（先 normalize 再查注册表）", () => {
+    expect(canonicalKey("  Well-Being  ")).toBe("well-being");
+    expect(canonicalKey("WELLBEING")).toBe("well-being");
+    expect(canonicalKey("  E-Mail ")).toBe("email");
   });
 
   it("display form (canonicalForm) 保留原始连字符", () => {
-    // normalizeTerm 不改变连字符，只做小写/trim
     expect(normalizeTerm("well-being")).toBe("well-being");
     expect(normalizeTerm("Well-Being")).toBe("well-being");
   });
 
-  it("三者分离：display form ≠ canonical identity ≠ retrieval query", () => {
-    const raw = "Well-Being";
-    const display = normalizeTerm(raw); // "well-being"
-    const identity = canonicalKey(raw); // "wellbeing"
-    expect(display).toBe("well-being");
-    expect(identity).toBe("wellbeing");
-    expect(display).not.toBe(identity);
+  it("变体输入：identity（规范形）≠ retrieval query（原始变体）", () => {
+    // canonicalKey 把 "wellbeing" 解析为规范形 "well-being"，
+    // 而 query 层仍保留用户输入 "wellbeing" —— 三者分离依然成立
+    expect(canonicalKey("wellbeing")).toBe("well-being");
+    expect(normalizeTerm("wellbeing")).toBe("wellbeing");
+    expect(canonicalKey("wellbeing")).not.toBe(normalizeTerm("wellbeing"));
   });
 });
 
-describe("Bad Case 035: collision safety — 不无条件删除所有 separator", () => {
-  it("多词短语保留空格（不合并为一个词）", () => {
+describe("Bad Case 035 Final: MERGE / NON-MERGE safety fixtures", () => {
+  it("MERGE fixture #2: e-mail == email（已登记同词变体）", () => {
+    expect(canonicalKey("e-mail")).toBe("email");
+    expect(canonicalKey("email")).toBe("email");
+    expect(canonicalKey("e-mail")).toBe(canonicalKey("email"));
+    expect(stableItemId(canonicalKey("e-mail"))).toBe(stableItemId(canonicalKey("email")));
+  });
+
+  it("MERGE fixture #3: co-operate == cooperate（已登记同词变体）", () => {
+    expect(canonicalKey("co-operate")).toBe("cooperate");
+    expect(canonicalKey("cooperate")).toBe("cooperate");
+    expect(canonicalKey("co-operate")).toBe(canonicalKey("cooperate"));
+  });
+
+  it("NON-MERGE fixture #1: re-cover != recover（不同词，禁止合并）", () => {
+    expect(canonicalKey("re-cover")).toBe("re-cover");
+    expect(canonicalKey("recover")).toBe("recover");
+    expect(canonicalKey("re-cover")).not.toBe(canonicalKey("recover"));
+    expect(stableItemId(canonicalKey("re-cover"))).not.toBe(stableItemId(canonicalKey("recover")));
+  });
+
+  it("NON-MERGE fixture #2: co-op != coop（cooperative vs chicken coop）", () => {
+    expect(canonicalKey("co-op")).toBe("co-op");
+    expect(canonicalKey("coop")).toBe("coop");
+    expect(canonicalKey("co-op")).not.toBe(canonicalKey("coop"));
+  });
+
+  it("NON-MERGE fixture #3: state-of-the-art 不塌缩为 stateoftheart", () => {
+    expect(canonicalKey("state-of-the-art")).toBe("state-of-the-art");
+    expect(canonicalKey("stateoftheart")).toBe("stateoftheart");
+    expect(canonicalKey("state-of-the-art")).not.toBe(canonicalKey("stateoftheart"));
+  });
+
+  it("NON-MERGE fixture #4: 空格分隔的 well being ≠ wellbeing（未登记，fail-safe 独立）", () => {
     expect(canonicalKey("well being")).toBe("well being");
-    expect(canonicalKey("wellbeing")).toBe("wellbeing");
     expect(canonicalKey("well being")).not.toBe(canonicalKey("wellbeing"));
+    expect(canonicalKey("well being")).not.toBe(canonicalKey("well-being"));
   });
 
-  it("连字符短语 vs 无连字符不同词：已知 trade-off 记录", () => {
-    // co-op (cooperative) 和 coop (chicken coop) 会被合并
-    // 这是已知 trade-off：对 IELTS 词汇场景，同一概念因书写变体产生
-    // 两份长期状态的代价 > 极少数真正不同词被合并的代价
-    expect(canonicalKey("co-op")).toBe(canonicalKey("coop"));
-    expect(canonicalKey("re-cover")).toBe(canonicalKey("recover"));
+  it("NON-MERGE fixture #5: 数字连字符 2-year != 2year（未登记）", () => {
+    expect(canonicalKey("2-year")).toBe("2-year");
+    expect(canonicalKey("2year")).toBe("2year");
+    expect(canonicalKey("2-year")).not.toBe(canonicalKey("2year"));
   });
 
-  it("多连字符短语：state-of-the-art → stateoftheart（已知限制）", () => {
-    // 多连字符短语会被合并为一个长词
-    // 这是当前方案的限制，未来可通过 alias mapping 或更智能的
-    // canonicalization（如仅对单词级连字符去符号）改进
-    expect(canonicalKey("state-of-the-art")).toBe("stateoftheart");
+  it("fail-safe：任意未登记连字符词保持独立（hello-world != helloworld）", () => {
+    expect(canonicalKey("hello-world")).toBe("hello-world");
+    expect(canonicalKey("helloworld")).toBe("helloworld");
+    expect(canonicalKey("hello-world")).not.toBe(canonicalKey("helloworld"));
   });
 
-  it("数字连字符保留语义差异（synthetic safety case）", () => {
-    // "2-year" 和 "2year" 应该不同吗？
-    // 当前方案会合并。但这是 synthetic case，实际 IELTS 词汇中
-    // 数字连字符短语（如 "2-year-old"）通常作为 PHRASE/CHUNK 而非 WORD 处理
-    expect(canonicalKey("2-year")).toBe("2year");
+  it("注册表完整性：变体 key 已 normalize；value 是其自身的固定点", () => {
+    for (const [variant, canonical] of Object.entries(LEXICAL_VARIANTS)) {
+      expect(normalizeTerm(variant)).toBe(variant); // key 已是规范化输入
+      expect(canonicalKey(variant)).toBe(canonical); // 变体解析到代表形
+      expect(canonicalKey(canonical)).toBe(canonical); // 代表形是固定点
+      expect(variant).not.toBe(canonical); // 变体与代表形确实不同（否则无需登记）
+    }
   });
 });
 
-describe("Bad Case 035: findSeedItem — 连字符不敏感查找", () => {
-  it("seed 词库无连字符词，canonicalKey === normalizedTerm", () => {
-    // 验证 seed 词库中没有连字符词（确保不破坏现有 seed）
+describe("Bad Case 035 Final: findSeedItem — 注册表一致性", () => {
+  it("seed 词库无连字符/变体词，canonicalKey === normalizedTerm", () => {
     const seed = findSeedItem("sustainable");
     expect(seed).not.toBeNull();
     if (seed) {
@@ -94,8 +134,8 @@ describe("Bad Case 035: findSeedItem — 连字符不敏感查找", () => {
   });
 });
 
-describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
-  it("well-being 和 wellbeing 创建同一个 item（deduplicated=true）", async () => {
+describe("Bad Case 035 Final: Memory Repository — createOrGetItem 去重", () => {
+  it("MERGE: well-being 和 wellbeing 创建同一个 item（deduplicated=true）", async () => {
     const repo = new MemoryLearningRepository();
 
     const item1: LearningItem = {
@@ -120,20 +160,53 @@ describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
       createdAt: new Date().toISOString(),
     };
 
-    // 两个变体的 itemId 相同
     expect(item1.id).toBe(item2.id);
 
-    // createOrGetItem 应该返回同一个 item
     const created1 = await repo.createOrGetItem(item1);
     const created2 = await repo.createOrGetItem(item2);
     expect(created1.id).toBe(created2.id);
 
-    // findItemByNormalizedTerm 用任意变体都能找到
     const found1 = await repo.findItemByNormalizedTerm("well-being");
     const found2 = await repo.findItemByNormalizedTerm("wellbeing");
     expect(found1).not.toBeNull();
     expect(found2).not.toBeNull();
     expect(found1!.id).toBe(found2!.id);
+  });
+
+  it("NON-MERGE: re-cover 和 recover 创建不同的 item", async () => {
+    const repo = new MemoryLearningRepository();
+
+    const item1: LearningItem = {
+      id: stableItemId(canonicalKey("re-cover")),
+      itemType: "WORD",
+      canonicalForm: "re-cover",
+      normalizedTerm: "re-cover",
+      canonicalKey: canonicalKey("re-cover"),
+      contentJson: {} as never,
+      topicTags: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    const item2: LearningItem = {
+      id: stableItemId(canonicalKey("recover")),
+      itemType: "WORD",
+      canonicalForm: "recover",
+      normalizedTerm: "recover",
+      canonicalKey: canonicalKey("recover"),
+      contentJson: {} as never,
+      topicTags: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    const created1 = await repo.createOrGetItem(item1);
+    const created2 = await repo.createOrGetItem(item2);
+    expect(created1.id).not.toBe(created2.id);
+
+    // 各自独立可查
+    const found1 = await repo.findItemByNormalizedTerm("re-cover");
+    const found2 = await repo.findItemByNormalizedTerm("recover");
+    expect(found1!.id).toBe(created1.id);
+    expect(found2!.id).toBe(created2.id);
   });
 
   it("不同词仍然创建不同 item", async () => {
@@ -177,7 +250,7 @@ describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
   });
 });
 
-describe("Bad Case 035: learn/card 路由端到端（对齐 Eval r4 断言）", () => {
+describe("Bad Case 035 Final: learn/card 路由端到端（对齐 Eval r4 断言）", () => {
   beforeEach(async () => {
     traceStore.reset();
     setTraceEnabled(true);
@@ -186,7 +259,7 @@ describe("Bad Case 035: learn/card 路由端到端（对齐 Eval r4 断言）", 
     __setProviderForTests("mock", makeWordCardProvider());
   });
 
-  it("well-being 与 wellbeing 两次请求返回同一个 item.id（deduplicated=true）", async () => {
+  it("MERGE: well-being 与 wellbeing 两次请求返回同一个 item.id（deduplicated=true）", async () => {
     const resA = await LEARN_CARD(
       new Request("http://localhost/api/learn/card", {
         method: "POST",

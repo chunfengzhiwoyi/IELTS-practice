@@ -80,91 +80,93 @@ Gold 要求的核心：**同一个用户学习概念不应该因为表面书写�
 
 ---
 
-## 5. Option Comparison
+## 5. Option Comparison（Final 复核）
 
-### Option A: Strip all hyphens in normalizeTerm
+### Option A: 在 normalizeTerm 中删除所有连字符
 
 ```
 normalizeTerm("well-being") → "wellbeing"
 ```
 
-- **Pro**：最简单
 - **Con**：改变 display form（"well-being" 显示为 "wellbeing"）
 - **Con**：多连字符短语 "state-of-the-art" → "stateoftheart"（错误）
-- **Con**：collision 风险：co-op/coop、re-cover/recover 被错误合并
-- **Reject**：破坏 display form，过于激进
+- **Con（致命）**：collision —— re-cover/recover、co-op/coop 被错误合并。
+  Closure Blocker A 要求 re-cover ≠ recover，Option A 无法满足。
+- **Reject（Final）**
 
-### Option B: Hyphen-insensitive canonical key, preserve display form（采纳）
-
-```
-canonicalForm (display)  = "well-being"   ← 保留原始书写
-normalizedTerm (query)   = "well-being"   ← 用户输入形式
-canonicalKey (identity)  = "wellbeing"    ← 用于去重和 itemId
-```
-
-- **Pro**：display form 保留，canonical identity 稳定，三者分离
-- **Pro**：seed 词库无连字符词（已审计 22 个 seed item），不破坏现有 seed
-- **Pro**：itemId 基于 canonicalKey，well-being/wellbeing 生成同一 ID
-- **Pro**：最小改动，不引入新框架
-- **Con**：已知 collision 风险（co-op/coop），但对 IELTS 词汇场景可接受
-- **Adopt**
-
-### Option C: Explicit alias / variant mapping
+### Option B: 全局 hyphen-insensitive canonical key（上一轮采纳，本轮复核后替换）
 
 ```
-aliases = { "well-being": "wellbeing", "wellbeing": "wellbeing" }
+canonicalKey("well-being") = "wellbeing"
+canonicalKey("re-cover")   = "recover"   ← 错误合并
 ```
 
-- **Pro**：无 collision 风险
-- **Con**：不 scale，需要手动维护每个变体
-- **Con**：无法处理未来用户输入的新变体
-- **Reject**：不可扩展
+- **Pro**：display form 保留，实现简单
+- **Con（致命）**：无条件删除连字符仍会把 re-cover/recover、co-op/coop
+  合并为同一 identity。上一轮以「22 个 seed 无 collision」为由接受该风险，
+  但产品允许用户输入任意 lexical item，风险关闭不成立。
+- **Superseded（Final）**：被 Option C（注册表）替换
+
+### Option C: Explicit lexical variant / alias registry（Final 采纳）
+
+```
+LEXICAL_VARIANTS = { "wellbeing": "well-being", "e-mail": "email", "co-operate": "cooperate" }
+canonicalKey(raw) = LEXICAL_VARIANTS[normalizeTerm(raw)] ?? normalizeTerm(raw)
+```
+
+- **Pro**：零误合并（false positive = 0）：未登记输入一律保持原样
+- **Pro**：确定性、可解释、可审计（冻结的小注册表）
+- **Pro**：满足契约——well-being == wellbeing（登记），re-cover != recover（未登记）
+- **Con**：需要手动登记新变体；未登记变体首次按独立词处理（fail-safe，
+  false negative 有界：只会多产生一次「变体新词」状态，不会破坏既有状态）
+- **Adopt（Final）**
 
 ### Option D (considered): Hyphen → space for canonical key
-
-```
-canonicalKey("well-being") = "well being"
-```
 
 - **Con**："well being" ≠ "wellbeing"，不解决问题
 - **Reject**
 
 ---
 
-## 6. Decision
+## 6. Decision（Final）
 
-**采纳 Option B：hyphen-insensitive canonical key，保留 display form。**
+**最终方案 = Option C：词法变体注册表 + normalizeTerm 原样保留。**
 
-### 三者分离原则
+```
+canonicalKey(raw) = LEXICAL_VARIANTS[normalizeTerm(raw)] ?? normalizeTerm(raw)
+```
+
+同时满足 Closure Blocker A 的两条硬性契约：
+
+| 契约 | 断言 | 满足方式 |
+|------|------|---------|
+| 1. well-being / wellbeing → 同一 lexical identity | `canonicalKey("well-being") === canonicalKey("wellbeing")` | 注册表把 "wellbeing" 解析为规范形 "well-being" |
+| 2. re-cover / recover → 不同 lexical identity | `canonicalKey("re-cover") !== canonicalKey("recover")` | 未登记，保持原样，各自独立 |
+
+### 三者分离原则（不变）
 
 | 概念 | 字段 | 示例 | 用途 |
 |------|------|------|------|
 | Display Form | `canonicalForm` | "well-being" | 用户看到的书写形式 |
-| Retrieval Query | `normalizedTerm` | "well-being" | 用户输入的标准化形式 |
-| Canonical Identity | `canonicalKey` | "wellbeing" | 去重、itemId 生成、Repository 查找 |
+| Retrieval Query | `normalizedTerm` | "well-being" / "wellbeing" | 用户输入的标准化形式 |
+| Canonical Identity | `canonicalKey` | "well-being"（变体经注册表解析） | 去重、itemId 生成、Repository 查找 |
 
 ### 实现位置
 
 | 文件 | 修改 |
 |------|------|
-| `lib/learning/item-id.ts` | 新增 `canonicalKey()` 函数；`stableItemId()` 改用 canonicalKey |
-| `lib/learning/types.ts` | `LearningItem` 新增 `canonicalKey: string` 字段 |
-| `lib/learning/seed-catalog.ts` | `findSeedItem()` 改用 canonicalKey 比较；`seedToLearningItem()` 填充 canonicalKey |
-| `lib/learning/repositories/memory-learning-repository.ts` | `normalizedIndex` → `canonicalIndex`；`findItemByNormalizedTerm()` / `createOrGetItem()` 改用 canonicalKey |
-| `lib/learning/repositories/supabase-learning-repository.ts` | `toItem()` 映射 canonical_key；`findItemByNormalizedTerm()` 查 canonical_key 列；`createOrGetItem()` onConflict 改用 canonical_key |
-| `lib/llm/tasks/generate-word-card.ts` | `stableItemId()` 改用 `finalCanonical` |
-| `lib/client/demo-service.ts` | 创建 LearningItem 时填充 canonicalKey（复用 `canonicalKey()`，不内联） |
-| `lib/learning/index.ts` | 导出 `canonicalKey` / `stableItemId` / `isSeedItemId` |
-
-**一致性清扫（提交内）：** 三处早期内联的 `replace(/-/g, "")` 统一改为复用
-`canonicalKey()`（demo-service / Memory repo `findItemByNormalizedTerm` / Supabase repo
-`toItem` 与查询），确保所有 canonical identity 计算走同一函数（Supabase 旧行 fallback
-也会先 normalize 再 strip hyphen）；清理 7 个文件的 UTF-8 BOM（编辑器副作用）；
-回退 package-lock.json 的无关 npm 元数据变动（保持最小变更面）。
+| `lib/learning/item-id.ts` | `LEXICAL_VARIANTS` 冻结注册表；`canonicalKey()` 改为注册表解析 |
+| `lib/learning/types.ts` | `LearningItem` 新增 `canonicalKey: string` 字段（2de03f7） |
+| `lib/learning/seed-catalog.ts` | `findSeedItem()` 用 canonicalKey 比较；`seedToLearningItem()` 填充 canonicalKey |
+| `lib/learning/repositories/memory-learning-repository.ts` | `canonicalIndex` 替代 `normalizedIndex` |
+| `lib/learning/repositories/supabase-learning-repository.ts` | 查询/写入 `canonical_key` 列（对应 0009） |
+| `lib/llm/tasks/generate-word-card.ts` | `stableItemId()` 改用 finalCanonical |
+| `lib/client/demo-service.ts` | 创建 LearningItem 时填充 canonicalKey |
+| `lib/learning/index.ts` | 导出 canonicalKey / stableItemId / isSeedItemId |
 
 ---
 
-## 7. Why & Trade-off
+## 7. Why & Trade-off（Final）
 
 ### 为什么选 Server Repository 层的 canonicalKey？
 
@@ -172,23 +174,25 @@ canonicalKey("well-being") = "well being"
 - 前端不感知 canonicalKey 的计算，只通过 API 使用
 - 与 M1 Single Source of Truth 一致：核心业务状态由服务端管理
 
-### 为什么不完全删除连字符？
+### 为什么不无条件删除连字符？（Closure Blocker A 核心）
 
-- display form 是用户体验的一部分，"well-being" 比 "wellbeing" 更易读
-- 多连字符短语（如 "state-of-the-art"）删除连字符后无法识别
-- 保留连字符在 normalizedTerm 中，未来可用于更智能的检索
+无条件删除连字符（旧 Option B）会把**真正不同的词**错误合并：
 
-### Collision Risk（已知 trade-off）
+| 碰撞对 | 语义 | 旧行为 | Final 行为 |
+|--------|------|--------|-----------|
+| well-being / wellbeing | 同词（IELTS health 高频） | 合并 | **合并**（注册表） |
+| e-mail / email | 同词 | 合并 | **合并**（注册表） |
+| co-operate / cooperate | 同词 | 合并 | **合并**（注册表） |
+| re-cover / recover | 不同词（再次覆盖 vs 恢复） | ~~合并（错误）~~ | **不合并** |
+| co-op / coop | 不同词（cooperative vs 鸡舍） | ~~合并（错误）~~ | **不合并** |
+| state-of-the-art / stateoftheart | 不同 | ~~塌缩~~ | **不合并** |
+| well being（空格）/ wellbeing | 未登记 | 不合并 | **不合并**（fail-safe） |
 
-| 碰撞对 | 当前行为 | 影响 |
-|--------|---------|------|
-| co-op / coop | 合并 | IELTS 词汇中极少同时出现 |
-| re-cover / recover | 合并 | 同上 |
-| state-of-the-art / stateoftheart | 合并 | 多连字符短语的已知限制 |
+**产品契约**：合并只发生在注册表明确登记的同词变体；其余一律独立。
+安全默认（fail-safe）= 不合并 → 代价仅是「未登记变体多一份新词状态」，
+可事后补登记；而错误合并会破坏两个不同词各自的长期学习状态，不可逆。
 
-**缓解**：当前方案仅对 IELTS 词汇学习场景优化。如果未来需要更精确的 lexical disambiguation，可引入 Option C（alias mapping）作为补充层，而不是替换 canonicalKey。
-
-### Retrieval Miss Decision
+### Retrieval Miss Decision（不变）
 
 - **不在 GenerationMeta 添加 knowledge_miss 字段**
 - M2 Trace 的 `retrieval.executed.knowledge_miss_flag` 已满足 observability
@@ -196,27 +200,37 @@ canonicalKey("well-being") = "well being"
 
 ---
 
-## 8. Implementation
+## 8. Implementation（Final）
 
-### canonicalKey 函数
+### canonicalKey 函数与注册表
 
 ```typescript
+// lib/learning/item-id.ts
+export const LEXICAL_VARIANTS: Readonly<Record<string, string>> = {
+  "wellbeing": "well-being", // 同词异拼（IELTS health 话题高频）
+  "e-mail": "email",         // 同词异拼（现代标准拼写）
+  "co-operate": "cooperate", // 同词异拼（现代标准拼写）
+} as const;
+
 export function canonicalKey(raw: string): string {
-  return normalizeTerm(raw).replace(/-/g, "");
+  const normalized = normalizeTerm(raw);
+  return LEXICAL_VARIANTS[normalized] ?? normalized;
 }
 ```
 
 ### itemId 生成
 
 ```typescript
-// 旧：stableItemId(normalizeTerm("well-being")) → item-yi9ukg
-// 新：stableItemId(canonicalKey("well-being")) → stableItemId("wellbeing")
+// well-being 与 wellbeing → 同一 canonicalKey "well-being" → 同一 itemId
+stableItemId(canonicalKey("well-being")) === stableItemId(canonicalKey("wellbeing"))
+// re-cover 与 recover → "re-cover" / "recover" → 不同 itemId
+stableItemId(canonicalKey("re-cover")) !== stableItemId(canonicalKey("recover"))
 ```
 
 ### Repository 去重
 
 ```typescript
-// Memory: canonicalIndex 替代 normalizedIndex
+// Memory: canonicalIndex 替代 normalizedIndex（2de03f7）
 async createOrGetItem(item: LearningItem): Promise<LearningItem> {
   const existing = await this.findItemByNormalizedTerm(item.canonicalKey);
   if (existing) return existing;
@@ -226,63 +240,77 @@ async createOrGetItem(item: LearningItem): Promise<LearningItem> {
 }
 ```
 
-### Supabase Migration（设计，未执行）
+### Supabase Migration（Blocker B 关闭）
+
+**结论：Case 2 —— Supabase Repository 的查询/写入依赖 `canonical_key` 数据库列，代码在无该列时无法正确工作（`findItemByNormalizedTerm` 按列过滤、`createOrGetItem` 写入列并以列为 onConflict 仲裁）。因此新增独立后续 migration：**
+
+`supabase/migrations/0009_lexical_canonical_key.sql`（新增）：
 
 ```sql
-ALTER TABLE learning_items ADD COLUMN IF NOT EXISTS canonical_key TEXT;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_items_canonical_key ON learning_items(canonical_key);
--- Backfill: UPDATE learning_items SET canonical_key = REPLACE(LOWER(normalized_term), '-', '');
+alter table public.learning_items add column if not exists canonical_key text;
+
+update public.learning_items
+   set canonical_key = lower(coalesce(nullif(normalized_term, ''), canonical_form))
+ where canonical_key is null;
+
+-- 词法变体注册表（与代码 LEXICAL_VARIANTS 逐一对应）
+update public.learning_items set canonical_key = 'well-being' where canonical_key = 'wellbeing';
+update public.learning_items set canonical_key = 'email'      where canonical_key = 'e-mail';
+update public.learning_items set canonical_key = 'cooperate'  where canonical_key = 'co-operate';
+
+alter table public.learning_items alter column canonical_key set not null;
+
+create unique index if not exists ux_learning_items_canonical_key
+  on public.learning_items (canonical_key);
 ```
 
-**状态：UNVERIFIED** — 未在任何 Supabase 实例执行。
+- **不重写 0001–0008**：0008（M1 Final）已验收，未向其中塞入 035 无关 schema 变化
+- **cloud-setup.sql**：在 seed 插入之后追加与 0009 相同的 canonical_key 块
+  （先 backfill 再 set not null，避免 seed INSERT 违反约束）
+- **seed.sql**：INSERT 增加 `canonical_key` 列（seed 的 canonical_key = lower(canonical_form)）
+- **状态**：`SUPABASE_CODE_STATUS = VERIFIED`（schema 契约与代码一致，测试覆盖 memory 路径）；
+  `SUPABASE_RUNTIME_STATUS = UNVERIFIED`（本环境无法真实连接远程 Supabase，未实跑）
 
 ---
 
-## 9. Regression
+## 9. Regression（Final）
 
-### 新增测试：`tests/unit/badcase-035-canonicalization.test.ts`（15 tests）
+### 新增测试：`tests/unit/badcase-035-canonicalization.test.ts`（21 tests）
 
 | 测试类 | 用例 | 验证 |
 |--------|------|------|
-| canonicalKey 连字符不敏感 | 5 | well-being/wellbeing 相同 key、相同 itemId、大小写/空格不影响、display 保留、三者分离 |
-| collision safety | 4 | 多词短语保留空格、co-op/coop 已知 trade-off、多连字符短语限制、数字连字符 synthetic case |
-| findSeedItem | 1 | seed 无连字符词，canonicalKey === normalizedTerm |
-| Memory Repository | 3 | well-being/wellbeing 创建同一 item、不同词不合并、seedToLearningItem 含 canonicalKey |
-| learn/card 路由端到端（r4 对齐） | 2 | 两次 POST learn/card（well-being / wellbeing）返回同一 item.id（deduplicated=true，对齐 Eval r4 断言）；r1 保持——首次请求 retrieval.executed 仍记录 knowledge_miss_flag=true |
+| canonicalKey 注册表 | 5 | well-being==wellbeing 同 key、同 itemId、大小写/空格、display 保留、变体 identity≠query |
+| MERGE/NON-MERGE fixtures | 9 | MERGE：well-being/wellbeing、e-mail/email、co-operate/cooperate；NON-MERGE：re-cover/recover、co-op/coop、state-of-the-art、well being、2-year、hello-world；注册表完整性（固定点） |
+| findSeedItem | 1 | seed 无连字符/变体词 |
+| Memory Repository | 4 | MERGE 创建同一 item、**NON-MERGE：re-cover/recover 创建不同 item**、不同词不合并、seedToLearningItem 含 canonicalKey |
+| learn/card 路由端到端（r4 对齐） | 2 | well-being/wellbeing 两次请求同一 item.id（deduplicated=true）；retrieval.executed knowledge_miss_flag=true 保持 |
 
-端到端测试通过 `__setProviderForTests("mock", …)` 注入 WordCard mock provider，直接调用
-`POST /api/learn/card` 路由（与 Eval Runner 的调用方式一致），不依赖真实 LLM。
-display form 语义验证：同一 canonical identity 只保留一份状态，`canonicalForm` 保留**首次创建**的书写形式（"well-being"）。
-
-### 全量回归结果
+### 全量回归结果（本次 Final 复核实跑）
 
 | 检查项 | 结果 |
 |--------|------|
 | `tsc --noEmit` | **PASS** |
 | `next build` | **PASS** |
-| Bad Case 035 测试 | **15/15 PASS** |
+| Bad Case 035 测试 | **21/21 PASS** |
 | M1 ELS-EVAL-037/038 | **PASS** |
-| M2 Phase 1 测试 | **18/18 PASS** |
-| M2 Phase 2 测试 | **18/18 PASS** |
-| 全量 unit | **190 passed / 1 failed**（1 预存在：llm-safety.test.ts；本 worktree 无 .env.local，env.test.ts 通过） |
+| M2 Phase 1 测试 | **PASS** |
+| M2 Phase 2 测试 | **PASS** |
+| 全量 unit | 见下方实跑记录（既有 1 个预存在失败：llm-safety.test.ts，与本改动无关） |
 
 ---
 
-## 10. Expected Eval Outcome
+## 10. Expected Eval Outcome（Final）
 
-修复后预期行为：
-- `well-being` 和 `wellbeing` 生成同一个 `itemId`
-- `createOrGetItem` 返回同一个 item（deduplicated = true）
-- `retrieval.executed.knowledge_miss_flag` 对于已存在的变体应为 false
+修复后预期行为（由 Eval Runner 在合并后真实判定，本 Builder 不代写 PASS）：
+- `well-being` 和 `wellbeing` 生成同一个 `itemId`（deduplicated = true）
+- `re-cover` 和 `recover` 保持两个独立 identity
+- `retrieval.executed.knowledge_miss_flag` 对已存在变体为 false
 - display form 保留用户首次输入的书写形式
 
-**Builder 不写 ELS-EVAL-035 PASS。真正 PASS 由 Eval Runner 在合并后决定。**
-
 ---
 
-## 11. Remaining Risks
+## 11. Remaining Risks（Final）
 
-1. **Supabase migration 未执行**：canonical_key 列和 backfill 需在远程实例执行
-2. **多连字符短语**："state-of-the-art" → "stateoftheart" 是已知限制
-3. **Collision**：co-op/coop 等极少数词可能被错误合并
-4. **现有 Memory 数据**：进程重启后旧 item 消失，无迁移问题；Supabase 需 backfill
+1. **Supabase runtime 未实跑**：0009 已在仓库落地并通过代码契约核验，远程实例执行状态 UNVERIFIED
+2. **注册表扩展成本**：新变体需手动登记（有界、可审计；未登记输入 fail-safe 独立）
+3. **Memory 数据**：进程重启后旧 item 消失，无迁移问题；Supabase 需执行 0009 回填
