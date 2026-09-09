@@ -1,4 +1,4 @@
-/**
+﻿/**
  * M2 Phase 2 — Product State & Decision Trace Tests
  * ------------------------------------------------------------
  * Fixtures A-E + Endpoint Node Conformance + Idempotency Trace
@@ -357,6 +357,7 @@ describe("M2 Phase 2: Fixture E — Idempotent Replay", () => {
       itemType: "WORD",
       canonicalForm: "test",
       normalizedTerm: "test",
+      canonicalKey: "test",
       contentJson: {} as never,
       topicTags: [],
       createdAt: new Date().toISOString(),
@@ -511,3 +512,4 @@ describe("M2 Phase 2: Regression Guard — Trace Disabled no-op", () => {
     setTraceEnabled(true);
   });
 });
+

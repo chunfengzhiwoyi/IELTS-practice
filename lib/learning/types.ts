@@ -1,4 +1,4 @@
-/**
+﻿/**
  * P1 学习领域类型
  */
 
@@ -50,6 +50,8 @@ export interface LearningItem {
   itemType: ItemType;
   canonicalForm: string;
   normalizedTerm: string;
+  /** Canonical identity key：连字符不敏感，用于去重和 itemId 生成 */
+  canonicalKey: string;
   contentJson: SeedLearningItem;
   topicTags: string[];
   createdAt: string;
@@ -106,3 +108,4 @@ export interface LearnSubmitResponse {
   nextReviewAt: string;
   state: UserItemState;
 }
+

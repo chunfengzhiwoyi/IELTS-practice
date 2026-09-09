@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SupabaseLearningRepository
  * ------------------------------------------------------------
  * LearningRepository 的 Supabase 实现；DATA_PROVIDER=supabase 时使用。
@@ -61,6 +61,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       itemType: row.item_type as ItemType,
       canonicalForm: row.canonical_form,
       normalizedTerm: row.normalized_term ?? row.canonical_form.toLowerCase(),
+      canonicalKey: row.canonical_key ?? row.normalized_term?.replace(/-/g, '') ?? row.canonical_form.toLowerCase().replace(/-/g, ''),
       contentJson: row.content_json as unknown as SeedLearningItem,
       topicTags: row.topic_tags ?? [],
       createdAt: row.created_at,
@@ -107,7 +108,7 @@ export class SupabaseLearningRepository implements LearningRepository {
     const { data, error } = await sb
       .from("learning_items")
       .select("*")
-      .eq("normalized_term", normalizedTerm)
+      .eq("canonical_key", normalizedTerm.trim().toLowerCase().replace(/-/g, ""))
       .maybeSingle();
     if (error) throw error;
     return data ? this.toItem(data) : null;
@@ -124,10 +125,11 @@ export class SupabaseLearningRepository implements LearningRepository {
           item_type: item.itemType,
           canonical_form: item.canonicalForm,
           normalized_term: item.normalizedTerm,
+          canonical_key: item.canonicalKey,
           content_json: item.contentJson as unknown as Json,
           topic_tags: item.topicTags,
         },
-        { onConflict: "item_type,canonical_form" },
+        { onConflict: "canonical_key" },
       )
       .select("*")
       .single();
@@ -295,3 +297,4 @@ export class SupabaseLearningRepository implements LearningRepository {
     return (data ?? []).map((r) => this.toEvent(r));
   }
 }
+

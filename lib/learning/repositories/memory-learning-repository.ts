@@ -22,22 +22,24 @@ import type {
 
 export class MemoryLearningRepository implements LearningRepository {
   private items = new Map<string, LearningItem>(); // keyed by id
-  private normalizedIndex = new Map<string, string>(); // normalizedTerm → id
+  private canonicalIndex = new Map<string, string>(); // canonicalKey → id
   private states = new Map<string, UserItemState>(); // `${userId}:${itemId}`
   private events: LearningEvent[] = [];
   private clientEventIds = new Set<string>(); // dedup
 
   async findItemByNormalizedTerm(normalizedTerm: string): Promise<LearningItem | null> {
-    const id = this.normalizedIndex.get(normalizedTerm.toLowerCase());
+    // 使用 canonicalKey 实现连字符不敏感查找
+    const key = normalizedTerm.trim().toLowerCase().replace(/-/g, "");
+    const id = this.canonicalIndex.get(key);
     if (!id) return null;
     return this.items.get(id) ?? null;
   }
 
   async createOrGetItem(item: LearningItem): Promise<LearningItem> {
-    const existing = await this.findItemByNormalizedTerm(item.normalizedTerm);
+    const existing = await this.findItemByNormalizedTerm(item.canonicalKey);
     if (existing) return existing;
     this.items.set(item.id, item);
-    this.normalizedIndex.set(item.normalizedTerm.toLowerCase(), item.id);
+    this.canonicalIndex.set(item.canonicalKey, item.id);
     return item;
   }
 
@@ -120,7 +122,7 @@ export class MemoryLearningRepository implements LearningRepository {
   // --- 测试辅助 ---
   _reset(): void {
     this.items.clear();
-    this.normalizedIndex.clear();
+    this.canonicalIndex.clear();
     this.states.clear();
     this.events = [];
     this.clientEventIds.clear();

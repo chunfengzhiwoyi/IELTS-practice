@@ -22,4 +22,5 @@ export type { LearningRepository } from "@/lib/learning/repository";
 
 export { getRepository } from "@/lib/learning/service";
 export { findSeedItem, normalizeTerm, seedToLearningItem, getAllSeedItems } from "@/lib/learning/seed-catalog";
+export { canonicalKey, stableItemId, isSeedItemId } from "@/lib/learning/item-id";
 export { seedDemoReviewItems } from "@/lib/learning/demo-review-seed";

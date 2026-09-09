@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LLM Task: 生成词卡（seed 未命中时使用）
  * Knowledge Layer V1：检索相关知识注入 system prompt。
  */
@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { callLlmStructured } from "@/lib/llm/structured-output";
 import type { SeedLearningItem } from "@/lib/learning/types";
-import { normalizeTerm, stableItemId } from "@/lib/learning/item-id";
+import { canonicalKey, normalizeTerm, stableItemId } from "@/lib/learning/item-id";
 import { retrieveKnowledge } from "@/lib/knowledge/retrieval";
 import type { ExamContext, IeltsItemMetadata, GenerationMeta } from "@/lib/knowledge/types";
 
@@ -129,6 +129,7 @@ export async function generateWordCardWithLlm(
 
   const data = result.data;
   const finalNormalized = normalizeTerm(data.normalizedTerm || term);
+  const finalCanonical = canonicalKey(finalNormalized);
 
   // Build ielts metadata
   const ielts: IeltsItemMetadata | undefined = data.ielts
@@ -149,7 +150,7 @@ export async function generateWordCardWithLlm(
   };
 
   return {
-    itemId: stableItemId(finalNormalized),
+    itemId: stableItemId(finalCanonical),
     term: data.term || term,
     normalizedTerm: finalNormalized,
     itemType: data.itemType,

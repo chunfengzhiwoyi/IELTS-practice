@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /**
  * Browser Demo Service
  * ------------------------------------------------------------
@@ -149,6 +149,7 @@ export async function getWordCard(term: string): Promise<
       itemType: cached.itemType,
       canonicalForm: cached.term,
       normalizedTerm: cached.normalizedTerm,
+      canonicalKey: cached.normalizedTerm.replace(/-/g, ""),
       contentJson: cached,
       topicTags: cached.topicTags,
       createdAt: new Date().toISOString(),
@@ -849,6 +850,7 @@ function seedToItem(seed: SeedLearningItem): LearningItem {
     itemType: seed.itemType,
     canonicalForm: seed.term,
     normalizedTerm: seed.normalizedTerm,
+    canonicalKey: seed.normalizedTerm.replace(/-/g, ""),
     contentJson: seed,
     topicTags: seed.topicTags,
     createdAt: new Date().toISOString(),
@@ -911,3 +913,4 @@ function analyzeLocally(answer: string, q: SpeakingQuestion): SpeakingAnalysisRe
     summary: mainSev === "major" ? `本次回答 ${wordCount} 词，需改善「${mainDim}」。` : `表达基本到位（${wordCount} 词），可优化「${mainDim}」。`,
   };
 }
+

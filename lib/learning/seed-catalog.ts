@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 本地词库读取
  * ------------------------------------------------------------
  * Mock 模式只允许从本文件读取确定性内容。
@@ -8,6 +8,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { LearningItem, SeedLearningItem } from "@/lib/learning/types";
+import { canonicalKey, normalizeTerm } from "@/lib/learning/item-id";
+
+// 向后兼容：re-export normalizeTerm
+export { normalizeTerm };
 
 let catalog: SeedLearningItem[] | null = null;
 
@@ -19,15 +23,10 @@ function loadCatalog(): SeedLearningItem[] {
   return catalog;
 }
 
-/** 标准化 term：全小写，去首尾空格，合并连续空格 */
-export function normalizeTerm(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-/** 从本地词库查找 */
+/** 从本地词库查找（使用 canonicalKey 实现连字符不敏感匹配） */
 export function findSeedItem(rawTerm: string): SeedLearningItem | null {
-  const normalized = normalizeTerm(rawTerm);
-  return loadCatalog().find((item) => item.normalizedTerm === normalized) ?? null;
+  const key = canonicalKey(rawTerm);
+  return loadCatalog().find((item) => canonicalKey(item.normalizedTerm) === key) ?? null;
 }
 
 /** 将 seed 条目转换为 LearningItem（Repository 可直接使用） */
@@ -37,6 +36,7 @@ export function seedToLearningItem(seed: SeedLearningItem): LearningItem {
     itemType: seed.itemType,
     canonicalForm: seed.term,
     normalizedTerm: seed.normalizedTerm,
+    canonicalKey: canonicalKey(seed.normalizedTerm),
     contentJson: seed,
     topicTags: seed.topicTags,
     createdAt: new Date().toISOString(),
@@ -52,3 +52,5 @@ export function getAllSeedItems(): SeedLearningItem[] {
 export function __resetCatalogForTests(): void {
   catalog = null;
 }
+
+
