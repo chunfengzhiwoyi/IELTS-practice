@@ -128,6 +128,12 @@ export interface RetrievalResult {
   promptContext: string | null;
   /** 命中的知识对象 ID 列表（用于 generationMeta 持久化） */
   knowledgeObjectIds: string[];
+  /** ELS-EVAL-026：是否检测到语义冲突（同维度互斥指引）；无冲突 = false */
+  conflict_detected: boolean;
+  /** 消解动作标签（Gold pass_criteria 2：conflict_resolution 非空、可追踪）；无冲突 = null */
+  conflict_resolution: string | null;
+  /** 参与语义冲突的知识对象 ID（诊断 / trace 用）；无冲突 = [] */
+  conflict_object_ids: string[];
 }
 
 // =============================================================
@@ -175,4 +181,7 @@ export interface GenerationMeta {
   knowledgeLayerVersion: "v1";
   knowledgeObjectIds: string[];
   promptVersion: string;
+  /** ELS-EVAL-026：知识冲突检测结果（Gold pass_criteria 2 允许 generationMeta 记录消解动作） */
+  conflictDetected?: boolean;
+  conflictResolution?: string | null;
 }

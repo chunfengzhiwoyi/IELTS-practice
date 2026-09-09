@@ -74,6 +74,24 @@ export async function POST(request: Request) {
       }
     }
 
+    // ---- retrieval.executed: knowledge-layer retrieval（LLM 生成路径，ELS-EVAL-026）----
+    // seed 命中的请求不走知识层；仅在 LLM 生成路径（generationMeta 存在）时记录
+    if (seedItem.generationMeta) {
+      const kbIds = seedItem.generationMeta.knowledgeObjectIds;
+      const kbConflict = seedItem.generationMeta.conflictDetected ?? false;
+      tctx.emitRetrievalExecuted({
+        query_raw: parsed.data.term,
+        query_normalized: normalized,
+        knowledge_object_ids: kbIds,
+        knowledge_injected_count: kbIds.length,
+        knowledge_miss_flag: kbIds.length === 0,
+        conflict_detected: kbConflict,
+        conflict_resolution: kbConflict
+          ? (seedItem.generationMeta.conflictResolution ?? "none")
+          : "none",
+      });
+    }
+
     const repo = getLearningRepository();
 
     // ---- state.write: learning_item（幂等建 item，Contract §1.3 learn/card）----

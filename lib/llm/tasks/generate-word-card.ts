@@ -101,11 +101,15 @@ export async function generateWordCardWithLlm(
   // Knowledge Retrieval
   let knowledgeObjectIds: string[] = [];
   let knowledgeContext: string | null = null;
+  let knowledgeConflictDetected: boolean | undefined;
+  let knowledgeConflictResolution: string | null | undefined;
 
   if (!skipKnowledge) {
     const retrieval = retrieveKnowledge({ term: normalized, currentContext: context });
     knowledgeObjectIds = retrieval.knowledgeObjectIds;
     knowledgeContext = retrieval.promptContext;
+    knowledgeConflictDetected = retrieval.conflict_detected;
+    knowledgeConflictResolution = retrieval.conflict_resolution;
   }
 
   // Build system prompt
@@ -147,6 +151,9 @@ export async function generateWordCardWithLlm(
     knowledgeLayerVersion: "v1",
     knowledgeObjectIds,
     promptVersion: PROMPT_VERSION,
+    // ELS-EVAL-026：冲突检测结果随 generationMeta 持久化（Gold pass_criteria 2）
+    conflictDetected: knowledgeConflictDetected,
+    conflictResolution: knowledgeConflictResolution,
   };
 
   return {

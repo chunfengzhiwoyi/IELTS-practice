@@ -16,6 +16,7 @@ import type {
   RetrievalMatch,
   ExamContext,
 } from "@/lib/knowledge/types";
+import { detectKnowledgeConflict, buildConflictNote } from "@/lib/knowledge/conflict";
 
 let _cache: KnowledgeObject[] | null = null;
 
@@ -97,13 +98,22 @@ export function retrieveKnowledge(query: RetrievalQuery): RetrievalResult {
   // 限制最多 5 个
   const finalMatches = matches.slice(0, 5);
 
-  // 生成 prompt context
-  const promptContext = finalMatches.length > 0 ? buildPromptContext(finalMatches, context) : null;
+  // ELS-EVAL-026：确定性冲突检测（同 guidanceType + 同语境 + 极性相反且 target 一致）
+  const conflict = detectKnowledgeConflict(finalMatches);
+
+  // 生成 prompt context；检出语义冲突时附加"双源并陈差异提示"（Gold pass_criteria 3）
+  let promptContext = finalMatches.length > 0 ? buildPromptContext(finalMatches, context) : null;
+  if (conflict.hasConflict && promptContext !== null) {
+    promptContext += buildConflictNote(conflict);
+  }
 
   return {
     matched: finalMatches,
     promptContext,
     knowledgeObjectIds: finalMatches.map((m) => m.object.id),
+    conflict_detected: conflict.hasConflict,
+    conflict_resolution: conflict.hasConflict ? "dual_source_with_conflict_note" : null,
+    conflict_object_ids: conflict.conflictingObjectIds,
   };
 }
 

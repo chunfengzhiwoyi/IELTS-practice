@@ -41,6 +41,9 @@ export interface SeedLearningItem {
     knowledgeLayerVersion: string;
     knowledgeObjectIds: string[];
     promptVersion: string;
+    /** ELS-EVAL-026：知识冲突检测结果（Gold pass_criteria 2 允许 generationMeta 记录消解动作） */
+    conflictDetected?: boolean;
+    conflictResolution?: string | null;
   };
 }
 
