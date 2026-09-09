@@ -15,6 +15,7 @@
  *   - Fixture 通过 TraceContext emitter 生成（与产品代码同一埋点路径），trace_id 固定便于链接。
  */
 import { MemoryLearningRepository } from "@/lib/learning/repositories/memory-learning-repository";
+import { canonicalKey } from "@/lib/learning/item-id";
 import { TraceContext } from "@/lib/observability/trace-context";
 import { traceStore } from "@/lib/observability/trace-store";
 
@@ -215,6 +216,7 @@ async function buildIdempotentReplay(): Promise<void> {
     itemType: "WORD",
     canonicalForm: "resilience",
     normalizedTerm: "resilience",
+    canonicalKey: canonicalKey("resilience"),
     contentJson: {} as never,
     topicTags: [],
     createdAt: new Date().toISOString(),
