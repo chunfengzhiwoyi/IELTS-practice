@@ -4,6 +4,7 @@
  * 输入 term → 标准化 → seed 查找 → 未命中时 LLM 生成 → 返回词卡 + 任务
  * M1: 使用中央 repository-factory
  * M2 Phase 2: state.read / retrieval.executed 埋点
+ * BC-033: 保留 LLM 具体错误码（MODEL_SCHEMA_MISMATCH 等），不折叠为 MODEL_ERROR
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -65,10 +66,17 @@ export async function POST(request: Request) {
       try {
         seedItem = await generateWordCardWithLlm(parsed.data.term, traceId);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "生成词卡失败";
-        endTraceError(tctx, 502, "MODEL_ERROR", msg);
+        // BC-033: Preserve specific LLM error kind (MODEL_SCHEMA_MISMATCH, MODEL_TIMEOUT, etc.)
+        // instead of collapsing everything to MODEL_ERROR.
+        // LlmError extends AppError, so instanceof AppError catches both.
+        const appErr =
+          err instanceof AppError
+            ? err
+            : new AppError("MODEL_ERROR", err instanceof Error ? err.message : "生成词卡失败", traceId);
+        const { code, message } = appErrorToTrace(appErr);
+        endTraceError(tctx, 502, code, message);
         return NextResponse.json(
-          { error: { kind: "MODEL_ERROR", message: `无法为「${parsed.data.term}」生成词卡: ${msg}`, trace_id: traceId } },
+          { error: { kind: appErr.kind, message: `无法为「${parsed.data.term}」生成词卡: ${appErr.message}`, trace_id: traceId } },
           { status: 502, headers: { "x-trace-id": traceId } },
         );
       }
