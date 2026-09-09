@@ -398,7 +398,7 @@ export async function submitReviewAnswer(params: {
     itemId,
     status,
     recognitionLevel: prev?.recognitionLevel ?? 1,
-    recallLevel: result === "CORRECT_INDEPENDENT" ? Math.min((prev?.recallLevel ?? 0) + 1, 5) : (prev?.recallLevel ?? 0),
+    recallLevel: result === "CORRECT_INDEPENDENT" ? Math.min((prev?.recallLevel ?? 0) + 1, 2) : (prev?.recallLevel ?? 0),
     applicationLevel: 0,
     consecutiveCorrect: (result === "CORRECT_INDEPENDENT" || result === "CORRECT_WITH_HINT") ? (prev?.consecutiveCorrect ?? 0) + 1 : 0,
     currentIntervalDays: hoursMap[result] / 24,

@@ -5,17 +5,18 @@ import Link from "next/link";
 
 import type { SpeakingAnalysisResult, SpeakingPart, SpeakingSession, SpeakingQuestion } from "@/lib/speaking/types";
 import type { AudioMetadata } from "@/lib/speaking/audio-types";
-import { writeAbilityObservations } from "@/lib/ability/writer";
-import { buildSpeakingAbilityProfile } from "@/lib/ability/profile-builder";
-import { retrieveAbilityContext } from "@/lib/ability/memory-retriever";
-import { computeSessionEvaluation } from "@/lib/evaluation/evaluation-builder";
-import { getEvaluationRepository } from "@/lib/evaluation/repository";
 import { TopicSelector } from "@/components/speaking/topic-selector";
 import { AnswerInput } from "@/components/speaking/answer-input";
 import { SpeakingFeedback } from "@/components/speaking/speaking-feedback";
 import { MicroDrillCard } from "@/components/speaking/micro-drill-card";
 import { PartStepper } from "@/components/speaking/part-stepper";
 import { SpeakingPrep } from "@/components/speaking/speaking-prep";
+
+/**
+ * M1: Single Source of Truth
+ * 口语训练通过服务端 API 流转。能力观察和效果评估由服务端统一写入 Repository。
+ * 前端不再调用 localStorage 的 ability/evaluation 写入。
+ */
 
 type PageState =
   | { kind: "TOPIC_SELECT" }
@@ -81,15 +82,7 @@ export function SpeakingPage() {
     const { session, questionData } = state;
     setState({ kind: "ANALYZING" });
     try {
-      // Phase 4.3: 构建能力上下文（不阻塞主流程）
-      let abilityContext = null;
-      try {
-        const profile = buildSpeakingAbilityProfile(session.userId);
-        abilityContext = retrieveAbilityContext(profile);
-      } catch {
-        // Profile Builder 失败不影响分析
-      }
-
+      // M1: 能力上下文由服务端从 Repository 构建，前端不再从 localStorage 读取
       const res = await fetch("/api/speaking/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -98,7 +91,6 @@ export function SpeakingPage() {
           answer,
           isSecondAnswer: isSecond,
           ...(audioMetadata ? { audioMetadata } : {}),
-          ...(abilityContext ? { abilityContext } : {}),
         }),
       });
       const json = await res.json();
@@ -112,30 +104,7 @@ export function SpeakingPage() {
         return [...others, { part: questionData.part, analysis: json.analysis }];
       });
 
-      // Phase 4.1: 沉淀能力观察（Analysis = 推理，Writer = 状态更新）
-      try {
-        writeAbilityObservations({
-          userId: session.userId,
-          sessionId: session.id,
-          analysis: json.analysis as SpeakingAnalysisResult,
-        });
-      } catch {
-        // Ability Writer 失败不阻塞主流程
-      }
-
-      // Phase 5: 二次回答后计算效果评估
-      if (isSecond) {
-        try {
-          const updatedSession = json.session as import("@/lib/speaking/types").SpeakingSession;
-          const evaluation = computeSessionEvaluation(updatedSession);
-          if (evaluation) {
-            getEvaluationRepository().save(evaluation);
-          }
-        } catch {
-          // Evaluation 失败不阻塞主流程
-        }
-      }
-
+      // M1: 能力观察和效果评估由服务端统一写入 Repository（analyze route 内处理）
       setState({ kind: "FEEDBACK", session: json.session, questionData, analysis: json.analysis, isSecond });
     } catch (err) {
       setState({ kind: "ERROR", message: err instanceof Error ? err.message : "网络错误" });

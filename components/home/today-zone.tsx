@@ -2,32 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getItem } from "@/lib/client/storage";
-import type { UserItemState } from "@/lib/learning/types";
-import type { SpeakingSession } from "@/lib/speaking/types";
+
+/**
+ * M1: Single Source of Truth
+ * 今日区域数据从服务端 /api/learning/stats 获取。
+ * 前端不再从 localStorage 计算到期数和口语闲置天数。
+ */
+
+interface Stats {
+  learnedCount: number;
+  dueCount: number;
+  weeklyAccuracy: number | null;
+  streak: number;
+  speakingIdleDays: number | null;
+}
 
 export function TodayZone() {
-  const [due, setDue] = useState<number | null>(null);
-  const [speakingIdleDays, setSpeakingIdleDays] = useState<number | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    const states = getItem<Record<string, UserItemState>>("states") ?? {};
-    const now = new Date().toISOString();
-    const dueCount = Object.values(states).filter((s) => s.nextReviewAt <= now).length;
-    setDue(dueCount);
-
-    const sessions = getItem<SpeakingSession[]>("speaking_sessions") ?? [];
-    if (sessions.length > 0) {
-      const last = sessions
-        .map((s) => new Date(s.updatedAt).getTime())
-        .sort((a, b) => b - a)[0]!;
-      const days = Math.floor((Date.now() - last) / 86400000);
-      setSpeakingIdleDays(days);
-    }
+    fetch("/api/learning/stats")
+      .then((r) => r.json())
+      .then((data) => setStats(data))
+      .catch(() => setStats({ learnedCount: 0, dueCount: 0, weeklyAccuracy: null, streak: 0, speakingIdleDays: null }));
   }, []);
 
-  const hasDue = due !== null && due > 0;
-  const minutes = due !== null ? Math.max(1, Math.ceil(due * 0.5)) : 1;
+  const due = stats?.dueCount ?? 0;
+  const hasDue = due > 0;
+  const minutes = due > 0 ? Math.max(1, Math.ceil(due * 0.5)) : 1;
+  const speakingIdleDays = stats?.speakingIdleDays;
 
   return (
     <section className="today-zone" aria-labelledby="today-title">
@@ -54,12 +57,10 @@ export function TodayZone() {
       )}
 
       <div className="today-zone__secondary">
-        {speakingIdleDays !== null && speakingIdleDays >= 2 && (
-          <span>
-            口语 · {speakingIdleDays} 天没练
-          </span>
+        {speakingIdleDays != null && speakingIdleDays >= 2 && (
+          <span>口语 · {speakingIdleDays} 天没练</span>
         )}
-        <Link href="/report">查看学习报告 →</Link>
+        {stats?.streak ? <span>连续 {stats.streak} 天</span> : null}
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ClientReport } from "@/lib/client/demo-service";
+import type { ClientReport } from "@/lib/client/report-transform";
 
 export function TwoHands({ report }: { report: ClientReport }) {
   const { correctIndependent, correctWithHint, incorrect, reviewTotal, totalItems, speaking } = report;

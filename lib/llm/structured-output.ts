@@ -28,6 +28,77 @@ import type {
   ProviderKind,
 } from "@/lib/llm/types";
 import { logModelCall, logger } from "@/lib/observability/logger";
+import { traceStore } from "@/lib/observability/trace-store";
+import {
+  EVENT_TYPE_TO_LAYER,
+  type LlmAttemptPayload,
+  type TraceEvent,
+  type ValidationResultPayload,
+  type FallbackTriggeredPayload,
+} from "@/lib/observability/trace-contract";
+import { isTraceEnabled, truncateRawOutput } from "@/lib/observability/trace-context";
+
+// =============================================================
+// M2 Trace: 内部事件发射辅助（直接用 traceId，不穿透 TraceContext）
+// =============================================================
+
+let _traceSeq = 0;
+
+function emitTraceEvent(
+  traceId: string,
+  eventType: TraceEvent["event_type"],
+  payload: Record<string, unknown>,
+  status: TraceEvent["status"] = "ok",
+  durationMs: number | null = null,
+  errorCode: string | null = null,
+  errorMessage: string | null = null,
+): void {
+  if (!isTraceEnabled()) return;
+  _traceSeq += 1;
+  const event: TraceEvent = {
+    trace_id: traceId,
+    event_id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`,
+    seq: _traceSeq,
+    ts: new Date().toISOString(),
+    event_type: eventType,
+    layer: EVENT_TYPE_TO_LAYER[eventType],
+    status,
+    duration_ms: durationMs,
+    error_code: errorCode,
+    error_message: errorMessage ? errorMessage.slice(0, 256) : null,
+    payload,
+  };
+  traceStore.appendEvent(event);
+}
+
+function emitLlmAttempt(
+  traceId: string,
+  payload: Omit<LlmAttemptPayload, "raw_output" | "raw_output_truncated"> & { raw_output_full: string },
+  status: TraceEvent["status"] = "ok",
+): void {
+  const { raw_output_full, ...rest } = payload;
+  const truncated = truncateRawOutput(raw_output_full);
+  const fullPayload: LlmAttemptPayload = {
+    ...rest,
+    raw_output: truncated.text,
+    raw_output_truncated: truncated.truncated,
+    raw_output_sha256: truncated.sha256,
+  };
+  emitTraceEvent(traceId, "llm.attempt", fullPayload as unknown as Record<string, unknown>, status, payload.latency_ms, payload.llm_error_code ?? null);
+}
+
+function emitValidation(traceId: string, payload: ValidationResultPayload): void {
+  const status: TraceEvent["status"] =
+    payload.outcome === "pass" ? "ok" : payload.outcome === "needs_review" ? "degraded" : "error";
+  emitTraceEvent(traceId, "validation.result", payload as unknown as Record<string, unknown>, status);
+}
+
+function emitFallback(traceId: string, payload: FallbackTriggeredPayload): void {
+  emitTraceEvent(traceId, "fallback.triggered", payload as unknown as Record<string, unknown>, "degraded");
+  if (payload.degradation_flag) {
+    traceStore.updateHeader(traceId, { degradation_flag: true });
+  }
+}
 
 // =============================================================
 // 内部辅助
@@ -92,8 +163,11 @@ async function attemptStructured<T>(
   req: LlmStructuredRequest<T>,
 ): Promise<AttemptResult<T>> {
   const started = Date.now();
+  const promptKey = req.schemaName;
+  const promptVersion = "v1"; // Phase 1: 无版本化系统，固定 v1
 
   // ---- 首次尝试 ----
+  const firstStart = Date.now();
   const first = await callAndValidate(provider, {
     tier: req.tier,
     messages: req.messages,
@@ -103,8 +177,28 @@ async function attemptStructured<T>(
     traceId: req.traceId,
     signal: req.signal,
   }, req.schema);
+  const firstLatency = Date.now() - firstStart;
 
   if (first.kind === "success") {
+    // M2: llm.attempt (primary, success) + validation.result (pass)
+    emitLlmAttempt(req.traceId, {
+      attempt_purpose: "primary",
+      provider: provider.kind,
+      model_name: first.model,
+      tier: req.tier,
+      prompt_key: promptKey,
+      prompt_version: promptVersion,
+      token_usage: {},
+      latency_ms: firstLatency,
+      raw_output_full: JSON.stringify(first.data).slice(0, 2000),
+      temperature: req.temperature,
+    }, "ok");
+    emitValidation(req.traceId, {
+      validator: `zod:${promptKey}`,
+      outcome: "pass",
+      zod_validation_result: { success: true },
+      repair_attempts: 0,
+    });
     return {
       ok: true,
       data: first.data,
@@ -116,8 +210,43 @@ async function attemptStructured<T>(
 
   // 网络级 / provider 级错误（timeout / 429 / 5xx / auth）直接抛，不走修复重试
   if (isProviderLevelFailure(first.error)) {
+    // M2: llm.attempt (primary, error)
+    emitLlmAttempt(req.traceId, {
+      attempt_purpose: "primary",
+      provider: provider.kind,
+      model_name: first.error.context.model ?? "unknown",
+      tier: req.tier,
+      prompt_key: promptKey,
+      prompt_version: promptVersion,
+      token_usage: {},
+      latency_ms: firstLatency,
+      raw_output_full: first.badContent,
+      llm_error_code: first.error.llmKind,
+      temperature: req.temperature,
+    }, "error");
     return { ok: false, error: first.error };
   }
+
+  // M2: llm.attempt (primary, validation fail) + validation.result (fail)
+  emitLlmAttempt(req.traceId, {
+    attempt_purpose: "primary",
+    provider: provider.kind,
+    model_name: first.error.context.model ?? "unknown",
+    tier: req.tier,
+    prompt_key: promptKey,
+    prompt_version: promptVersion,
+    token_usage: {},
+    latency_ms: firstLatency,
+    raw_output_full: first.badContent,
+    llm_error_code: first.error.llmKind,
+    temperature: req.temperature,
+  }, "error");
+  emitValidation(req.traceId, {
+    validator: `zod:${promptKey}`,
+    outcome: "fail",
+    zod_validation_result: { success: false, issues: [first.error.message] },
+    repair_attempts: 0,
+  });
 
   logger.warn("llm.structured.repair_attempt", {
     trace_id: req.traceId,
@@ -133,6 +262,7 @@ async function attemptStructured<T>(
     first.error.message,
     req.jsonExample,
   );
+  const repairStart = Date.now();
   const second = await callAndValidate(provider, {
     tier: "fast",
     messages: repairMessages,
@@ -142,8 +272,28 @@ async function attemptStructured<T>(
     traceId: req.traceId,
     signal: req.signal,
   }, req.schema);
+  const repairLatency = Date.now() - repairStart;
 
   if (second.kind === "success") {
+    // M2: llm.attempt (repair, success) + validation.result (pass, repair_attempts=1)
+    emitLlmAttempt(req.traceId, {
+      attempt_purpose: "repair",
+      provider: provider.kind,
+      model_name: second.model,
+      tier: "fast",
+      prompt_key: `${promptKey}:repair`,
+      prompt_version: promptVersion,
+      token_usage: {},
+      latency_ms: repairLatency,
+      raw_output_full: JSON.stringify(second.data).slice(0, 2000),
+      temperature: 0,
+    }, "ok");
+    emitValidation(req.traceId, {
+      validator: `zod:${promptKey}`,
+      outcome: "pass",
+      zod_validation_result: { success: true },
+      repair_attempts: 1,
+    });
     return {
       ok: true,
       data: second.data,
@@ -152,6 +302,27 @@ async function attemptStructured<T>(
       latencyMs: Date.now() - started,
     };
   }
+
+  // M2: llm.attempt (repair, fail) + validation.result (fail, repair_attempts=1)
+  emitLlmAttempt(req.traceId, {
+    attempt_purpose: "repair",
+    provider: provider.kind,
+    model_name: second.error.context.model ?? "unknown",
+    tier: "fast",
+    prompt_key: `${promptKey}:repair`,
+    prompt_version: promptVersion,
+    token_usage: {},
+    latency_ms: repairLatency,
+    raw_output_full: second.badContent,
+    llm_error_code: second.error.llmKind,
+    temperature: 0,
+  }, "error");
+  emitValidation(req.traceId, {
+    validator: `zod:${promptKey}`,
+    outcome: "fail",
+    zod_validation_result: { success: false, issues: [second.error.message] },
+    repair_attempts: 1,
+  });
   return { ok: false, error: second.error };
 }
 
@@ -325,6 +496,17 @@ export async function callLlmStructured<T>(
     // 非 transient 错误 或 无 fallback，直接抛 primary 错误
     throw primaryError;
   }
+
+  // M2: fallback.triggered（provider 切换）
+  emitFallback(req.traceId, {
+    trigger_error_code: primaryError.llmKind,
+    chain_snapshot: [
+      { step: "primary", from: resolved.primaryKind, to: resolved.primaryKind, status: "used" as const },
+      { step: "fallback_provider", from: resolved.primaryKind, to: resolved.fallback.kind, status: "used" as const },
+    ],
+    degradation_flag: true,
+    to_kind: "provider",
+  });
 
   // ---- 尝试 fallback ----
   const fallbackStart = Date.now();

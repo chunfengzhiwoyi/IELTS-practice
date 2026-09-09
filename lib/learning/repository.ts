@@ -23,6 +23,16 @@ export interface CreateLearningEventInput {
   traceId: string;
 }
 
+/** createLearningEvent 的显式幂等结果。
+ *  created=true  → 本次请求新建了事件（应继续推进状态）
+ *  created=false → clientEventId 重复，返回既有事件（不应再次推进状态）
+ *  traceId 仅用于 Observability，不参与幂等判断。
+ */
+export interface CreateLearningEventResult {
+  event: LearningEvent;
+  created: boolean;
+}
+
 export interface UpsertUserItemStateInput {
   userId: string;
   itemId: string;
@@ -48,8 +58,8 @@ export interface LearningRepository {
   /** 创建或更新用户知识项状态 */
   upsertUserItemState(input: UpsertUserItemStateInput): Promise<UserItemState>;
 
-  /** 创建学习事件（幂等，基于 clientEventId） */
-  createLearningEvent(input: CreateLearningEventInput): Promise<LearningEvent>;
+  /** 创建学习事件（幂等，基于 clientEventId）。返回 event + created 标志。 */
+  createLearningEvent(input: CreateLearningEventInput): Promise<CreateLearningEventResult>;
 
   /** 获取用户某知识项最近的学习事件 */
   getRecentLearningEvents(userId: string, itemId: string, limit?: number): Promise<LearningEvent[]>;

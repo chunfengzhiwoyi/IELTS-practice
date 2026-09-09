@@ -1,22 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  computeStreak,
-  computeWeeklyReviewAccuracy,
-  getLearnedCount,
-} from "@/lib/client/progress";
+
+/**
+ * M1: Single Source of Truth
+ * 进度带数据从服务端 /api/learning/stats 获取。
+ * 前端不再从 localStorage 计算已学数、正确率、连续天数。
+ */
+
+interface Stats {
+  learnedCount: number;
+  dueCount: number;
+  weeklyAccuracy: number | null;
+  streak: number;
+  speakingIdleDays: number | null;
+}
 
 export function ProgressBand() {
-  const [learned, setLearned] = useState<number | null>(null);
-  const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [streak, setStreak] = useState<number | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    setLearned(getLearnedCount());
-    setAccuracy(computeWeeklyReviewAccuracy());
-    setStreak(computeStreak());
+    fetch("/api/learning/stats")
+      .then((r) => r.json())
+      .then((data) => setStats(data))
+      .catch(() => setStats({ learnedCount: 0, dueCount: 0, weeklyAccuracy: null, streak: 0, speakingIdleDays: null }));
   }, []);
+
+  const learned = stats?.learnedCount;
+  const accuracy = stats?.weeklyAccuracy;
+  const streak = stats?.streak;
 
   return (
     <section aria-labelledby="progress-label">
@@ -30,7 +42,7 @@ export function ProgressBand() {
         </div>
         <div className="stat">
           <div className="stat__num">
-            {accuracy === null ? "—" : `${accuracy}%`}
+            {accuracy === null || accuracy === undefined ? "—" : `${accuracy}%`}
           </div>
           <div className="stat__label">本周复习正确率</div>
         </div>

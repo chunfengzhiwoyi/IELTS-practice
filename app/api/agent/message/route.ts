@@ -1,6 +1,7 @@
 /**
  * POST /api/agent/message
  * 连续会话入口：接收 messages 数组，返回 assistant_text + ui_action
+ * M2 Phase 1: 接入 request.received / response.sent trace
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import { getUserOverrideProviders, getUserImaConfig } from "@/lib/llm/user-confi
 import { searchImaKnowledge } from "@/lib/knowledge/ima";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
+import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
 
 export const runtime = "nodejs";
 
@@ -41,6 +43,10 @@ const ResponseSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const tctx = startTrace(traceId, "/api/agent/message", {
+    input_summary: "agent message",
+    method: "POST",
+  });
 
   // 1. 输入校验（独立处理，不走兜底）
   let parsed: z.infer<typeof RequestSchema>;
@@ -58,6 +64,8 @@ export async function POST(request: Request) {
   } catch (err) {
     const appErr = toAppError(err, traceId);
     const status = appErr.kind === "INVALID_INPUT" ? 400 : 502;
+    const { code, message } = appErrorToTrace(err);
+    endTraceError(tctx, status, code, message);
     return NextResponse.json(
       { error: appErr.toPayload() },
       { status, headers: { "x-trace-id": traceId } },
@@ -84,7 +92,13 @@ export async function POST(request: Request) {
   // 4. Mock 模式快速回退（仅在未配置自有模型时）
   if (isMockPrimary() && !override) {
     const mockResp = buildMockResponse(lastUser);
-    return NextResponse.json(mockResp, { status: 200, headers: { "x-trace-id": traceId } });
+    tctx.emitRoutingDecided({
+      intent_decision: mockResp.ui_action.type,
+      ui_action_type: mockResp.ui_action.type,
+      persistence_required: mockResp.ui_action.type !== "NONE",
+    });
+    const resp = NextResponse.json(mockResp, { status: 200, headers: { "x-trace-id": traceId } });
+    return endTraceSuccess(tctx, resp, "mock shortcircuit", false);
   }
 
   // 5. 构造 LLM messages
@@ -127,13 +141,28 @@ export async function POST(request: Request) {
       conversation_state_patch: result.data.conversation_state_patch as ChatResponse["conversation_state_patch"],
     };
 
-    return NextResponse.json(resp, { status: 200, headers: { "x-trace-id": traceId } });
+    // ---- routing.decided ----
+    tctx.emitRoutingDecided({
+      intent_decision: resp.ui_action.type,
+      ui_action_type: resp.ui_action.type,
+      persistence_required: resp.ui_action.type !== "NONE",
+    });
+
+    const response = NextResponse.json(resp, { status: 200, headers: { "x-trace-id": traceId } });
+    return endTraceSuccess(tctx, response, `ui_action=${resp.ui_action.type}`, false);
   } catch {
     const fallback = buildMockResponse(lastUser);
-    return NextResponse.json(
+    tctx.emitRoutingDecided({
+      intent_decision: fallback.ui_action.type,
+      ui_action_type: fallback.ui_action.type,
+      persistence_required: fallback.ui_action.type !== "NONE",
+      reject_reason: "llm_failed_mock_fallback",
+    });
+    const response = NextResponse.json(
       { ...fallback, fallback: true },
       { status: 200, headers: { "x-trace-id": traceId } },
     );
+    return endTraceSuccess(tctx, response, "llm failed → mock fallback", true);
   }
 }
 

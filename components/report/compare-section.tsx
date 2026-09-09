@@ -1,4 +1,4 @@
-import type { WeekBucket } from "@/lib/client/demo-service";
+import type { WeekBucket } from "@/lib/client/report-transform";
 
 type Cell = { key: string; label: string; hasActivity: boolean; isToday: boolean };
 

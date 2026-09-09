@@ -15,6 +15,9 @@ import { callLlmStructured, type CallStructuredOptions } from "@/lib/llm/structu
 import { analyzeSpeakingAnswer as ruleBasedAnalysis } from "@/lib/speaking/analysis";
 import { validateFeedbackQuality } from "@/lib/speaking/feedback-quality";
 import { logger } from "@/lib/observability/logger";
+import { traceStore } from "@/lib/observability/trace-store";
+import { EVENT_TYPE_TO_LAYER, type TraceEvent } from "@/lib/observability/trace-contract";
+import { isTraceEnabled } from "@/lib/observability/trace-context";
 import type { SpeakingAnalysisResult, SpeakingQuestion, IeltsSpeakingAnalysis, DimensionAnalysis } from "@/lib/speaking/types";
 import type { AudioMetadata } from "@/lib/speaking/audio-types";
 import type { AbilityMemoryContext } from "@/lib/ability/memory-retriever";
@@ -180,12 +183,74 @@ export async function analyzeSpeakingWithLlm(
     // ─── Feedback Quality Gate ───────────────────────────────
     const qualityCheck = validateFeedbackQuality(llmResult, answer);
 
+    // M2: validation.result（口语四门质量门）
+    if (isTraceEnabled()) {
+      const gateScores: Record<string, number> = {};
+      for (const issue of qualityCheck.issues) {
+        const gate = (issue.type.split("_")[0] ?? "unknown").toLowerCase();
+        gateScores[gate] = (gateScores[gate] ?? 100) - 10;
+      }
+      const valEvent: TraceEvent = {
+        trace_id: traceId,
+        event_id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`,
+        seq: Date.now(),
+        ts: new Date().toISOString(),
+        event_type: "validation.result",
+        layer: EVENT_TYPE_TO_LAYER["validation.result"],
+        status: qualityCheck.status === "PASS" ? "ok" : qualityCheck.status === "NEEDS_REVIEW" ? "degraded" : "error",
+        duration_ms: null,
+        error_code: null,
+        error_message: null,
+        payload: {
+          validator: "speaking_quality_gate",
+          outcome: qualityCheck.status.toLowerCase(),
+          repair_attempts: 0,
+          quality_gate_scores: {
+            schemaCheck: gateScores["schema"] ?? 100,
+            evidenceConsistencyCheck: gateScores["evidence"] ?? 100,
+            actionabilityCheck: gateScores["actionability"] ?? 100,
+            ieltsAlignmentCheck: gateScores["ielts"] ?? 100,
+            total: qualityCheck.score,
+          },
+          quality_warning: qualityCheck.issues.map((i) => i.description).join("; ").slice(0, 300),
+        },
+      };
+      traceStore.appendEvent(valEvent);
+    }
+
     if (qualityCheck.status === "FAIL") {
       logger.warn("llm.speaking.quality.fail", {
         trace_id: traceId,
         score: qualityCheck.score,
         issues: qualityCheck.issues.map((i) => i.type),
       });
+      // M2: fallback.triggered（质量门失败 → rule_based_analysis）
+      if (isTraceEnabled()) {
+        const fbEvent: TraceEvent = {
+          trace_id: traceId,
+          event_id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`,
+          seq: Date.now() + 1,
+          ts: new Date().toISOString(),
+          event_type: "fallback.triggered",
+          layer: EVENT_TYPE_TO_LAYER["fallback.triggered"],
+          status: "degraded",
+          duration_ms: null,
+          error_code: "QUALITY_GATE_FAIL",
+          error_message: `score=${qualityCheck.score}`,
+          payload: {
+            trigger_error_code: "QUALITY_GATE_FAIL",
+            chain_snapshot: [
+              { step: "llm_analysis", from: "llm", to: "llm", status: "used" },
+              { step: "quality_gate", from: "llm", to: "quality_gate", status: "used" },
+              { step: "rule_engine", from: "quality_gate", to: "rule_engine", status: "used" },
+            ],
+            degradation_flag: true,
+            to_kind: "rule_based_analysis",
+          },
+        };
+        traceStore.appendEvent(fbEvent);
+        traceStore.updateHeader(traceId, { degradation_flag: true });
+      }
       // 质量不合格 → fallback 到规则引擎
       return ruleBasedAnalysis(answer, question);
     }

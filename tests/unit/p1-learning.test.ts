@@ -158,7 +158,7 @@ describe("8. 重复学习创建新 event", () => {
     const repo = makeRepo();
     const item = makeSeedItem();
     await repo.createOrGetItem(item);
-    const ev1 = await repo.createLearningEvent({
+    const { event: ev1 } = await repo.createLearningEvent({
       userId: "u1",
       itemId: item.id,
       eventType: "NEW",
@@ -170,7 +170,7 @@ describe("8. 重复学习创建新 event", () => {
       clientEventId: "cli-001",
       traceId: "trc_t1",
     });
-    const ev2 = await repo.createLearningEvent({
+    const { event: ev2 } = await repo.createLearningEvent({
       userId: "u1",
       itemId: item.id,
       eventType: "NEW",

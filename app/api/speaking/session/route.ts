@@ -4,6 +4,7 @@
  * 创建口语训练会话。支持：
  *  - 指定 questionId
  *  - 指定 part + optional topic（自动选题）
+ * M1: 使用中央 repository-factory
  */
 import "server-only";
 import { NextResponse } from "next/server";
@@ -13,9 +14,9 @@ import { requireUser } from "@/lib/auth/session";
 import {
   getQuestionById,
   pickQuestion,
-  getSpeakingRepository,
   type SpeakingSession,
 } from "@/lib/speaking";
+import { getSpeakingRepository } from "@/lib/repository-factory";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
     const user = await requireUser(traceId);
     const { questionId, part, topic } = parsed.data;
 
-    // Resolve question
     let questionData;
     if (questionId) {
       questionData = getQuestionById(questionId);

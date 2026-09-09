@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LexiconEntry } from "@/lib/client/demo-service";
+import type { LexiconEntry } from "@/lib/client/report-transform";
 
 export function LexiconSection({
   totalItems,

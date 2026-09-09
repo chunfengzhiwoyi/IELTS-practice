@@ -120,6 +120,17 @@ const ISSUE_MATCH_PREFIX_LEN = 10;
 export function buildSpeakingAbilityProfile(userId: string): SpeakingAbilityProfile {
   const repo = getAbilityRepository();
   const allObservations = repo.getAll(userId);
+  return buildSpeakingAbilityProfileFromObservations(userId, allObservations);
+}
+
+/**
+ * 从给定 observations 构建能力画像（纯函数，不读 localStorage）。
+ * M1: 服务端返回 observations 后，客户端用此函数构建展示用画像。
+ */
+export function buildSpeakingAbilityProfileFromObservations(
+  userId: string,
+  allObservations: AbilityObservation[],
+): SpeakingAbilityProfile {
 
   // 按 unique sourceId 计算总练习次数
   const uniqueSessions = new Set(allObservations.map((o) => o.sourceId));

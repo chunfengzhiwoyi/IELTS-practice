@@ -15,6 +15,7 @@ import type {
 } from "@/lib/learning/types";
 import type {
   CreateLearningEventInput,
+  CreateLearningEventResult,
   LearningRepository,
   UpsertUserItemStateInput,
 } from "@/lib/learning/repository";
@@ -62,11 +63,11 @@ export class MemoryLearningRepository implements LearningRepository {
     return state;
   }
 
-  async createLearningEvent(input: CreateLearningEventInput): Promise<LearningEvent> {
-    // 幂等：clientEventId 重复时返回已有
+  async createLearningEvent(input: CreateLearningEventInput): Promise<CreateLearningEventResult> {
+    // 幂等：clientEventId 重复时返回已有事件，created=false
     if (this.clientEventIds.has(input.clientEventId)) {
       const existing = this.events.find((e) => e.clientEventId === input.clientEventId);
-      if (existing) return existing;
+      if (existing) return { event: existing, created: false };
     }
 
     const event: LearningEvent = {
@@ -85,7 +86,7 @@ export class MemoryLearningRepository implements LearningRepository {
     };
     this.events.push(event);
     this.clientEventIds.add(input.clientEventId);
-    return event;
+    return { event, created: true };
   }
 
   async getRecentLearningEvents(

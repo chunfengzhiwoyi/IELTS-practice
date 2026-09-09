@@ -2,17 +2,19 @@
  * POST /api/learn/submit
  * ------------------------------------------------------------
  * 提交学习结果：LLM 语义判题 + 降级关键词匹配
+ * M1: 使用中央 repository-factory
+ * M2 Phase 2: state.read / rule.applied / state.write 埋点
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/session";
 import {
-  getRepository,
   type EventCorrectness,
   type LearningStatus,
   type LearnSubmitResponse,
 } from "@/lib/learning";
+import { getLearningRepository } from "@/lib/repository-factory";
 import { getAllSeedItems } from "@/lib/learning/seed-catalog";
 import { judgeAnswerWithLlm } from "@/lib/llm/tasks/judge-answer";
 import {
@@ -22,6 +24,8 @@ import {
 } from "@/lib/review/initial-schedule";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
+import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
+import { canonicalStateHash } from "@/lib/observability/trace-context";
 
 export const runtime = "nodejs";
 
@@ -35,6 +39,11 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const tctx = startTrace(traceId, "/api/learn/submit", {
+    input_summary: "learn submit",
+    client_event_id: "",
+    method: "POST",
+  });
   try {
     const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
@@ -44,11 +53,19 @@ export async function POST(request: Request) {
 
     const user = await requireUser(traceId);
     const { itemId, taskType, answer, usedHint, clientEventId } = parsed.data;
-    const repo = getRepository();
+    const repo = getLearningRepository();
 
+    // ---- state.read: user_item_state ----
     const existingState = await repo.getUserItemState(user.id, itemId);
+    tctx.emitStateRead({
+      entity: "user_item_state",
+      keys: { userId: user.id, itemId },
+      snapshot_summary: existingState
+        ? `status=${existingState.status}, recallLevel=${existingState.recallLevel}, nextReviewAt=${existingState.nextReviewAt}`
+        : "no prior state (first learn)",
+      state_not_found: !existingState,
+    });
 
-    // 获取词条信息（优先 seed，否则从 repo 获取）
     const seed = getAllSeedItems().find((s) => s.itemId === itemId);
     const item = await repo.getItemById(itemId);
     const term = seed?.term ?? item?.canonicalForm ?? itemId;
@@ -56,8 +73,7 @@ export async function POST(request: Request) {
     const acceptedAnswers = seed?.acceptedAnswers ?? [coreMeaning];
     const answerKeywords = seed?.answerKeywords ?? [];
 
-    // LLM 语义判题（含降级）
-    const { correctness, feedback, status, scheduleQuality } = await judgeLearnAnswer({
+    const { correctness, feedback, status, scheduleQuality, shortCircuited } = await judgeLearnAnswer({
       term,
       coreMeaning,
       answer,
@@ -67,10 +83,29 @@ export async function POST(request: Request) {
       traceId,
     });
 
+    // ---- rule.applied: empty_answer_short_circuit ----
+    if (shortCircuited) {
+      tctx.emitRuleApplied({
+        rule_key: "empty_answer_short_circuit",
+        inputs: { answer_empty: true, itemId },
+        outputs: { correctness: "FAIL", status: "EXPOSED", scheduleQuality: "FAIL", llm_call_count: 0 },
+        llm_call_count: 0,
+      });
+    }
+
+    // ---- rule.applied: learning_branch_map ----
+    tctx.emitRuleApplied({
+      rule_key: "learning_branch_map",
+      inputs: { correctness, usedHint, shortCircuited },
+      outputs: { status, scheduleQuality, llm_call_count: shortCircuited ? 0 : 1 },
+      llm_call_count: shortCircuited ? 0 : 1,
+    });
+
     const nextReviewAt = computeInitialReviewAt(scheduleQuality);
     const intervalDays = initialIntervalDays(scheduleQuality);
 
-    const event = await repo.createLearningEvent({
+    // ---- state.write: learning_event ----
+    const { event, created } = await repo.createLearningEvent({
       userId: user.id,
       itemId,
       eventType: "NEW",
@@ -82,6 +117,45 @@ export async function POST(request: Request) {
       clientEventId,
       traceId,
     });
+
+    tctx.emitStateWrite({
+      entity: "learning_event",
+      keys: { userId: user.id, itemId, eventId: event.id },
+      event_id: event.id,
+      client_event_id: clientEventId,
+      idempotency_outcome: created ? "inserted" : "duplicate_ignored",
+      state_before: null,
+      state_after: { eventType: "NEW", correctness, taskType },
+      canonical_state_hash: canonicalStateHash({ eventType: "NEW", correctness, taskType }),
+    });
+
+    // M1 FINAL: 显式幂等 Contract — created=false 表示重复提交，不更新 state
+    if (!created) {
+      const currentState = await repo.getUserItemState(user.id, itemId);
+      const prevFeedback = (event.resultJson?.feedback as string) ?? feedback;
+      const resp = NextResponse.json(
+        {
+          eventId: event.id,
+          correctness: event.correctness,
+          status: currentState?.status ?? status,
+          feedback: prevFeedback,
+          nextReviewAt: currentState?.nextReviewAt ?? nextReviewAt,
+          state: currentState,
+        },
+        { status: 200, headers: { "x-trace-id": traceId, "x-idempotent-replay": "true" } },
+      );
+      return endTraceSuccess(tctx, resp, `idempotent replay: correctness=${event.correctness}`, false, true);
+    }
+
+    // ---- state.write: user_item_state ----
+    const stateBefore = existingState
+      ? {
+          status: existingState.status,
+          recallLevel: existingState.recallLevel,
+          consecutiveCorrect: existingState.consecutiveCorrect,
+          nextReviewAt: existingState.nextReviewAt,
+        }
+      : null;
 
     const newState = await repo.upsertUserItemState({
       userId: user.id,
@@ -95,6 +169,27 @@ export async function POST(request: Request) {
       nextReviewAt,
     });
 
+    tctx.emitStateWrite({
+      entity: "user_item_state",
+      keys: { userId: user.id, itemId },
+      idempotency_outcome: "inserted",
+      state_before: stateBefore,
+      state_after: {
+        status: newState.status,
+        recallLevel: newState.recallLevel,
+        consecutiveCorrect: newState.consecutiveCorrect,
+        nextReviewAt: newState.nextReviewAt,
+      },
+      canonical_state_hash: canonicalStateHash({
+        status: newState.status,
+        recallLevel: newState.recallLevel,
+        consecutiveCorrect: newState.consecutiveCorrect,
+        nextReviewAt: newState.nextReviewAt,
+      }),
+      next_review_at_before: existingState?.nextReviewAt ?? null,
+      next_review_at_after: newState.nextReviewAt,
+    });
+
     const response: LearnSubmitResponse = {
       eventId: event.id,
       correctness,
@@ -104,23 +199,23 @@ export async function POST(request: Request) {
       state: newState,
     };
 
-    return NextResponse.json(response, { status: 200, headers: { "x-trace-id": traceId } });
+    const resp = NextResponse.json(response, { status: 200, headers: { "x-trace-id": traceId } });
+    return endTraceSuccess(tctx, resp, `correctness=${correctness}, status=${status}`);
   } catch (err) {
     const appErr = toAppError(err, traceId);
     const status = appErr.kind === "AUTH_REQUIRED" ? 401 : appErr.kind === "INVALID_INPUT" ? 400 : 500;
+    const { code, message } = appErrorToTrace(err);
+    endTraceError(tctx, status, code, message);
     return NextResponse.json({ error: appErr.toPayload() }, { status, headers: { "x-trace-id": traceId } });
   }
 }
-
-// =============================================================
-// LLM 判题 + 映射
-// =============================================================
 
 interface JudgeResult {
   correctness: EventCorrectness;
   feedback: string;
   status: LearningStatus;
   scheduleQuality: InitialScheduleQuality;
+  shortCircuited: boolean;
 }
 
 async function judgeLearnAnswer(params: {
@@ -140,6 +235,7 @@ async function judgeLearnAnswer(params: {
       feedback: "未提供答案，建议再试一次。",
       status: "EXPOSED",
       scheduleQuality: "FAIL",
+      shortCircuited: true,
     };
   }
 
@@ -159,6 +255,7 @@ async function judgeLearnAnswer(params: {
         feedback: `正确！「${term}」= ${coreMeaning}。${llmResult.explanation}（使用了提示，下次试着独立回忆）`,
         status: "RECALLED_WITH_HELP",
         scheduleQuality: "HINTED",
+        shortCircuited: false,
       };
     }
     return {
@@ -166,6 +263,7 @@ async function judgeLearnAnswer(params: {
       feedback: `非常好！无提示正确回忆。「${term}」= ${coreMeaning}。${llmResult.explanation}`,
       status: "RECALLED_INDEPENDENTLY",
       scheduleQuality: "INDEPENDENT",
+      shortCircuited: false,
     };
   }
 
@@ -174,5 +272,6 @@ async function judgeLearnAnswer(params: {
     feedback: `不太对。「${term}」的核心含义是：${coreMeaning}。${llmResult.explanation}`,
     status: "EXPOSED",
     scheduleQuality: "FAIL",
+    shortCircuited: false,
   };
 }

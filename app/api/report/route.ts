@@ -1,15 +1,14 @@
 /**
- * POST /api/report
+ * GET /api/report
  * ------------------------------------------------------------
- * 生成学习报告 + LLM 自然语言建议
+ * M1: 统一报告数据源。服务端聚合学习/复习/口语/能力/评估数据。
+ * M2 Phase 2: state.read / report.aggregated / rule.applied(insufficient_data) 埋点
  */
 import "server-only";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/session";
-import { getRepository } from "@/lib/learning";
-import { getSpeakingRepository } from "@/lib/speaking";
+import { getLearningRepository, getSpeakingRepository, getAbilityRepository, getEvaluationRepository } from "@/lib/repository-factory";
 import {
   aggregateReportData,
   generateRecommendations,
@@ -17,34 +16,59 @@ import {
   type ReportPeriod,
 } from "@/lib/report";
 import { generateReportSummaryWithLlm } from "@/lib/llm/tasks/generate-report-summary";
-import { AppError, toAppError } from "@/lib/observability/errors";
+import { toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
+import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
+import { canonicalStateHash } from "@/lib/observability/trace-context";
 
 export const runtime = "nodejs";
 
-const RequestSchema = z.object({
-  period: z.enum(["7d", "30d"]).default("7d"),
-});
-
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const tctx = startTrace(traceId, "/api/report", {
+    input_summary: "report",
+    method: "GET",
+  });
   try {
-    const bodyRaw = await request.json().catch(() => ({}));
-    const parsed = RequestSchema.safeParse(bodyRaw);
-    if (!parsed.success) {
-      throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
-    }
-
     const user = await requireUser(traceId);
-    const period: ReportPeriod = parsed.data.period;
+    const url = new URL(request.url);
+    const period = (url.searchParams.get("period") ?? "7d") as ReportPeriod;
 
-    const learningRepo = getRepository();
+    const learningRepo = getLearningRepository();
     const speakingRepo = getSpeakingRepository();
+    const abilityRepo = getAbilityRepository();
+    const evalRepo = getEvaluationRepository();
 
     const aggregated = await aggregateReportData(learningRepo, speakingRepo, {
       userId: user.id,
       period,
     });
+
+    // ---- state.read: report source data ----
+    tctx.emitStateRead({
+      entity: "report_source_data",
+      keys: { userId: user.id, period },
+      snapshot_summary: `states=${aggregated.states.length}, events=${aggregated.events.length}, sessions=${aggregated.sessions.length}`,
+    });
+
+    // M1: 从服务端 Repository 获取能力观察和评估
+    const abilityObservations = await abilityRepo.getAll(user.id);
+    const evaluations = await evalRepo.getAll(user.id);
+
+    // M1: 获取词条内容供前端词库展示
+    const itemContents: Record<string, { term: string; coreMeaning: string }> = {};
+    for (const state of aggregated.states) {
+      if (!itemContents[state.itemId]) {
+        const item = await learningRepo.getItemById(state.itemId);
+        if (item) {
+          const content = item.contentJson as { term?: string; coreMeaning?: string } | undefined;
+          itemContents[state.itemId] = {
+            term: content?.term ?? item.canonicalForm,
+            coreMeaning: content?.coreMeaning ?? "",
+          };
+        }
+      }
+    }
 
     const recommendations = generateRecommendations(aggregated, new Date());
 
@@ -52,6 +76,48 @@ export async function POST(request: Request) {
       aggregated.events.length === 0 &&
       aggregated.sessions.length === 0 &&
       aggregated.states.length === 0;
+
+    // ---- report.aggregated ----
+    const aggregateValues = {
+      totalItems: aggregated.states.length,
+      totalEvents: aggregated.events.length,
+      totalSessions: aggregated.sessions.length,
+      recalledIndependently: aggregated.memory.statusDistribution.RECALLED_INDEPENDENTLY,
+      recalledWithHelp: aggregated.memory.statusDistribution.RECALLED_WITH_HELP,
+      reviewCorrectRate: aggregated.review.correctRate,
+    };
+    tctx.emitReportAggregated({
+      period,
+      aggregate_checksum: canonicalStateHash(aggregateValues),
+      insufficient_data_flag: insufficientData,
+      baseline_availability: aggregated.states.length > 0,
+      summary_generated: null, // 会在 LLM 调用后更新
+      section_render_flags: {
+        memory: aggregated.states.length > 0,
+        review: aggregated.events.length > 0,
+        speaking: aggregated.sessions.length > 0,
+        recommendations: recommendations.length > 0,
+      },
+      aggregate_values: aggregateValues,
+    });
+
+    // ---- rule.applied: insufficient_data ----
+    if (insufficientData) {
+      tctx.emitRuleApplied({
+        rule_key: "insufficient_data",
+        inputs: {
+          events_count: aggregated.events.length,
+          sessions_count: aggregated.sessions.length,
+          states_count: aggregated.states.length,
+        },
+        outputs: {
+          insufficient_data: true,
+          show_message: true,
+          llm_summary_skipped: true,
+        },
+        llm_call_count: 0,
+      });
+    }
 
     const report: ProgressReport = {
       period,
@@ -67,26 +133,36 @@ export async function POST(request: Request) {
     };
 
     // LLM 自然语言建议（不阻塞报告主体）
-    const llmSummary = await generateReportSummaryWithLlm(report, traceId);
+    let llmSummary = null;
+    if (!insufficientData) {
+      try {
+        llmSummary = await generateReportSummaryWithLlm(report, traceId);
+      } catch {
+        // LLM 失败不影响报告
+      }
+    }
 
-    return NextResponse.json(
-      { ...report, llmSummary },
+    const resp = NextResponse.json(
+      {
+        ...report,
+        llmSummary,
+        abilityObservations,
+        evaluations,
+        _raw: {
+          states: aggregated.states,
+          events: aggregated.events,
+          sessions: aggregated.sessions,
+          itemContents,
+        },
+      },
       { status: 200, headers: { "x-trace-id": traceId } },
     );
+    return endTraceSuccess(tctx, resp, `period=${period}, items=${aggregated.states.length}, events=${aggregated.events.length}, insufficientData=${insufficientData}, llmSummary=${llmSummary !== null}`, llmSummary === null);
   } catch (err) {
     const appErr = toAppError(err, traceId);
-    const status = appErr.kind === "AUTH_REQUIRED" ? 401 : appErr.kind === "INVALID_INPUT" ? 400 : 500;
+    const status = appErr.kind === "AUTH_REQUIRED" ? 401 : 500;
+    const { code, message } = appErrorToTrace(err);
+    endTraceError(tctx, status, code, message);
     return NextResponse.json({ error: appErr.toPayload() }, { status, headers: { "x-trace-id": traceId } });
   }
-}
-
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const period = url.searchParams.get("period") ?? "7d";
-  const syntheticRequest = new Request(request.url, {
-    method: "POST",
-    headers: request.headers,
-    body: JSON.stringify({ period }),
-  });
-  return POST(syntheticRequest);
 }

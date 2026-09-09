@@ -30,6 +30,7 @@ import type {
 } from "@/lib/learning/types";
 import type {
   CreateLearningEventInput,
+  CreateLearningEventResult,
   LearningRepository,
   UpsertUserItemStateInput,
 } from "@/lib/learning/repository";
@@ -182,7 +183,7 @@ export class SupabaseLearningRepository implements LearningRepository {
     return this.toState(data);
   }
 
-  async createLearningEvent(input: CreateLearningEventInput): Promise<LearningEvent> {
+  async createLearningEvent(input: CreateLearningEventInput): Promise<CreateLearningEventResult> {
     const sb = await this.sb();
     const { data, error } = await sb
       .from("learning_events")
@@ -201,7 +202,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       .select("*")
       .single();
 
-    // 幂等：同 (user_id, client_event_id) 唯一约束冲突时，返回既有事件
+    // 幂等：同 (user_id, client_event_id) 唯一约束冲突时，返回既有事件，created=false
     if (error) {
       if (error.code === "23505") {
         const { data: existing, error: selErr } = await sb
@@ -211,11 +212,11 @@ export class SupabaseLearningRepository implements LearningRepository {
           .eq("client_event_id", input.clientEventId)
           .maybeSingle();
         if (selErr) throw selErr;
-        if (existing) return this.toEvent(existing);
+        if (existing) return { event: this.toEvent(existing), created: false };
       }
       throw error;
     }
-    return this.toEvent(data);
+    return { event: this.toEvent(data), created: true };
   }
 
   async getRecentLearningEvents(

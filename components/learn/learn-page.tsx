@@ -3,11 +3,16 @@
 import { useState } from "react";
 
 import type { LearnSubmitResponse, WordCardResponse } from "@/lib/learning/types";
-import { getWordCard, submitLearnAnswer, saveItemToCache } from "@/lib/client/demo-service";
 import { LearningResult } from "@/components/learn/learning-result";
 import { RecallTask } from "@/components/learn/recall-task";
 import { TermInput } from "@/components/learn/term-input";
 import { WordCard } from "@/components/learn/word-card";
+
+/**
+ * M1: Single Source of Truth
+ * 新词学习完全通过服务端 API + Repository 流转。
+ * 前端不再调用 demo-service 的 localStorage 业务读写。
+ */
 
 type PageState =
   | { kind: "EMPTY" }
@@ -33,14 +38,7 @@ export function LearnPage() {
   const handleTermSubmit = async (term: string) => {
     setState({ kind: "LOADING_CARD" });
     try {
-      // 1. 先尝试本地（seed + els_items 缓存）
-      const localResult = await getWordCard(term);
-      if (localResult.ok) {
-        setState({ kind: "CARD_READY", card: localResult.data, usedHint: false });
-        return;
-      }
-
-      // 2. 本地没有 → 调服务端 API Route（seed 再检查一次 + LLM 生成）
+      // M1: 直接调用服务端 API（seed 查找 + Repository + LLM 生成）
       const res = await fetch("/api/learn/card", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -48,7 +46,12 @@ export function LearnPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        if (json?.error?.kind === "DEMO_ITEM_NOT_FOUND" || json?.error?.kind === "MODEL_ERROR" || res.status === 404 || res.status === 502) {
+        if (
+          json?.error?.kind === "DEMO_ITEM_NOT_FOUND" ||
+          json?.error?.kind === "MODEL_ERROR" ||
+          res.status === 404 ||
+          res.status === 502
+        ) {
           setState({ kind: "ITEM_NOT_FOUND", term });
           return;
         }
@@ -57,12 +60,6 @@ export function LearnPage() {
       }
 
       const card = json as WordCardResponse;
-
-      // 3. LLM 生成的词卡 → 保存到 localStorage els_items 缓存
-      if (card.item.contentJson && !card.item.id.startsWith("seed-")) {
-        saveItemToCache(card.item.contentJson);
-      }
-
       setState({ kind: "CARD_READY", card, usedHint: false });
     } catch (err) {
       setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "网络错误" });
@@ -80,11 +77,25 @@ export function LearnPage() {
     const { card, usedHint } = state;
     setState({ kind: "SUBMITTING", card });
     try {
-      const result = await submitLearnAnswer({
-        itemId: card.item.id,
-        answer,
-        usedHint,
+      // M1: 调用服务端 API 提交（LLM 判题 + Repository 写入）
+      const clientEventId = `learn-${card.item.id}-${Date.now()}`;
+      const res = await fetch("/api/learn/submit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          itemId: card.item.id,
+          taskType: card.task.taskType,
+          answer,
+          usedHint,
+          clientEventId,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok) {
+        setState({ kind: "REQUEST_ERROR", message: json?.error?.message ?? `错误 ${res.status}` });
+        return;
+      }
+      const result = json as LearnSubmitResponse;
       setState({ kind: "RESULT_SUCCESS", result, card });
     } catch (err) {
       setState({ kind: "REQUEST_ERROR", message: err instanceof Error ? err.message : "提交失败" });

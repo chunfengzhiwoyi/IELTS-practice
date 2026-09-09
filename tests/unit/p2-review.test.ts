@@ -186,7 +186,7 @@ describe("12. clientEventId 幂等", () => {
     const repo = makeRepo();
     const item = makeSeedItem();
     await repo.createOrGetItem(item);
-    const ev1 = await repo.createLearningEvent({
+    const { event: ev1 } = await repo.createLearningEvent({
       userId: "u1",
       itemId: item.id,
       eventType: "REVIEW",
@@ -198,7 +198,7 @@ describe("12. clientEventId 幂等", () => {
       clientEventId: "review-dedup-1",
       traceId: "t1",
     });
-    const ev2 = await repo.createLearningEvent({
+    const { event: ev2 } = await repo.createLearningEvent({
       userId: "u1",
       itemId: item.id,
       eventType: "REVIEW",
