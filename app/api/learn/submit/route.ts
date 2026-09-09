@@ -16,6 +16,7 @@ import {
 } from "@/lib/learning";
 import { getLearningRepository } from "@/lib/repository-factory";
 import { getAllSeedItems } from "@/lib/learning/seed-catalog";
+import { isAnswerContentEmpty } from "@/lib/learning/answer-content";
 import { judgeAnswerWithLlm } from "@/lib/llm/tasks/judge-answer";
 import {
   computeInitialReviewAt,
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     if (shortCircuited) {
       tctx.emitRuleApplied({
         rule_key: "empty_answer_short_circuit",
-        inputs: { answer_empty: true, itemId },
+        inputs: { answer_empty: true, content_empty: true, itemId },
         outputs: { correctness: "FAIL", status: "EXPOSED", scheduleQuality: "FAIL", llm_call_count: 0 },
         llm_call_count: 0,
       });
@@ -229,7 +230,7 @@ async function judgeLearnAnswer(params: {
 }): Promise<JudgeResult> {
   const { term, coreMeaning, answer, usedHint, traceId } = params;
 
-  if (!answer.trim()) {
+  if (isAnswerContentEmpty(answer)) {
     return {
       correctness: "FAIL",
       feedback: "未提供答案，建议再试一次。",

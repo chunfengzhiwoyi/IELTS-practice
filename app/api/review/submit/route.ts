@@ -12,6 +12,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { getLearningRepository } from "@/lib/repository-factory";
 import { getAllSeedItems } from "@/lib/learning/seed-catalog";
+import { isAnswerContentEmpty } from "@/lib/learning/answer-content";
 import type { LearningStatus } from "@/lib/learning/types";
 import { judgeAnswerWithLlm } from "@/lib/llm/tasks/judge-answer";
 import type { ReviewResult } from "@/lib/review/answer-judge";
@@ -72,13 +73,13 @@ export async function POST(request: Request) {
     let shortCircuited = false;
     if (skipped) {
       result = "SKIPPED";
-    } else if (!answer.trim()) {
+    } else if (isAnswerContentEmpty(answer)) {
       result = "INCORRECT";
       shortCircuited = true;
       // ---- rule.applied: empty_answer_short_circuit ----
       tctx.emitRuleApplied({
         rule_key: "empty_answer_short_circuit",
-        inputs: { answer_empty: true, skipped: false, itemId },
+        inputs: { answer_empty: true, content_empty: true, skipped: false, itemId },
         outputs: { result: "INCORRECT", llm_call_count: 0 },
         llm_call_count: 0,
       });

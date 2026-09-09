@@ -14,6 +14,7 @@ import { MemorySpeakingRepository } from "@/lib/speaking/repository";
 import { findSeedItem, seedToLearningItem, getAllSeedItems } from "@/lib/learning/seed-catalog";
 import type { LearningItem, UserItemState } from "@/lib/learning/types";
 import { judgeReviewAnswer, type ReviewResult } from "@/lib/review/answer-judge";
+import { isAnswerContentEmpty } from "@/lib/learning/answer-content";
 import { computeReviewNextAt } from "@/lib/review/review-schedule";
 import { aggregateReportData } from "@/lib/report/aggregator";
 
@@ -61,7 +62,7 @@ async function simulateReviewSubmit(
   let result: ReviewResult;
   if (params.skipped) {
     result = "SKIPPED";
-  } else if (!params.answer.trim()) {
+  } else if (isAnswerContentEmpty(params.answer)) {
     result = "INCORRECT";
   } else {
     const judged = judgeReviewAnswer({
@@ -171,7 +172,7 @@ async function simulateLearnSubmit(
   params: { itemId: string; answer: string; usedHint: boolean; clientEventId: string },
 ) {
   const seed = getAllSeedItems().find((s) => s.itemId === params.itemId)!;
-  const correctness = params.usedHint ? "HINTED" : params.answer.trim() ? "INDEPENDENT" : "FAIL";
+  const correctness = params.usedHint ? "HINTED" : isAnswerContentEmpty(params.answer) ? "FAIL" : "INDEPENDENT";
   const status = correctness === "INDEPENDENT" ? "RECALLED_INDEPENDENTLY" : correctness === "HINTED" ? "RECALLED_WITH_HELP" : "EXPOSED";
 
   const { event } = await repo.createLearningEvent({

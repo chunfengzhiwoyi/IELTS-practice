@@ -7,6 +7,7 @@
  * 所有逻辑确定性执行，不调 LLM。
  */
 import { getItem, setItem } from "@/lib/client/storage";
+import { isAnswerContentEmpty } from "@/lib/learning/answer-content";
 import { computeStreak, computeReviewAccuracy } from "@/lib/client/progress";
 import { localDayKey } from "@/lib/client/day";
 import { normalizeTerm, stableItemId } from "@/lib/learning/item-id";
@@ -192,7 +193,7 @@ export async function submitLearnAnswer(params: {
   let feedback: string;
   let hoursUntil: number;
 
-  if (!answer.trim()) {
+  if (isAnswerContentEmpty(answer)) {
     correctness = "FAIL";
     status = "EXPOSED";
     feedback = "未提供答案，建议再试一次。";
@@ -337,7 +338,7 @@ export async function submitReviewAnswer(params: {
   let result: ReviewResult;
   if (skipped) {
     result = "SKIPPED";
-  } else if (!answer.trim()) {
+  } else if (isAnswerContentEmpty(answer)) {
     result = "INCORRECT";
   } else {
     // 统一查找 item 内容，用于判题
