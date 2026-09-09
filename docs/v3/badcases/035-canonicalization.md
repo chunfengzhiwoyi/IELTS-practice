@@ -242,7 +242,13 @@ async createOrGetItem(item: LearningItem): Promise<LearningItem> {
 
 ### Supabase Migration（Blocker B 关闭）
 
-**结论：Case 2 —— Supabase Repository 的查询/写入依赖 `canonical_key` 数据库列，代码在无该列时无法正确工作（`findItemByNormalizedTerm` 按列过滤、`createOrGetItem` 写入列并以列为 onConflict 仲裁）。因此新增独立后续 migration：**
+**结论：Case 2 —— Supabase Repository 的查询/写入依赖 `canonical_key` 数据库列，代码在无该列时无法正确工作（`findItemByNormalizedTerm` 按列过滤、`createOrGetItem` 写入列并以列为 onConflict 仲裁）。因此需要独立后续 migration（设计见下）。**
+
+> **Merge-ready 分支（`fix/eval-035-code-only`）说明：本分支仅纳入已验证产品代码，migration 施工（0009 / cloud-setup block / seed.sql）**尚未获批**，不随本分支进入 Integration。
+> 依赖 `ENV-SUPABASE-01`：远程 Supabase collision state UNKNOWN，后续 Probe 明确 `READY_FOR_MIGRATION_DESIGN=NO`；
+> 在 0009 获批并执行前，Supabase 运行时不可使用 canonical_key 路径（Memory 路径不受影响）。
+
+**设计（待获批后单独落地，勿并入本分支）：**
 
 `supabase/migrations/0009_lexical_canonical_key.sql`（新增）：
 
@@ -268,8 +274,9 @@ create unique index if not exists ux_learning_items_canonical_key
 - **cloud-setup.sql**：在 seed 插入之后追加与 0009 相同的 canonical_key 块
   （先 backfill 再 set not null，避免 seed INSERT 违反约束）
 - **seed.sql**：INSERT 增加 `canonical_key` 列（seed 的 canonical_key = lower(canonical_form)）
-- **状态**：`SUPABASE_CODE_STATUS = VERIFIED`（schema 契约与代码一致，测试覆盖 memory 路径）；
-  `SUPABASE_RUNTIME_STATUS = UNVERIFIED`（本环境无法真实连接远程 Supabase，未实跑）
+- **状态（本分支）**：`SUPABASE_CODE_STATUS = VERIFIED`（schema 契约与代码一致，测试覆盖 memory 路径）；
+  `SUPABASE_RUNTIME_STATUS = UNVERIFIED`（未真实连接远程 Supabase；且 0009 未获批/未执行，
+  Supabase 运行时 canonical_key 查询暂不可用——属 gated 状态，见 ENV-SUPABASE-01）
 
 ---
 
@@ -311,6 +318,7 @@ create unique index if not exists ux_learning_items_canonical_key
 
 ## 11. Remaining Risks（Final）
 
-1. **Supabase runtime 未实跑**：0009 已在仓库落地并通过代码契约核验，远程实例执行状态 UNVERIFIED
+1. **Supabase migration 未获批（ENV-SUPABASE-01）**：0009 / cloud-setup block / seed.sql 变更未纳入
+   merge-ready 分支；远程 collision state UNKNOWN，需 Probe 确认 READY_FOR_MIGRATION_DESIGN=YES 后单独施工
 2. **注册表扩展成本**：新变体需手动登记（有界、可审计；未登记输入 fail-safe 独立）
-3. **Memory 数据**：进程重启后旧 item 消失，无迁移问题；Supabase 需执行 0009 回填
+3. **Memory 数据**：进程重启后旧 item 消失，无迁移问题；Supabase 待 0009 获批后回填

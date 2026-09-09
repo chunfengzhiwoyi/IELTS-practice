@@ -350,25 +350,3 @@ values
     array['environment', 'ielts-part3']
   )
 on conflict (item_type, canonical_form) do nothing;
-
--- =============================================================
--- Bad Case 035 Final: canonical_key（对齐 migration 0009）
--- -------------------------------------------------------------
--- 本块必须位于 seed 插入之后：先 backfill 全部已有行（含 seed），
--- 再 set not null，避免 seed INSERT（不含 canonical_key）违反约束。
--- 与 lib/learning/item-id.ts LEXICAL_VARIANTS 保持一致。
--- =============================================================
-alter table public.learning_items add column if not exists canonical_key text;
-
-update public.learning_items
-   set canonical_key = lower(coalesce(nullif(normalized_term, ''), canonical_form))
- where canonical_key is null;
-
-update public.learning_items set canonical_key = 'well-being' where canonical_key = 'wellbeing';
-update public.learning_items set canonical_key = 'email'      where canonical_key = 'e-mail';
-update public.learning_items set canonical_key = 'cooperate'  where canonical_key = 'co-operate';
-
-alter table public.learning_items alter column canonical_key set not null;
-
-create unique index if not exists ux_learning_items_canonical_key
-  on public.learning_items (canonical_key);
