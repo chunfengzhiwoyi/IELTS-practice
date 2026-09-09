@@ -40,20 +40,23 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const rawItemId = bodyRaw && typeof bodyRaw.itemId === "string" ? bodyRaw.itemId : null;
+  const rawAnswer = bodyRaw && typeof bodyRaw.answer === "string" ? bodyRaw.answer : null;
   const tctx = startTrace(traceId, "/api/learn/submit", {
-    input_summary: "learn submit",
-    client_event_id: "",
+    input_summary: rawItemId ? "itemId=" + rawItemId + ", answer=" + (rawAnswer ?? "").slice(0, 200) : "invalid body",
     method: "POST",
   });
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
     }
 
     const user = await requireUser(traceId);
+    tctx.trace.setUser(user.id);
     const { itemId, taskType, answer, usedHint, clientEventId } = parsed.data;
+    tctx.trace.setClientEventId(clientEventId);
     const repo = getLearningRepository();
 
     // ---- state.read: user_item_state ----
@@ -74,7 +77,7 @@ export async function POST(request: Request) {
     const acceptedAnswers = seed?.acceptedAnswers ?? [coreMeaning];
     const answerKeywords = seed?.answerKeywords ?? [];
 
-    const { correctness, feedback, status, scheduleQuality, shortCircuited } = await judgeLearnAnswer({
+    const { correctness, feedback, status, scheduleQuality, shortCircuited, fallbackUsed } = await judgeLearnAnswer({
       term,
       coreMeaning,
       answer,
@@ -83,6 +86,19 @@ export async function POST(request: Request) {
       answerKeywords,
       traceId,
     });
+
+    // ---- fallback.triggered: fallbackJudge（LLM 判题失败 → 关键词降级，Case 036）----
+    if (fallbackUsed) {
+      tctx.emitFallbackTriggered({
+        trigger_error_code: "LLM_JUDGE_FAILED",
+        chain_snapshot: [
+          { step: "llm_judge", from: "llm", to: "llm", status: "used" },
+          { step: "fallback_judge", from: "llm", to: "keyword_match", status: "used" },
+        ],
+        degradation_flag: true,
+        to_kind: "fallback_judge",
+      });
+    }
 
     // ---- rule.applied: empty_answer_short_circuit ----
     if (shortCircuited) {
@@ -201,7 +217,7 @@ export async function POST(request: Request) {
     };
 
     const resp = NextResponse.json(response, { status: 200, headers: { "x-trace-id": traceId } });
-    return endTraceSuccess(tctx, resp, `correctness=${correctness}, status=${status}`);
+    return endTraceSuccess(tctx, resp, `correctness=${correctness}, status=${status}`, fallbackUsed);
   } catch (err) {
     const appErr = toAppError(err, traceId);
     const status = appErr.kind === "AUTH_REQUIRED" ? 401 : appErr.kind === "INVALID_INPUT" ? 400 : 500;
@@ -217,6 +233,8 @@ interface JudgeResult {
   status: LearningStatus;
   scheduleQuality: InitialScheduleQuality;
   shortCircuited: boolean;
+  /** LLM 判题失败回退到关键词匹配（fallbackJudge）时为 true */
+  fallbackUsed: boolean;
 }
 
 async function judgeLearnAnswer(params: {
@@ -237,6 +255,7 @@ async function judgeLearnAnswer(params: {
       status: "EXPOSED",
       scheduleQuality: "FAIL",
       shortCircuited: true,
+      fallbackUsed: false,
     };
   }
 
@@ -257,6 +276,7 @@ async function judgeLearnAnswer(params: {
         status: "RECALLED_WITH_HELP",
         scheduleQuality: "HINTED",
         shortCircuited: false,
+        fallbackUsed: llmResult.source === "fallback",
       };
     }
     return {
@@ -265,6 +285,7 @@ async function judgeLearnAnswer(params: {
       status: "RECALLED_INDEPENDENTLY",
       scheduleQuality: "INDEPENDENT",
       shortCircuited: false,
+      fallbackUsed: llmResult.source === "fallback",
     };
   }
 
@@ -274,5 +295,6 @@ async function judgeLearnAnswer(params: {
     status: "EXPOSED",
     scheduleQuality: "FAIL",
     shortCircuited: false,
+    fallbackUsed: llmResult.source === "fallback",
   };
 }

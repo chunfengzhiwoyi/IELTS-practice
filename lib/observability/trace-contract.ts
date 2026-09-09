@@ -93,6 +93,8 @@ export const TraceEventSchema = z.object({
   error_code: z.string().nullable(),
   error_message: z.string().nullable(),
   payload: z.record(z.unknown()),
+  // Contract §1.5: 单条 payload 序列化后上限 4KB，超限截断并置 payload_truncated: true
+  payload_truncated: z.boolean().optional(),
 });
 
 export type TraceEvent = z.infer<typeof TraceEventSchema>;
@@ -116,8 +118,9 @@ export interface LlmAttemptPayload {
   provider: string;
   model_name: string;
   tier: "fast" | "main";
-  prompt_key: string;
-  prompt_version: string;
+  // Contract §1.6: whisper 端点允许 prompt 字段为 null（其余端点 MUST）
+  prompt_key: string | null;
+  prompt_version: string | null;
   token_usage: {
     prompt?: number;
     completion?: number;
@@ -166,6 +169,8 @@ export interface ResponseSentPayload {
   output_summary: string;
   fallback_used_flag: boolean;
   idempotent_replay?: boolean;
+  // Contract §1.6: 口语转写端点失败时标记前端文字回退已提供（034）
+  ui_fallback_offered?: boolean;
 }
 
 /** routing.decided payload */

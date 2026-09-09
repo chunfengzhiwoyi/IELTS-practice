@@ -25,14 +25,16 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const url = new URL(request.url);
+  const periodParam = url.searchParams.get("period") ?? "7d";
   const tctx = startTrace(traceId, "/api/report", {
-    input_summary: "report",
+    input_summary: "period=" + periodParam.slice(0, 50),
     method: "GET",
   });
   try {
     const user = await requireUser(traceId);
-    const url = new URL(request.url);
-    const period = (url.searchParams.get("period") ?? "7d") as ReportPeriod;
+    tctx.trace.setUser(user.id);
+    const period = periodParam as ReportPeriod;
 
     const learningRepo = getLearningRepository();
     const speakingRepo = getSpeakingRepository();
@@ -139,6 +141,18 @@ export async function GET(request: Request) {
         llmSummary = await generateReportSummaryWithLlm(report, traceId);
       } catch {
         // LLM 失败不影响报告
+      }
+      // ---- fallback.triggered: null_summary（LLM 总结失败 → 报告不阻塞，Case 028 相关）----
+      if (llmSummary === null) {
+        tctx.emitFallbackTriggered({
+          trigger_error_code: "REPORT_SUMMARY_FAILED",
+          chain_snapshot: [
+            { step: "llm_summary", from: "llm", to: "llm", status: "used" },
+            { step: "null_summary", from: "llm", to: "null", status: "used" },
+          ],
+          degradation_flag: true,
+          to_kind: "null_report_summary",
+        });
       }
     }
 

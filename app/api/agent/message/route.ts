@@ -43,15 +43,18 @@ const ResponseSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const lastRawMsg = Array.isArray(bodyRaw?.messages)
+    ? [...bodyRaw.messages].reverse().find((m: { role?: string }) => m?.role === "user")?.content
+    : null;
   const tctx = startTrace(traceId, "/api/agent/message", {
-    input_summary: "agent message",
+    input_summary: lastRawMsg ? "lastUserMsg=" + String(lastRawMsg).slice(0, 200) : "invalid body",
     method: "POST",
   });
 
   // 1. 输入校验（独立处理，不走兜底）
   let parsed: z.infer<typeof RequestSchema>;
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parseResult = RequestSchema.safeParse(bodyRaw);
     if (!parseResult.success) {
       throw new AppError(
@@ -157,6 +160,17 @@ export async function POST(request: Request) {
       ui_action_type: fallback.ui_action.type,
       persistence_required: fallback.ui_action.type !== "NONE",
       reject_reason: "llm_failed_mock_fallback",
+    });
+    // ---- fallback.triggered: LLM 失败 → 本地 mock 兜底（agent/message，§1.3 mock 兜底）----
+    tctx.emitFallbackTriggered({
+      trigger_error_code: "LLM_FAILED",
+      chain_snapshot: [
+        { step: "llm", from: "llm", to: "llm", status: "used" },
+        { step: "mock_fallback", from: "llm", to: "mock", status: "used" },
+      ],
+      degradation_flag: true,
+      // 本地确定性兜底归类为规则型降级（Contract to_kind 冻结枚举，无 mock 专用值）
+      to_kind: "rule_based_analysis",
     });
     const response = NextResponse.json(
       { ...fallback, fallback: true },

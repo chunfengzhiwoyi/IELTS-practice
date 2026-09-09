@@ -10,10 +10,16 @@
  *   - model: whisper-1
  *   - response_format: verbose_json（获取 word-level timestamps）
  *   - language: en（强制英文识别）
+ *
+ * M2（M2-P3B 补全）：接入 Trace（Contract §1.3 transcribe 行）
+ *   - request.received + llm.attempt(provider=whisper, prompt 字段 null, §1.6 特例)
+ *   - response.sent 错误路径带 ui_fallback_offered（Case 034 前端文字回退）
+ *   - 隐私：绝不记录音频字节，只记 metadata 指标（duration/wpm/pause）
  */
 import { NextResponse } from "next/server";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { logger } from "@/lib/observability/logger";
+import { startTrace, endTraceSuccess } from "@/lib/observability/trace-api-helper";
 import type { AudioMetadata, PauseInfo, TranscribeResponse, WordTimestamp } from "@/lib/speaking/audio-types";
 
 export const runtime = "nodejs";
@@ -23,7 +29,45 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const tctx = startTrace(traceId, "/api/speaking/transcribe", {
+    input_summary: "speaking transcribe (audio metadata only)",
+    method: "POST",
+  });
   const started = Date.now();
+
+  // 失败路径统一出口：错误响应 + ui_fallback_offered（前端可回退文字输入）
+  function fail(httpStatus: number, kind: string, message: string, llmErrorCode: string | null = null) {
+    if (llmErrorCode) {
+      tctx.trace.emitLlmAttempt(
+        {
+          attempt_purpose: "primary",
+          provider: "whisper",
+          model_name: "whisper-1",
+          tier: "fast",
+          prompt_key: null, // §1.6 whisper 特例：prompt 字段允许 null
+          prompt_version: null,
+          token_usage: {},
+          latency_ms: Date.now() - started,
+          raw_output: message.slice(0, 256),
+          raw_output_truncated: message.length > 256,
+          llm_error_code: llmErrorCode,
+        },
+        "error",
+      );
+    }
+    tctx.trace.emitResponseSent({
+      http_status: httpStatus,
+      app_error_code: kind,
+      output_summary: message.slice(0, 500),
+      fallback_used_flag: false,
+      ui_fallback_offered: true, // Case 034: 前端文字回退可用
+    });
+    tctx.trace.finalize(httpStatus, kind);
+    return NextResponse.json(
+      { error: { kind, message } },
+      { status: httpStatus, headers: { "x-trace-id": traceId } },
+    );
+  }
 
   try {
     // 1. 解析 FormData
@@ -31,17 +75,11 @@ export async function POST(request: Request) {
     const audioFile = formData.get("audio");
 
     if (!audioFile || !(audioFile instanceof File)) {
-      return NextResponse.json(
-        { error: { kind: "INVALID_INPUT", message: "缺少 audio 文件" } },
-        { status: 400, headers: { "x-trace-id": traceId } },
-      );
+      return fail(400, "INVALID_INPUT", "缺少 audio 文件");
     }
 
     if (audioFile.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: { kind: "INVALID_INPUT", message: "音频文件超过 25MB 限制" } },
-        { status: 400, headers: { "x-trace-id": traceId } },
-      );
+      return fail(400, "INVALID_INPUT", "音频文件超过 25MB 限制");
     }
 
     // 2. 调用 Whisper API
@@ -49,10 +87,7 @@ export async function POST(request: Request) {
     const whisperBaseUrl = process.env.WHISPER_BASE_URL ?? "https://api.openai.com/v1";
 
     if (!openaiKey) {
-      return NextResponse.json(
-        { error: { kind: "CONFIG_ERROR", message: "未配置 STT API Key（OPENAI_API_KEY 或 DEEPSEEK_API_KEY）" } },
-        { status: 503, headers: { "x-trace-id": traceId } },
-      );
+      return fail(503, "CONFIG_ERROR", "未配置 STT API Key（OPENAI_API_KEY 或 DEEPSEEK_API_KEY）", "CONFIG_ERROR");
     }
 
     // 构造 Whisper 请求
@@ -78,10 +113,7 @@ export async function POST(request: Request) {
         status: whisperRes.status,
         body: errBody.slice(0, 200),
       });
-      return NextResponse.json(
-        { error: { kind: "MODEL_ERROR", message: `语音识别失败 (${whisperRes.status})` } },
-        { status: 502, headers: { "x-trace-id": traceId } },
-      );
+      return fail(502, "MODEL_ERROR", `语音识别失败 (${whisperRes.status})`, "MODEL_ERROR");
     }
 
     const whisperData = await whisperRes.json() as WhisperVerboseResponse;
@@ -109,6 +141,22 @@ export async function POST(request: Request) {
       audioMetadata,
     };
 
+    // 4. Trace: llm.attempt（whisper，prompt null 特例；raw 只存 transcript 摘要）
+    const transcriptTruncated = transcript.length > 512;
+    tctx.trace.emitLlmAttempt({
+      attempt_purpose: "primary",
+      provider: "whisper",
+      model_name: "whisper-1",
+      tier: "fast",
+      prompt_key: null,
+      prompt_version: null,
+      token_usage: {},
+      latency_ms: Date.now() - started,
+      raw_output: transcriptTruncated ? `${transcript.slice(0, 256)}...[truncated]...${transcript.slice(-256)}` : transcript,
+      raw_output_truncated: transcriptTruncated,
+      temperature: undefined,
+    });
+
     logger.info("speaking.transcribe.success", {
       trace_id: traceId,
       duration,
@@ -118,17 +166,15 @@ export async function POST(request: Request) {
       latency_ms: Date.now() - started,
     });
 
-    return NextResponse.json(response, {
+    const resp = NextResponse.json(response, {
       status: 200,
       headers: { "x-trace-id": traceId },
     });
+    return endTraceSuccess(tctx, resp, `transcript=${transcript.slice(0, 200)}, duration=${duration}, wpm=${wpm}`, false);
   } catch (err) {
     const message = err instanceof Error ? err.message : "transcribe failed";
     logger.error("speaking.transcribe.error", { trace_id: traceId, error: message });
-    return NextResponse.json(
-      { error: { kind: "INTERNAL", message } },
-      { status: 500, headers: { "x-trace-id": traceId } },
-    );
+    return fail(500, "INTERNAL", message, "MODEL_ERROR");
   }
 }
 

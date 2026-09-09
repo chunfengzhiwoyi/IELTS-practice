@@ -36,7 +36,7 @@ import {
   type ValidationResultPayload,
   type FallbackTriggeredPayload,
 } from "@/lib/observability/trace-contract";
-import { isTraceEnabled, truncateRawOutput } from "@/lib/observability/trace-context";
+import { isTraceEnabled, truncateRawOutput, sha256Hex } from "@/lib/observability/trace-context";
 
 // =============================================================
 // M2 Trace: 内部事件发射辅助（直接用 traceId，不穿透 TraceContext）
@@ -77,7 +77,11 @@ function emitLlmAttempt(
   status: TraceEvent["status"] = "ok",
 ): void {
   const { raw_output_full, ...rest } = payload;
-  const truncated = truncateRawOutput(raw_output_full);
+  // Contract §3.6: 异常场景 raw output 全量（provider 错误 / schema 失败，status=error）。
+  // 质量门 fail 的 raw 全量受 append-only 分层埋点架构限制（发射时无法预知质量门结果），记为已知限制。
+  const truncated = status === "error"
+    ? { text: raw_output_full, truncated: false, sha256: sha256Hex(raw_output_full) }
+    : truncateRawOutput(raw_output_full);
   const fullPayload: LlmAttemptPayload = {
     ...rest,
     raw_output: truncated.text,

@@ -46,18 +46,22 @@ function itemToTask(item: { id: string; canonicalForm: string; contentJson: unkn
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const rawMode = bodyRaw && typeof bodyRaw.mode === "string" ? bodyRaw.mode : null;
+  const rawItemId = bodyRaw && typeof bodyRaw.itemId === "string" ? bodyRaw.itemId : null;
+  const rawModeStr = rawMode ? ("mode=" + rawMode + (rawItemId ? (", itemId=" + rawItemId) : "")) : "invalid body";
   const tctx = startTrace(traceId, "/api/review/session", {
-    input_summary: "review session",
+    input_summary: rawModeStr,
     method: "POST",
   });
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
     }
 
     const user = await requireUser(traceId);
+    tctx.trace.setUser(user.id);
     const repo = getLearningRepository();
     const now = new Date().toISOString();
 

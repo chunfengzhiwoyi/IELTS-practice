@@ -12,6 +12,11 @@
  *   ctx.emitFallbackTriggered({...});
  *   ctx.emitResponseSent({...});
  *   ctx.finalize(httpStatus, appErrorCode);
+ *
+ * Contract 对齐（M2_OBSERVABILITY_CONTRACT_V2_2）：
+ * - §1.5 单条 payload 序列化后上限 4KB，超限截断并置 payload_truncated: true
+ * - §1.4 header.user_hash = sha256(user_id + deployment_salt) 前 16 hex
+ * - §1.4 header.client_event_id（写路径，Console D 区关联键）
  */
 import { createHash } from "crypto";
 
@@ -46,21 +51,63 @@ export function isTraceEnabled(): boolean {
   return traceEnabled;
 }
 
+// Contract §1.5: 单条 payload 序列化后上限 4KB
+const PAYLOAD_LIMIT_BYTES = 4096;
+
+// Contract §3.2: deployment_salt 不入库、不入日志；demo 用固定 salt，生产可经 TRACE_SALT 注入
+function deploymentSalt(): string {
+  return process.env.TRACE_SALT ?? "m2-demo-deployment-salt";
+}
+
 function newEventId(): string {
   return `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function sha256(input: string): string {
+/** sha256 hex（前 16 hex；user_hash 契约长度） */
+export function sha256Hex(input: string): string {
   return createHash("sha256").update(input).digest("hex").slice(0, 16);
+}
+
+/**
+ * Contract §3.2: user_id → user_hash = sha256(user_id + deployment_salt) 前 16 hex。
+ * salt 不入库、不入日志。
+ */
+export function hashUserId(userId: string): string {
+  return sha256Hex(`${userId}${deploymentSalt()}`);
 }
 
 /** 截断 raw_output：head256 + tail256 + sha256 */
 export function truncateRawOutput(raw: string): { text: string; truncated: boolean; sha256: string } {
-  const hash = sha256(raw);
+  const hash = sha256Hex(raw);
   if (raw.length <= 512) return { text: raw, truncated: false, sha256: hash };
   const head = raw.slice(0, 256);
   const tail = raw.slice(-256);
   return { text: `${head}\n...[truncated ${raw.length - 512} chars]...\n${tail}`, truncated: true, sha256: hash };
+}
+
+/**
+ * Contract §1.5: payload 序列化后 >4KB 时截断。
+ * 保留关键摘要字段（前 6 个键）并标记，避免事件信封整体超限。
+ */
+export function truncatePayload(payload: Record<string, unknown>): {
+  payload: Record<string, unknown>;
+  truncated: boolean;
+} {
+  const raw = JSON.stringify(payload);
+  if (raw.length <= PAYLOAD_LIMIT_BYTES) {
+    return { payload, truncated: false };
+  }
+  const keys = Object.keys(payload);
+  const summary: Record<string, unknown> = {};
+  for (const k of keys.slice(0, 6)) {
+    const v = payload[k];
+    if (typeof v === "string") summary[k] = v.slice(0, 200);
+    else if (typeof v === "number" || typeof v === "boolean" || v === null) summary[k] = v;
+    else summary[k] = "[truncated]";
+  }
+  summary._payload_size = raw.length;
+  summary._payload_truncated_keys = keys.length;
+  return { payload: summary, truncated: true };
 }
 
 /** 计算 canonical state hash（用于 state.write 前后状态对比） */
@@ -70,7 +117,7 @@ export function canonicalStateHash(state: Record<string, unknown> | null): strin
     acc[k] = state[k];
     return acc;
   }, {});
-  return sha256(JSON.stringify(sorted));
+  return sha256Hex(JSON.stringify(sorted));
 }
 
 export class TraceContext {
@@ -113,6 +160,7 @@ export class TraceContext {
     if (!traceEnabled) return;
 
     this.seq += 1;
+    const { payload: safePayload, truncated } = truncatePayload(payload);
     const event: TraceEvent = {
       trace_id: this.traceId,
       event_id: newEventId(),
@@ -124,7 +172,8 @@ export class TraceContext {
       duration_ms: durationMs,
       error_code: errorCode,
       error_message: errorMessage ? errorMessage.slice(0, 256) : null,
-      payload,
+      payload: safePayload,
+      ...(truncated ? { payload_truncated: true as const } : {}),
     };
     traceStore.appendEvent(event);
   }
@@ -196,6 +245,25 @@ export class TraceContext {
   emitReportAggregated(payload: ReportAggregatedPayload): void {
     const status: TraceEvent["status"] = payload.insufficient_data_flag ? "degraded" : "ok";
     this.emit("report.aggregated", payload as unknown as Record<string, unknown>, status);
+  }
+
+  /**
+   * Contract §1.4: 记录 user_hash（auth 解析后调用）。
+   * 仅 observability，不参与业务逻辑。
+   */
+  setUser(userId: string): void {
+    if (!traceEnabled || !userId) return;
+    traceStore.updateHeader(this.traceId, { user_hash: hashUserId(userId) });
+  }
+
+  /**
+   * Contract §1.4: 写路径请求体解析后回填真实 client_event_id。
+   * 解决 startTrace 时 body 尚未解析、request.received 只能先占位的问题，
+   * 保证 Console D 区按 client_event_id 关联（Case 037 双 trace 对比）可用。
+   */
+  setClientEventId(clientEventId: string): void {
+    if (!traceEnabled || !clientEventId) return;
+    traceStore.updateHeader(this.traceId, { client_event_id: clientEventId });
   }
 
   // ---- finalize（请求结束时回填 header）----

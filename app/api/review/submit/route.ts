@@ -35,20 +35,23 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const rawItemId = bodyRaw && typeof bodyRaw.itemId === "string" ? bodyRaw.itemId : null;
+  const rawAnswer = bodyRaw && typeof bodyRaw.answer === "string" ? bodyRaw.answer : null;
   const tctx = startTrace(traceId, "/api/review/submit", {
-    input_summary: "review submit",
-    client_event_id: "",
+    input_summary: rawItemId ? "itemId=" + rawItemId + ", answer=" + (rawAnswer ?? "").slice(0, 200) : "invalid body",
     method: "POST",
   });
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
     }
 
     const user = await requireUser(traceId);
+    tctx.trace.setUser(user.id);
     const { itemId, taskType, answer, usedHint, skipped, clientEventId } = parsed.data;
+    tctx.trace.setClientEventId(clientEventId);
     const repo = getLearningRepository();
 
     // ---- state.read: user_item_state ----
@@ -71,6 +74,7 @@ export async function POST(request: Request) {
 
     let result: ReviewResult;
     let shortCircuited = false;
+    let fallbackUsed = false;
     if (skipped) {
       result = "SKIPPED";
     } else if (isAnswerContentEmpty(answer)) {
@@ -92,11 +96,25 @@ export async function POST(request: Request) {
         answerKeywords,
         traceId,
       });
+      fallbackUsed = llmResult.source === "fallback";
       if (llmResult.correct) {
         result = usedHint ? "CORRECT_WITH_HINT" : "CORRECT_INDEPENDENT";
       } else {
         result = "INCORRECT";
       }
+    }
+
+    // ---- fallback.triggered: fallbackJudge（LLM 判题失败 → 关键词降级，Case 036）----
+    if (fallbackUsed) {
+      tctx.emitFallbackTriggered({
+        trigger_error_code: "LLM_JUDGE_FAILED",
+        chain_snapshot: [
+          { step: "llm_judge", from: "llm", to: "llm", status: "used" },
+          { step: "fallback_judge", from: "llm", to: "keyword_match", status: "used" },
+        ],
+        degradation_flag: true,
+        to_kind: "fallback_judge",
+      });
     }
 
     const nextReviewAt = computeReviewNextAt(result);
@@ -220,7 +238,7 @@ export async function POST(request: Request) {
       { eventId: event.id, result, feedback, status: newState.status, nextReviewAt, remaining },
       { status: 200, headers: { "x-trace-id": traceId } },
     );
-    return endTraceSuccess(tctx, resp, `result=${result}, status=${newState.status}`);
+    return endTraceSuccess(tctx, resp, `result=${result}, status=${newState.status}`, fallbackUsed);
   } catch (err) {
     const appErr = toAppError(err, traceId);
     const status = appErr.kind === "AUTH_REQUIRED" ? 401 : appErr.kind === "INVALID_INPUT" ? 400 : 500;

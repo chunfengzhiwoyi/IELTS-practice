@@ -9,6 +9,7 @@ import type { NextResponse } from "next/server";
 import { AppError } from "@/lib/observability/errors";
 import { TraceContext } from "@/lib/observability/trace-context";
 import type {
+  FallbackTriggeredPayload,
   ReportAggregatedPayload,
   RequestReceivedPayload,
   RetrievalExecutedPayload,
@@ -28,6 +29,7 @@ export interface TraceRouteContext {
   emitRuleApplied: (payload: RuleAppliedPayload) => void;
   emitStateWrite: (payload: StateWritePayload) => void;
   emitReportAggregated: (payload: ReportAggregatedPayload) => void;
+  emitFallbackTriggered: (payload: FallbackTriggeredPayload) => void;
 }
 
 /**
@@ -53,6 +55,7 @@ export function startTrace(
     emitRuleApplied: (p) => trace.emitRuleApplied(p),
     emitStateWrite: (p) => trace.emitStateWrite(p),
     emitReportAggregated: (p) => trace.emitReportAggregated(p),
+    emitFallbackTriggered: (p) => trace.emitFallbackTriggered(p),
   };
 }
 

@@ -15,6 +15,11 @@
  * - 进程重启后 trace 丢失（demo 可接受）
  * - 不支持跨进程查询
  * - 生产环境需切换到 Supabase Trace Store（接口相同）
+ *
+ * Retention（Contract §1.7 / §3.7 硬控制④）：
+ * - events 30 天 / trace 头 90 天滚动清理
+ * - Memory 实现提供 prune() 结构能力（惰性触发于 listTraceIds）；
+ *   进程内生命周期通常短于 TTL，生产级滚动清理由持久化后端（Supabase）承载。
  */
 import type { TraceEvent, TraceHeader } from "@/lib/observability/trace-contract";
 
@@ -26,6 +31,9 @@ interface TraceRecord {
   header: TraceHeader;
   events: TraceEvent[];
 }
+
+export const EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30d
+export const HEADER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000; // 90d
 
 class MemoryTraceStore {
   private traces = new Map<string, TraceRecord>();
@@ -84,8 +92,35 @@ class MemoryTraceStore {
     return { header: record.header, events };
   }
 
-  /** 列出所有 trace_id（debug 用） */
+  /**
+   * Contract §1.7 保留期：events 30d / trace 头 90d 滚动清理。
+   * - 超过 90d 的整条 trace 删除（头+事件）；
+   * - 未超 90d 但事件超 30d 的，裁剪过期事件（保留头，header.event_count 同步）。
+   * 返回清理的完整 trace 条数。
+   */
+  prune(now = Date.now(), eventsRetentionMs = EVENT_RETENTION_MS, headerRetentionMs = HEADER_RETENTION_MS): number {
+    let removedTraces = 0;
+    for (const [traceId, record] of [...this.traces.entries()]) {
+      const startedAt = new Date(record.header.started_at).getTime();
+      if (Number.isNaN(startedAt)) continue;
+      if (now - startedAt > headerRetentionMs) {
+        this.traces.delete(traceId);
+        removedTraces += 1;
+        continue;
+      }
+      // 事件级 30d 裁剪
+      const kept = record.events.filter((e) => now - new Date(e.ts).getTime() <= eventsRetentionMs);
+      if (kept.length !== record.events.length) {
+        record.events = kept;
+        record.header.event_count = kept.length;
+      }
+    }
+    return removedTraces;
+  }
+
+  /** 列出所有 trace_id（debug 用；惰性执行一次 retention prune） */
   listTraceIds(limit = 50): string[] {
+    this.prune();
     return Array.from(this.traces.keys()).slice(-limit);
   }
 

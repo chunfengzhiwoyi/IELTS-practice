@@ -58,19 +58,22 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const rawSessionId = bodyRaw && typeof bodyRaw.sessionId === "string" ? bodyRaw.sessionId : null;
+  const rawAnswer = bodyRaw && typeof bodyRaw.answer === "string" ? bodyRaw.answer : null;
   const tctx = startTrace(traceId, "/api/speaking/analyze", {
-    input_summary: "speaking analyze",
-    session_id: "",
+    input_summary: rawSessionId ? "sessionId=" + rawSessionId + ", answerLen=" + (rawAnswer?.length ?? 0) + ", answer=" + (rawAnswer ?? "").slice(0, 200) : "invalid body",
+    session_id: rawSessionId ?? "",
     method: "POST",
   });
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
     }
 
     const user = await requireUser(traceId);
+    tctx.trace.setUser(user.id);
     const { sessionId, answer, isSecondAnswer, audioMetadata, abilityContext: clientAbilityContext } = parsed.data;
     const repo = getSpeakingRepository();
 
@@ -129,6 +132,19 @@ export async function POST(request: Request) {
     );
 
     const fallbackUsed = analysis.ieltsAnalysis === undefined;
+
+    // ---- fallback.triggered: 规则引擎降级（Case 021/036）----
+    if (fallbackUsed) {
+      tctx.emitFallbackTriggered({
+        trigger_error_code: "LLM_ANALYSIS_UNAVAILABLE",
+        chain_snapshot: [
+          { step: "llm_analyze", from: "llm", to: "llm", status: "used" },
+          { step: "rule_engine", from: "llm", to: "rule_engine", status: "used" },
+        ],
+        degradation_flag: true,
+        to_kind: "rule_based_analysis",
+      });
+    }
 
     // ---- rule.applied: speaking_rule_engine（LLM 降级时）----
     if (fallbackUsed) {

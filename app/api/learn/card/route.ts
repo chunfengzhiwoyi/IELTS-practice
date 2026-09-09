@@ -21,6 +21,7 @@ import { generateWordCardWithLlm } from "@/lib/llm/tasks/generate-word-card";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
+import { canonicalStateHash } from "@/lib/observability/trace-context";
 
 export const runtime = "nodejs";
 
@@ -30,18 +31,20 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
+  const bodyRaw = await request.json().catch(() => null);
+  const termRaw = bodyRaw && typeof bodyRaw.term === "string" ? bodyRaw.term : null;
   const tctx = startTrace(traceId, "/api/learn/card", {
-    input_summary: "learn card",
+    input_summary: termRaw ? "term=" + termRaw.slice(0, 200) : "invalid body",
     method: "POST",
   });
   try {
-    const bodyRaw = await request.json().catch(() => null);
     const parsed = RequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       throw new AppError("INVALID_INPUT", parsed.error.issues.map((i) => i.message).join("; "), traceId);
     }
 
     const user = await requireUser(traceId);
+    tctx.trace.setUser(user.id);
     const normalized = normalizeTerm(parsed.data.term);
 
     // ---- retrieval.executed: seed catalog lookup ----
@@ -72,7 +75,18 @@ export async function POST(request: Request) {
     }
 
     const repo = getLearningRepository();
+
+    // ---- state.write: learning_item（幂等建 item，Contract §1.3 learn/card）----
+    const priorItem = await repo.findItemByNormalizedTerm(normalized);
     const item = await repo.createOrGetItem(seedToLearningItem(seedItem));
+    tctx.emitStateWrite({
+      entity: "learning_item",
+      keys: { itemId: item.id, canonicalKey: item.canonicalKey },
+      idempotency_outcome: priorItem ? "duplicate_ignored" : "inserted",
+      state_before: priorItem ? { id: priorItem.id, canonicalForm: priorItem.canonicalForm } : null,
+      state_after: { id: item.id, canonicalForm: item.canonicalForm },
+      canonical_state_hash: canonicalStateHash({ id: item.id, canonicalForm: item.canonicalForm }),
+    });
 
     // ---- state.read: user_item_state ----
     const currentState = await repo.getUserItemState(user.id, item.id);
