@@ -153,8 +153,14 @@ canonicalKey("well-being") = "well being"
 | `lib/learning/repositories/memory-learning-repository.ts` | `normalizedIndex` → `canonicalIndex`；`findItemByNormalizedTerm()` / `createOrGetItem()` 改用 canonicalKey |
 | `lib/learning/repositories/supabase-learning-repository.ts` | `toItem()` 映射 canonical_key；`findItemByNormalizedTerm()` 查 canonical_key 列；`createOrGetItem()` onConflict 改用 canonical_key |
 | `lib/llm/tasks/generate-word-card.ts` | `stableItemId()` 改用 `finalCanonical` |
-| `lib/client/demo-service.ts` | 创建 LearningItem 时填充 canonicalKey |
+| `lib/client/demo-service.ts` | 创建 LearningItem 时填充 canonicalKey（复用 `canonicalKey()`，不内联） |
 | `lib/learning/index.ts` | 导出 `canonicalKey` / `stableItemId` / `isSeedItemId` |
+
+**一致性清扫（提交内）：** 三处早期内联的 `replace(/-/g, "")` 统一改为复用
+`canonicalKey()`（demo-service / Memory repo `findItemByNormalizedTerm` / Supabase repo
+`toItem` 与查询），确保所有 canonical identity 计算走同一函数（Supabase 旧行 fallback
+也会先 normalize 再 strip hyphen）；清理 7 个文件的 UTF-8 BOM（编辑器副作用）；
+回退 package-lock.json 的无关 npm 元数据变动（保持最小变更面）。
 
 ---
 
@@ -234,7 +240,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_items_canonical_key ON learning_i
 
 ## 9. Regression
 
-### 新增测试：`tests/unit/badcase-035-canonicalization.test.ts`（13 tests）
+### 新增测试：`tests/unit/badcase-035-canonicalization.test.ts`（15 tests）
 
 | 测试类 | 用例 | 验证 |
 |--------|------|------|
@@ -242,6 +248,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_items_canonical_key ON learning_i
 | collision safety | 4 | 多词短语保留空格、co-op/coop 已知 trade-off、多连字符短语限制、数字连字符 synthetic case |
 | findSeedItem | 1 | seed 无连字符词，canonicalKey === normalizedTerm |
 | Memory Repository | 3 | well-being/wellbeing 创建同一 item、不同词不合并、seedToLearningItem 含 canonicalKey |
+| learn/card 路由端到端（r4 对齐） | 2 | 两次 POST learn/card（well-being / wellbeing）返回同一 item.id（deduplicated=true，对齐 Eval r4 断言）；r1 保持——首次请求 retrieval.executed 仍记录 knowledge_miss_flag=true |
+
+端到端测试通过 `__setProviderForTests("mock", …)` 注入 WordCard mock provider，直接调用
+`POST /api/learn/card` 路由（与 Eval Runner 的调用方式一致），不依赖真实 LLM。
+display form 语义验证：同一 canonical identity 只保留一份状态，`canonicalForm` 保留**首次创建**的书写形式（"well-being"）。
 
 ### 全量回归结果
 
@@ -249,11 +260,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_items_canonical_key ON learning_i
 |--------|------|
 | `tsc --noEmit` | **PASS** |
 | `next build` | **PASS** |
-| Bad Case 035 测试 | **13/13 PASS** |
+| Bad Case 035 测试 | **15/15 PASS** |
 | M1 ELS-EVAL-037/038 | **PASS** |
 | M2 Phase 1 测试 | **18/18 PASS** |
 | M2 Phase 2 测试 | **18/18 PASS** |
-| 全量 unit | **188 passed / 1 failed**（1 预存在：llm-safety.test.ts） |
+| 全量 unit | **190 passed / 1 failed**（1 预存在：llm-safety.test.ts；本 worktree 无 .env.local，env.test.ts 通过） |
 
 ---
 

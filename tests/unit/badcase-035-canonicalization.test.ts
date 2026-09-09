@@ -1,15 +1,23 @@
-﻿/**
+/**
  * Bad Case 035 — Lexical Canonicalization Regression Tests
  * ------------------------------------------------------------
  * 验证 well-being / wellbeing 等书写变体映射到同一个 canonical identity，
  * 同时确保不会无条件删除所有 lexical separators（collision safety）。
  */
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { canonicalKey, normalizeTerm, stableItemId } from "@/lib/learning/item-id";
 import { findSeedItem, seedToLearningItem } from "@/lib/learning/seed-catalog";
 import { MemoryLearningRepository } from "@/lib/learning/repositories/memory-learning-repository";
 import type { LearningItem } from "@/lib/learning/types";
+
+import { POST as LEARN_CARD } from "@/app/api/learn/card/route";
+import { __resetRegistryForTests, __setProviderForTests } from "@/lib/llm/provider-registry";
+import type { LlmProvider } from "@/lib/llm/provider";
+import type { LlmChatRequest, LlmChatResponse } from "@/lib/llm/types";
+import { _resetRepositories } from "@/lib/repository-factory";
+import { setTraceEnabled } from "@/lib/observability/trace-context";
+import { traceStore } from "@/lib/observability/trace-store";
 
 describe("Bad Case 035: canonicalKey — 连字符不敏感", () => {
   it("well-being 和 wellbeing 生成相同 canonicalKey", () => {
@@ -134,8 +142,8 @@ describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
     const item1: LearningItem = {
       id: stableItemId(canonicalKey("sustainable")),
       itemType: "WORD",
-      canonicalForm: "mitigate",
-      normalizedTerm: "mitigate",
+      canonicalForm: "sustainable",
+      normalizedTerm: "sustainable",
       canonicalKey: canonicalKey("sustainable"),
       contentJson: {} as never,
       topicTags: [],
@@ -145,8 +153,8 @@ describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
     const item2: LearningItem = {
       id: stableItemId(canonicalKey("significant")),
       itemType: "WORD",
-      canonicalForm: "alleviate",
-      normalizedTerm: "alleviate",
+      canonicalForm: "significant",
+      normalizedTerm: "significant",
       canonicalKey: canonicalKey("significant"),
       contentJson: {} as never,
       topicTags: [],
@@ -168,3 +176,84 @@ describe("Bad Case 035: Memory Repository — createOrGetItem 去重", () => {
     }
   });
 });
+
+describe("Bad Case 035: learn/card 路由端到端（对齐 Eval r4 断言）", () => {
+  beforeEach(async () => {
+    traceStore.reset();
+    setTraceEnabled(true);
+    _resetRepositories();
+    __resetRegistryForTests();
+    __setProviderForTests("mock", makeWordCardProvider());
+  });
+
+  it("well-being 与 wellbeing 两次请求返回同一个 item.id（deduplicated=true）", async () => {
+    const resA = await LEARN_CARD(
+      new Request("http://localhost/api/learn/card", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-trace-id": "trc_035_rt_a" },
+        body: JSON.stringify({ term: "well-being" }),
+      }),
+    );
+    expect(resA.status).toBe(200);
+    const jsonA = (await resA.json()) as { item?: { id?: string; canonicalForm?: string } };
+    const itemAId = jsonA.item?.id;
+    expect(itemAId).toBeTruthy();
+
+    const resB = await LEARN_CARD(
+      new Request("http://localhost/api/learn/card", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-trace-id": "trc_035_rt_b" },
+        body: JSON.stringify({ term: "wellbeing" }),
+      }),
+    );
+    expect(resB.status).toBe(200);
+    const jsonB = (await resB.json()) as { item?: { id?: string; canonicalForm?: string } };
+    expect(jsonB.item?.id).toBe(itemAId);
+    // display form 保留首次创建的书写形式（同一 canonical identity 只保留一份状态）
+    expect(jsonA.item?.canonicalForm).toBe("well-being");
+    expect(jsonB.item?.canonicalForm).toBe("well-being");
+  });
+
+  it("r1 保持：well-being 首次请求 retrieval.executed 仍记录 knowledge_miss_flag=true", async () => {
+    await LEARN_CARD(
+      new Request("http://localhost/api/learn/card", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-trace-id": "trc_035_rt_c" },
+        body: JSON.stringify({ term: "well-being" }),
+      }),
+    );
+    const t = traceStore.getTrace("trc_035_rt_c");
+    const ret = t?.events.find((e) => e.event_type === "retrieval.executed");
+    expect(ret?.payload.knowledge_miss_flag).toBe(true);
+    expect(ret?.payload.knowledge_object_ids).toEqual([]);
+  });
+});
+
+function makeWordCardProvider(): LlmProvider {
+  return {
+    kind: "mock",
+    async chat(req: LlmChatRequest): Promise<LlmChatResponse> {
+      const lastUser = [...req.messages].reverse().find((m) => m.role === "user");
+      const raw = lastUser?.content ?? "";
+      const term = raw.includes("：") ? raw.split("：").pop()!.trim() : raw;
+      const normalized = term.toLowerCase();
+      const card = {
+        term,
+        normalizedTerm: normalized,
+        itemType: "WORD",
+        phonetic: "/test/",
+        partOfSpeech: "noun",
+        coreMeaning: "健康；幸福",
+        usageContext: "IELTS 写作/口语 health 话题",
+        collocations: ["physical well-being"],
+        exampleSentence: "Exercise improves well-being.",
+        exampleTranslation: "运动改善健康。",
+        commonMistake: "well-being 与 wellbeing 同义，书写变体不影响含义。",
+        topicTags: ["health"],
+        acceptedAnswers: ["健康", "幸福"],
+        answerKeywords: ["健康", "幸福"],
+      };
+      return { content: JSON.stringify(card), model: "mock-model", usage: { input_tokens: 1, output_tokens: 1 } };
+    },
+  };
+}

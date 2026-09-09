@@ -19,6 +19,7 @@ import type {
   LearningRepository,
   UpsertUserItemStateInput,
 } from "@/lib/learning/repository";
+import { canonicalKey } from "@/lib/learning/item-id";
 
 export class MemoryLearningRepository implements LearningRepository {
   private items = new Map<string, LearningItem>(); // keyed by id
@@ -29,7 +30,7 @@ export class MemoryLearningRepository implements LearningRepository {
 
   async findItemByNormalizedTerm(normalizedTerm: string): Promise<LearningItem | null> {
     // 使用 canonicalKey 实现连字符不敏感查找
-    const key = normalizedTerm.trim().toLowerCase().replace(/-/g, "");
+    const key = canonicalKey(normalizedTerm);
     const id = this.canonicalIndex.get(key);
     if (!id) return null;
     return this.items.get(id) ?? null;

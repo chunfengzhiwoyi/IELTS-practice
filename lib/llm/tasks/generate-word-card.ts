@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LLM Task: 生成词卡（seed 未命中时使用）
  * Knowledge Layer V1：检索相关知识注入 system prompt。
  */

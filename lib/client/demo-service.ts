@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 /**
  * Browser Demo Service
  * ------------------------------------------------------------
@@ -10,7 +10,7 @@ import { getItem, setItem } from "@/lib/client/storage";
 import { isAnswerContentEmpty } from "@/lib/learning/answer-content";
 import { computeStreak, computeReviewAccuracy } from "@/lib/client/progress";
 import { localDayKey } from "@/lib/client/day";
-import { normalizeTerm, stableItemId } from "@/lib/learning/item-id";
+import { canonicalKey, normalizeTerm, stableItemId } from "@/lib/learning/item-id";
 import type {
   SeedLearningItem,
   LearningItem,
@@ -149,7 +149,7 @@ export async function getWordCard(term: string): Promise<
       itemType: cached.itemType,
       canonicalForm: cached.term,
       normalizedTerm: cached.normalizedTerm,
-      canonicalKey: cached.normalizedTerm.replace(/-/g, ""),
+      canonicalKey: canonicalKey(cached.normalizedTerm),
       contentJson: cached,
       topicTags: cached.topicTags,
       createdAt: new Date().toISOString(),
@@ -850,7 +850,7 @@ function seedToItem(seed: SeedLearningItem): LearningItem {
     itemType: seed.itemType,
     canonicalForm: seed.term,
     normalizedTerm: seed.normalizedTerm,
-    canonicalKey: seed.normalizedTerm.replace(/-/g, ""),
+    canonicalKey: canonicalKey(seed.normalizedTerm),
     contentJson: seed,
     topicTags: seed.topicTags,
     createdAt: new Date().toISOString(),

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * M2 Phase 2 — Product State & Decision Trace Tests
  * ------------------------------------------------------------
  * Fixtures A-E + Endpoint Node Conformance + Idempotency Trace

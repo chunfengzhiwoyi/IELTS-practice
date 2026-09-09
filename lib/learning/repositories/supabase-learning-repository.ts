@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SupabaseLearningRepository
  * ------------------------------------------------------------
  * LearningRepository 的 Supabase 实现；DATA_PROVIDER=supabase 时使用。
@@ -18,6 +18,7 @@
  *     等 server-only 模块打进客户端包。
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { canonicalKey } from "@/lib/learning/item-id";
 import type {
   LearningEvent,
   LearningItem,
@@ -61,7 +62,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       itemType: row.item_type as ItemType,
       canonicalForm: row.canonical_form,
       normalizedTerm: row.normalized_term ?? row.canonical_form.toLowerCase(),
-      canonicalKey: row.canonical_key ?? row.normalized_term?.replace(/-/g, '') ?? row.canonical_form.toLowerCase().replace(/-/g, ''),
+      canonicalKey: row.canonical_key ?? canonicalKey(row.normalized_term ?? row.canonical_form),
       contentJson: row.content_json as unknown as SeedLearningItem,
       topicTags: row.topic_tags ?? [],
       createdAt: row.created_at,
@@ -108,7 +109,7 @@ export class SupabaseLearningRepository implements LearningRepository {
     const { data, error } = await sb
       .from("learning_items")
       .select("*")
-      .eq("canonical_key", normalizedTerm.trim().toLowerCase().replace(/-/g, ""))
+      .eq("canonical_key", canonicalKey(normalizedTerm))
       .maybeSingle();
     if (error) throw error;
     return data ? this.toItem(data) : null;
