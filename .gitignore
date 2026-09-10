@@ -48,3 +48,19 @@ Thumbs.db
 
 # Misc
 *.tsbuildinfo
+
+# Vercel credential dumps (never commit)
+/vercel-env-production.txt
+/vercel-upload.env
+
+# Agent workspace
+/.workbuddy/
+
+# Local scratch build dumps (next.js chunk inspection artifacts)
+/_c_*.js
+/_chk*.js
+/_chunks*.txt
+/_login*.html
+
+# Dashboard implementation kit (local extracted copy; baseline zip kept out of tree)
+/scripts/_dashboard_kit_extracted/

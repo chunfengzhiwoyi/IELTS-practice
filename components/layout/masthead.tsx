@@ -23,6 +23,7 @@ export function Masthead() {
   const isHome = pathname === "/";
   // 登录/找回密码页不显示账户控制，避免与页面表单重复
   const isAuthPage = pathname === "/login" || pathname.startsWith("/reset-password");
+  const isDashboard = pathname.startsWith("/dashboard");
 
   useEffect(() => {
     setStreak(computeStreak());
@@ -32,6 +33,10 @@ export function Masthead() {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  // Dashboard 自带顶栏，且其 overlay(drawer/popover) 不应被全站 masthead 干扰（C2）
+  // 注意：必须放在所有 Hook 之后，避免违反 rules-of-hooks。
+  if (isDashboard) return null;
 
   const handleSignOut = async () => {
     const supabase = createSupabaseBrowserClient();

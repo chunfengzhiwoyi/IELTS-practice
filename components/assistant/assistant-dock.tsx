@@ -17,8 +17,11 @@ export function AssistantDock() {
   // 全局统一的 LLM 在线状态（与 Masthead / 主页共享同一份）
   const { status } = useLlmStatus();
 
-  // 登录 / 鉴权流程中不显示助手机
-  const hidden = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  // 登录 / 鉴权流程中不显示助手机；Dashboard overlay(drawer z-50 / popover z-60) 也需避让（C2）
+  const hidden =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/dashboard");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
