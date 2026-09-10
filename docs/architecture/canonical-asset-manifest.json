@@ -593,15 +593,16 @@
                        "target_path":  "app/api/dashboard/bad-cases/route.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "B63C0BFC5DF4F948B49B01C3D81215C93246CEDF8435BE96B6B833BF4F05CD63"
                    },
                    {
                        "source_path":  "app/api/dashboard/lifecycle/[stageId]/route.ts",
                        "source_state":  "UNTRACKED",
                        "category":  "DASHBOARD_PRODUCT",
-                       "source_sha256":  null,
-                       "source_size":  0,
+                       "source_sha256":  "04BE624DE16151FDA4275D2D4D4405262BD1859F5A91300522C3ACD89860D910",
+                       "source_size":  1421,
                        "exists_in_verified_base":  false,
                        "verified_base_path":  "app/api/dashboard/lifecycle/[stageId]/route.ts",
                        "relationship_to_496ae31":  "ABSENT_IN_VERIFIED_BASE",
@@ -609,15 +610,16 @@
                        "target_path":  "app/api/dashboard/lifecycle/[stageId]/route.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "04BE624DE16151FDA4275D2D4D4405262BD1859F5A91300522C3ACD89860D910"
                    },
                    {
                        "source_path":  "app/api/dashboard/modules/[moduleId]/route.ts",
                        "source_state":  "UNTRACKED",
                        "category":  "DASHBOARD_PRODUCT",
-                       "source_sha256":  null,
-                       "source_size":  0,
+                       "source_sha256":  "055CA5E2293656CC14FDF5573D4397312828E6C8AA723EE57ED406F4192354FC",
+                       "source_size":  1369,
                        "exists_in_verified_base":  false,
                        "verified_base_path":  "app/api/dashboard/modules/[moduleId]/route.ts",
                        "relationship_to_496ae31":  "ABSENT_IN_VERIFIED_BASE",
@@ -625,8 +627,9 @@
                        "target_path":  "app/api/dashboard/modules/[moduleId]/route.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "055CA5E2293656CC14FDF5573D4397312828E6C8AA723EE57ED406F4192354FC"
                    },
                    {
                        "source_path":  "app/api/dashboard/route.ts",
@@ -641,15 +644,16 @@
                        "target_path":  "app/api/dashboard/route.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "4E0DB792434B346143F65EB76113D534DE20B4629A1AFC70A7E47C3FD347DE57"
                    },
                    {
                        "source_path":  "app/api/dashboard/traces/[traceId]/route.ts",
                        "source_state":  "UNTRACKED",
                        "category":  "DASHBOARD_PRODUCT",
-                       "source_sha256":  null,
-                       "source_size":  0,
+                       "source_sha256":  "1D3B7E96456F8EF3AAE3977AE30D480DB2DB7CD8567969DAEF14349CE0A153E7",
+                       "source_size":  669,
                        "exists_in_verified_base":  false,
                        "verified_base_path":  "app/api/dashboard/traces/[traceId]/route.ts",
                        "relationship_to_496ae31":  "ABSENT_IN_VERIFIED_BASE",
@@ -657,8 +661,9 @@
                        "target_path":  "app/api/dashboard/traces/[traceId]/route.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "1D3B7E96456F8EF3AAE3977AE30D480DB2DB7CD8567969DAEF14349CE0A153E7"
                    },
                    {
                        "source_path":  "app/dashboard/page.tsx",
@@ -673,8 +678,9 @@
                        "target_path":  "app/dashboard/page.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "A70F8596C5794E9AEF18A2A8CBF0D6B99C0F14787E2F6C3FF93B8D6738DC8872"
                    },
                    {
                        "source_path":  "components/dashboard/DashboardPage.tsx",
@@ -689,8 +695,9 @@
                        "target_path":  "components/dashboard/DashboardPage.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "5AD6067C83CEA7068A3B1A83874CF1DD959DC71EEF25CF5DC76A1641F6D2FCD1"
                    },
                    {
                        "source_path":  "components/dashboard/components/DashboardHeader.tsx",
@@ -705,8 +712,9 @@
                        "target_path":  "components/dashboard/components/DashboardHeader.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "431D9E7D3AE76F5CCE9C5AA8A4139A3ED5C17B10ED648948C47E98649B00A620"
                    },
                    {
                        "source_path":  "components/dashboard/components/DashboardIcon.tsx",
@@ -721,8 +729,9 @@
                        "target_path":  "components/dashboard/components/DashboardIcon.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "E7779EE572322418FC6ED6218A80C595019194A0BB4D9B75BC89F56DA24DA52A"
                    },
                    {
                        "source_path":  "components/dashboard/components/LearningImpactSection.tsx",
@@ -737,8 +746,9 @@
                        "target_path":  "components/dashboard/components/LearningImpactSection.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "6DA4B4B4F9166A1AEC56BEFF080C77D66223F7F329BF2A8263384CDF49BEAAE6"
                    },
                    {
                        "source_path":  "components/dashboard/components/LifecycleSection.tsx",
@@ -753,8 +763,9 @@
                        "target_path":  "components/dashboard/components/LifecycleSection.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "239A2D5E13D1A0D4F0ECE4FC13E71FA0C9AEDB1EDB3DFEE021E930A4EEFBD510"
                    },
                    {
                        "source_path":  "components/dashboard/components/MetricValue.tsx",
@@ -769,8 +780,9 @@
                        "target_path":  "components/dashboard/components/MetricValue.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "ACEE134D010519A5B4C71689690CBD9E4DE969AE6FBE0FB369962F53319BE951"
                    },
                    {
                        "source_path":  "components/dashboard/components/OverlayHost.tsx",
@@ -785,8 +797,9 @@
                        "target_path":  "components/dashboard/components/OverlayHost.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "E4327A80B4033E59AB5781AAC79EC67DF0935792AC78FCCD28B09948893B230A"
                    },
                    {
                        "source_path":  "components/dashboard/components/ProductDiagnosisSection.tsx",
@@ -801,8 +814,9 @@
                        "target_path":  "components/dashboard/components/ProductDiagnosisSection.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "BD25CA6730D7BAD7D826A11996D36BA36C9DFE0A7B40860962C2067F949B64BE"
                    },
                    {
                        "source_path":  "components/dashboard/components/ProductHealthSection.tsx",
@@ -817,8 +831,9 @@
                        "target_path":  "components/dashboard/components/ProductHealthSection.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "05E4F8A7E8E617A1789A3E75B6DE4BD5AE3001DCF91117F4B85E8CA623C1ACBB"
                    },
                    {
                        "source_path":  "components/dashboard/components/SystemKnowledgeSection.tsx",
@@ -833,8 +848,9 @@
                        "target_path":  "components/dashboard/components/SystemKnowledgeSection.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "8C2900AF4EEA75F4F60B45C45411EF31FBF29F2CE47CDCB85724A1D7805A6CD5"
                    },
                    {
                        "source_path":  "components/dashboard/dashboard.css",
@@ -849,8 +865,9 @@
                        "target_path":  "components/dashboard/dashboard.css",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "A0A98045625AA7B93EE50F0239D64A75FDD6C673E0DA2570DCA7B5F693A05667"
                    },
                    {
                        "source_path":  "docs/ELS_EVALUATION_V1.json",
@@ -929,8 +946,9 @@
                        "target_path":  "docs/architecture/REPO-ARCH-02-INVENTORY.md",
                        "migration_phase":  "ARCH-03A",
                        "validation_after_copy":  "file presence + sha256 match",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "EF964EC6C63778DD18E40901F2830370C4AC18571A6192019F2A34645F5E2134"
                    },
                    {
                        "source_path":  "docs/architecture/REPO-ARCH-02-PLAN.md",
@@ -945,8 +963,9 @@
                        "target_path":  "docs/architecture/REPO-ARCH-02-PLAN.md",
                        "migration_phase":  "ARCH-03A",
                        "validation_after_copy":  "file presence + sha256 match",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "0E74D1A6F9FDB1F9D181A5B829ABB239F975C004F114054E463D4C3234EAEC98"
                    },
                    {
                        "source_path":  "docs/handoffs/M3-PAUSED-STATE.md",
@@ -961,8 +980,9 @@
                        "target_path":  "docs/handoffs/M3-PAUSED-STATE.md",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "file presence + sha256 match",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "383D2B9CE3BF9F65E15E7EF2BAD377827C073DDFB7652BA7FA6BEE99D3013D52"
                    },
                    {
                        "source_path":  "docs/handoffs/REPO-HYGIENE-01.md",
@@ -977,8 +997,9 @@
                        "target_path":  "docs/handoffs/REPO-HYGIENE-01.md",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "file presence + sha256 match",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "16267AE3278789B84DE3C8F4BD5DC33536B23F6872CD22C4C4F285F1E7328FEF"
                    },
                    {
                        "source_path":  "docs/handoffs/REPO-HYGIENE-02.md",
@@ -993,8 +1014,9 @@
                        "target_path":  "docs/handoffs/REPO-HYGIENE-02.md",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "file presence + sha256 match",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "B463172C48B182BFC90E401F4A9F1F55E78B68A48255DE766CF4D090FF7DCFC0"
                    },
                    {
                        "source_path":  "docs/v2-system-audit.md",
@@ -1025,8 +1047,9 @@
                        "target_path":  "generated/dashboard/latest-eval.json",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "431FC9811A13A44429968C1BB19825ACA819C630E5EA9FE289F94D7B5BADC898"
                    },
                    {
                        "source_path":  "lib/auth/dashboard-access.ts",
@@ -1041,8 +1064,9 @@
                        "target_path":  "lib/auth/dashboard-access.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "9592F2343CAC857CA300FF19C8639BF7AD6899A5B2F58E9980C4915A6880661A"
                    },
                    {
                        "source_path":  "lib/dashboard/aggregate.ts",
@@ -1057,8 +1081,9 @@
                        "target_path":  "lib/dashboard/aggregate.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "32A3715F392C474C6442404C2EEB45AFA65C4791D999FE7A8C903D251BCD9A9B"
                    },
                    {
                        "source_path":  "lib/dashboard/api-repository.ts",
@@ -1073,8 +1098,9 @@
                        "target_path":  "lib/dashboard/api-repository.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "5F03523854B0794A9FADA6F17DF3CCBDC8BF15241F120749250E4D5BF16EFF8E"
                    },
                    {
                        "source_path":  "lib/dashboard/dashboard.repository.ts",
@@ -1089,8 +1115,9 @@
                        "target_path":  "lib/dashboard/dashboard.repository.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "B3D4AC6A7E14C51699CF86039174DC9C79860769FF2506610275B613D56A4C46"
                    },
                    {
                        "source_path":  "lib/dashboard/eval-reader.ts",
@@ -1105,8 +1132,9 @@
                        "target_path":  "lib/dashboard/eval-reader.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "9AE623C4329935E87633B7CD20867402BE8F14FB90B7770B8754C29A149B431E"
                    },
                    {
                        "source_path":  "lib/dashboard/layer-labels.ts",
@@ -1121,8 +1149,9 @@
                        "target_path":  "lib/dashboard/layer-labels.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "D498BCE689C217991103376EBE929391E53F3B07BD0CBD4534F77FFCC7029B8F"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/factory.ts",
@@ -1137,8 +1166,9 @@
                        "target_path":  "lib/dashboard/mock/factory.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "378E2D7039675779C01CC6BD01BE40A95C7E53A5DB463C9550989106427C11A8"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/index.ts",
@@ -1153,8 +1183,9 @@
                        "target_path":  "lib/dashboard/mock/index.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "E38B4E6FEA9D90FD03019F770498190E0EB2CD7EB2C23A32E1ABFC5F6B642431"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/mock-repository.ts",
@@ -1169,8 +1200,9 @@
                        "target_path":  "lib/dashboard/mock/mock-repository.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "97FBBBB97CA7AC039B5AE78335C9226528B976A9D3350ABCDF567B00CEDEEBCA"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/ready-30d.ts",
@@ -1185,8 +1217,9 @@
                        "target_path":  "lib/dashboard/mock/ready-30d.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "2C240CC838AC86ACC9999ACB1D77DE0D83B930C28125CAC58E8B4F9D6B39D6A6"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/ready-7d.ts",
@@ -1201,8 +1234,9 @@
                        "target_path":  "lib/dashboard/mock/ready-7d.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "299B9BD2695DA4CB5A0DA61FC2BDD994857C10EC411A94115AE0640548CB7DB2"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/ready-all.ts",
@@ -1217,8 +1251,9 @@
                        "target_path":  "lib/dashboard/mock/ready-all.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "A5A4C64A84FA6F186458F12B64DAE39D3441EAA509C0EBCE8F5BCDFCD88931EC"
                    },
                    {
                        "source_path":  "lib/dashboard/mock/states.ts",
@@ -1233,8 +1268,9 @@
                        "target_path":  "lib/dashboard/mock/states.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "55C1A3B653B97B3D5DE828208988E9E1379299C0A4A1BB37D4C9B9BC26934FEC"
                    },
                    {
                        "source_path":  "lib/dashboard/real-repository.ts",
@@ -1249,8 +1285,9 @@
                        "target_path":  "lib/dashboard/real-repository.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "54C5FEE76EB7A4F62F0CA5FB74B771D59BE9716FFE834EA2E7AFFE4122330933"
                    },
                    {
                        "source_path":  "lib/dashboard/types.ts",
@@ -1265,8 +1302,9 @@
                        "target_path":  "lib/dashboard/types.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "803D7A44306CC3D24AEABA3C5D19D8218A6BEC1946A7AF08AF2C21E7D6ABFE37"
                    },
                    {
                        "source_path":  "lib/observability/durable-trace-store.ts",
@@ -1281,8 +1319,9 @@
                        "target_path":  "lib/observability/durable-trace-store.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "11CCC10DD902A889B444A19300D05391274997EF4E8E6F5868BA5D8B20A58452"
                    },
                    {
                        "source_path":  "reports/P4_API_RESPONSE_SAMPLES.json",
@@ -1633,8 +1672,9 @@
                        "target_path":  "tests/oracle/dashboard/oracle.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "9D1C122B97FA643FAAB1E8CA629E2AA9045B85E658FC6EE4F76CF6457191F169"
                    },
                    {
                        "source_path":  "tests/unit/dashboard-metrics.correctness.test.ts",
@@ -1649,8 +1689,9 @@
                        "target_path":  "tests/unit/dashboard-metrics.correctness.test.ts",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; vitest run tests/unit/dashboard-metrics.correctness.test.ts",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "1216D5227CEA0CD271E9920C98E7CC78506AD8538408C2FD97656E95A0D991F6"
                    },
                    {
                        "source_path":  ".gitignore",
@@ -1665,8 +1706,9 @@
                        "target_path":  ".gitignore",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; existing unit suite",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "542443D59B0B826E9A5195329EBBADDB4C3697817F4210A05D99027A4D567B2B"
                    },
                    {
                        "source_path":  "components/assistant/assistant-dock.tsx",
@@ -1681,8 +1723,9 @@
                        "target_path":  "components/assistant/assistant-dock.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; existing unit suite",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "39A6745B9F12843181FD65619F49685E7B17E69B85C518C09F6361090621F130"
                    },
                    {
                        "source_path":  "components/layout/masthead.tsx",
@@ -1697,8 +1740,9 @@
                        "target_path":  "components/layout/masthead.tsx",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; existing unit suite",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "DA7CDBC260B42F80962EC8A41876B3658F5A6F3CE352B82508E03AFCD864B698"
                    },
                    {
                        "source_path":  "tsconfig.json",
@@ -1713,8 +1757,9 @@
                        "target_path":  "tsconfig.json",
                        "migration_phase":  "ARCH-03B",
                        "validation_after_copy":  "typecheck; build; existing unit suite",
-                       "migrated":  false,
-                       "verified":  false
+                       "migrated":  true,
+                       "verified":  true,
+                       "target_sha256":  "C6241DEADF444A9CAAFD4B483A79588B81DF266DEC7FDDB7576C6B9BB0A6570D"
                    },
                    {
                        "source_path":  "vercel-env-production.txt",
