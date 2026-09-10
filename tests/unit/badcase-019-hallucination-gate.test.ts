@@ -19,6 +19,7 @@ import { __resetRegistryForTests, __setProviderForTests } from "@/lib/llm/provid
 import type { LlmProvider } from "@/lib/llm/provider";
 import type { LlmChatRequest, LlmChatResponse } from "@/lib/llm/types";
 import { isEvidenceGrounded, detectUngroundedLinguisticClaims, sanitizeUngroundedAnalysis } from "@/lib/speaking/evidence-sanitizer";
+import { buildAnswerWordSet } from "@/lib/speaking/evidence-grounding";
 import { validateFeedbackQuality } from "@/lib/speaking/feedback-quality";
 import { getQuestionById } from "@/lib/speaking";
 import type { SpeakingAnalysisResult, SpeakingQuestion } from "@/lib/speaking/types";
@@ -181,23 +182,54 @@ function getTestQuestion(): SpeakingQuestion {
 // Unit Tests: Grounding Check
 // =============================================================
 
-describe("BC-019: isEvidenceGrounded", () => {
+
+function makeHallucinatedAnalysis(): SpeakingAnalysisResult {
+  return {
+    candidateIssues: [{ dimension: "vocabulary", severity: "major", description: "which 从句问题", suggestion: "练习" }],
+    mainIssue: {
+      dimension: "vocabulary",
+      severity: "major",
+      description: "你使用了 which 定语从句但结构不够准确。",
+      suggestion: "练习定语从句。",
+    },
+    microDrill: { prompt: "练习", exampleImprovement: "example", targetDimension: "vocabulary" },
+    metrics: { wordCount: 8, sentenceCount: 3, connectorCount: 0, uniqueWordRatio: 0, paraphraseScore: 0 },
+    summary: "回答中使用了 which 定语从句和比较级。",
+    ieltsAnalysis: {
+      fluency: { label: "流利度", level: "adequate", evidence: ["回答流畅"], issues: [], suggestions: [] },
+      lexicalResource: { label: "词汇", level: "adequate", evidence: ["使用了 books"], issues: [], suggestions: [] },
+      grammaticalRange: {
+        label: "语法",
+        level: "developing",
+        evidence: ["使用了 which 定语从句", "使用了被动语态", "使用了比较级"],
+        issues: ["需提高"],
+        suggestions: ["多练习"],
+      },
+      pronunciation: null,
+      overallDiagnosis: "语法有潜力。",
+      prioritizedSuggestions: ["练习语法"],
+    },
+  };
+}
+
+describe("BC-019: isEvidenceGrounded (shared primitive)", () => {
   const answer = "I like books. Reading is fun. I read often.";
+  const answerWords = buildAnswerWordSet(answer);
 
   it("数据型 evidence（WPM/秒/次）视为 grounded", () => {
-    expect(isEvidenceGrounded("语速 98 WPM", answer)).toBe(true);
-    expect(isEvidenceGrounded("停顿 3 次", answer)).toBe(true);
+    expect(isEvidenceGrounded("语速 98 WPM", answerWords)).toBe(true);
+    expect(isEvidenceGrounded("停顿 3 次", answerWords)).toBe(true);
   });
 
   it("包含回答中关键词的 evidence 视为 grounded", () => {
-    expect(isEvidenceGrounded("使用了 books 这个词", answer)).toBe(true);
-    expect(isEvidenceGrounded("reading 出现多次", answer)).toBe(true);
+    expect(isEvidenceGrounded("使用了 books 这个词", answerWords)).toBe(true);
+    expect(isEvidenceGrounded("reading 出现多次", answerWords)).toBe(true);
   });
 
   it("不包含回答中任何关键词的 evidence 视为 ungrounded", () => {
-    expect(isEvidenceGrounded("使用了 which 定语从句", answer)).toBe(false);
-    expect(isEvidenceGrounded("使用了被动语态", answer)).toBe(false);
-    expect(isEvidenceGrounded("使用了形容词比较级", answer)).toBe(false);
+    expect(isEvidenceGrounded("使用了 which 定语从句", answerWords)).toBe(false);
+    expect(isEvidenceGrounded("使用了被动语态", answerWords)).toBe(false);
+    expect(isEvidenceGrounded("使用了形容词比较级", answerWords)).toBe(false);
   });
 });
 
@@ -234,34 +266,7 @@ describe("BC-019: detectUngroundedLinguisticClaims", () => {
 describe("BC-019: sanitizeUngroundedAnalysis", () => {
   const answer = "I like books. Reading is fun. I read often.";
 
-  function makeHallucinatedAnalysis(): SpeakingAnalysisResult {
-    return {
-      candidateIssues: [{ dimension: "vocabulary", severity: "major", description: "which 从句问题", suggestion: "练习" }],
-      mainIssue: {
-        dimension: "vocabulary",
-        severity: "major",
-        description: "你使用了 which 定语从句但结构不够准确。",
-        suggestion: "练习定语从句。",
-      },
-      microDrill: { prompt: "练习", exampleImprovement: "example", targetDimension: "vocabulary" },
-      metrics: { wordCount: 8, sentenceCount: 3, connectorCount: 0, uniqueWordRatio: 0, paraphraseScore: 0 },
-      summary: "回答中使用了 which 定语从句和比较级。",
-      ieltsAnalysis: {
-        fluency: { label: "流利度", level: "adequate", evidence: ["回答流畅"], issues: [], suggestions: [] },
-        lexicalResource: { label: "词汇", level: "adequate", evidence: ["使用了 books"], issues: [], suggestions: [] },
-        grammaticalRange: {
-          label: "语法",
-          level: "developing",
-          evidence: ["使用了 which 定语从句", "使用了被动语态", "使用了比较级"],
-          issues: ["需提高"],
-          suggestions: ["多练习"],
-        },
-        pronunciation: null,
-        overallDiagnosis: "语法有潜力。",
-        prioritizedSuggestions: ["练习语法"],
-      },
-    };
-  }
+  
 
   it("移除 grammaticalRange 中所有 ungrounded evidence", () => {
     const analysis = makeHallucinatedAnalysis();
@@ -484,39 +489,231 @@ describe("BC-019: analyzeSpeakingWithLlm — Hallucination Containment", () => {
     expect(result.ieltsAnalysis).toBeDefined();
   });
 
-  it("G. Vague advice — 不影响 016 的拦截行为（actionabilityCheck 仍运行）", async () => {
+  it("G. Vague advice — actionabilityCheck 仍运行（016 拦截行为不受 019 修复影响）", () => {
+    // 直接验证 Quality Gate 的 actionabilityCheck 对泛化建议的检测
+    const vagueAnalysis: SpeakingAnalysisResult = {
+      mainIssue: {
+        dimension: "fluency",
+        severity: "minor",
+        description: "回答流畅，books 使用自然。",
+        suggestion: "继续努力，多练习口语。",
+      },
+      microDrill: { prompt: "多练习口语表达", exampleImprovement: "ex", targetDimension: "fluency" },
+      summary: "回答中 books 和 reading 使用自然。",
+      ieltsAnalysis: {
+        fluency: { label: "流利度", level: "adequate", evidence: ["表达流畅"], issues: [], suggestions: ["多练习口语表达"] },
+        lexicalResource: { label: "词汇", level: "adequate", evidence: ["使用了 books"], issues: [], suggestions: [] },
+        grammaticalRange: { label: "语法", level: "adequate", evidence: ["语法正确"], issues: [], suggestions: [] },
+        pronunciation: { label: "发音", level: "adequate", evidence: [], issues: [], suggestions: [] },
+        overallDiagnosis: "表现良好。",
+        prioritizedSuggestions: ["继续努力"],
+      },
+      candidateIssues: [],
+      metrics: { wordCount: 8, sentenceCount: 3, connectorCount: 0, uniqueWordRatio: 0, paraphraseScore: 0 },
+    };
+    const answer = "I like books. Reading is fun. I read often.";
+
+    const qc = validateFeedbackQuality(vagueAnalysis, answer);
+
+    // actionabilityCheck 必须检测到泛化/不可执行建议
+    const actionIssues = qc.issues.filter((i) => i.type === "VAGUE_SUGGESTION" || i.type === "NOT_ACTIONABLE");
+    expect(actionIssues.length).toBeGreaterThan(0);
+
+    // 019 的 evidence sanitization 不影响 actionabilityCheck 的独立运行
+    const { report } = sanitizeUngroundedAnalysis(vagueAnalysis, answer, qc);
+    // sanitizer 只处理 evidence/factual fields，不修改 suggestions
+    expect(report.replacedFields).not.toContain("mainIssue.suggestion");
+    expect(report.replacedFields).not.toContain("microDrill.prompt");
+  });
+});
+
+
+// =============================================================
+// BC-M3-004-SAFETY-PATCH: Public Boundary & Grounding SSOT Tests
+// =============================================================
+
+describe("BC-019-SAFETY: A. public-response-no-raw-hallucination", () => {
+  it("factual fields in API response 不含 Frozen fixture 的 hallucinated claims", async () => {
+    const provider = makeHallucinatingProvider();
+    __setProviderForTests("mock", provider);
+    const question = getTestQuestion();
+    const answer = "I like books. Reading is fun. I read often.";
+
+    const result = await analyzeSpeakingWithLlm(answer, question, "trc_019_safety_a");
+
+    // 只检查 UI 渲染的 factual 字段（speaking-feedback.tsx）
+    // teaching suggestions (mainIssue.suggestion / microDrill / prioritizedSuggestions)
+    // 可以合法提及语法概念作为学习目标，不属于 hallucinated factual claim
+    const factualFields = JSON.stringify({
+      summary: result.summary,
+      overallDiagnosis: result.ieltsAnalysis?.overallDiagnosis,
+      mainIssueDescription: result.mainIssue.description,
+      evidence: Object.values(result.ieltsAnalysis ?? {}).flatMap((d) => (d as any)?.evidence ?? []),
+      issues: Object.values(result.ieltsAnalysis ?? {}).flatMap((d) => (d as any)?.issues ?? []),
+    });
+
+    // 幻觉断言不得出现在 factual 字段
+    expect(factualFields).not.toContain("which 定语从句");
+    expect(factualFields).not.toContain("被动语态");
+    expect(factualFields).not.toContain("比较级");
+    expect(factualFields).not.toContain("多个复合句");
+    expect(factualFields).not.toContain("which 引导");
+
+    // qualityWarning.sanitization 只含安全摘要，不含 raw claim
+    const sanitization = result.qualityWarning?.sanitization;
+    expect(sanitization).toBeDefined();
+    expect(sanitization?.applied).toBe(true);
+    expect(typeof sanitization?.evidenceRemoved).toBe("number");
+    expect(Array.isArray(sanitization?.affectedDimensions)).toBe(true);
+    expect(Array.isArray(sanitization?.replacedFields)).toBe(true);
+    // 不得包含 ungroundedClaims / safeReplacements 等内部诊断字段
+    expect(sanitization).not.toHaveProperty("ungroundedClaims");
+    expect(sanitization).not.toHaveProperty("safeReplacements");
+  });
+});
+
+describe("BC-019-SAFETY: B. internal-trace-can-record-safe-diagnostic", () => {
+  it("sanitizationReport 内部可记录 ungrounded claim labels（仅 label，非 raw text）", () => {
+    const answer = "I like books. Reading is fun. I read often.";
+    const analysis = makeHallucinatedAnalysis();
+    const qualityCheck = validateFeedbackQuality(analysis, answer);
+
+    const { report } = sanitizeUngroundedAnalysis(analysis, answer, qualityCheck);
+
+    // 内部 report 可记录 ungroundedClaims 用于诊断
+    expect(report.ungroundedClaims.length).toBeGreaterThan(0);
+    // 每个 claim 只有 label（类别名）和 matchedText（匹配片段）
+    // label 是安全的类别描述，不是原始 hallucinated sentence
+    for (const claim of report.ungroundedClaims) {
+      expect(claim).toHaveProperty("label");
+      expect(claim).toHaveProperty("matchedText");
+      expect(typeof claim.label).toBe("string");
+      expect(claim.label.length).toBeLessThan(30); // label 是短类别名
+    }
+  });
+});
+
+describe("BC-019-SAFETY: C. legitimate-grammar-evidence-preserved", () => {
+  it("用户确实使用 which/比较级时，对应 evidence 不被移除", async () => {
     const provider: LlmProvider = {
       kind: "mock",
       async chat(_req: LlmChatRequest): Promise<LlmChatResponse> {
         return {
-          model: "mock-vague",
+          model: "mock-legit",
           content: JSON.stringify({
             mainIssue: {
-              dimension: "fluency",
+              dimension: "grammar",
               severity: "minor",
-              description: "回答流畅，books 使用自然。",
-              suggestion: "继续努力", // vague pattern
+              description: "which 从句使用准确，比较级 better 运用自然。",
+              suggestion: "继续保持。",
             },
-            microDrill: { prompt: "多练习", exampleImprovement: "ex" }, // vague
-            summary: "回答中 books 和 reading 使用自然。",
-            fluency: { label: "流利度", level: "adequate", evidence: ["表达流畅"], issues: [], suggestions: ["多练习"] },
-            lexicalResource: { label: "词汇", level: "adequate", evidence: ["使用了 books"], issues: [], suggestions: [] },
-            grammaticalRange: { label: "语法", level: "adequate", evidence: ["语法正确"], issues: [], suggestions: [] },
-            overallDiagnosis: "表现良好。",
-            prioritizedSuggestions: ["继续努力"],
+            microDrill: { prompt: "练习", exampleImprovement: "ex" },
+            summary: "回答中使用了 which 定语从句和比较级 better。",
+            fluency: { label: "流利度", level: "adequate", evidence: ["回答流畅"], issues: [], suggestions: [] },
+            lexicalResource: { label: "词汇", level: "adequate", evidence: ["使用了 book"], issues: [], suggestions: [] },
+            grammaticalRange: { label: "语法", level: "adequate", evidence: ["使用了 which 定语从句", "比较级 better 使用准确"], issues: [], suggestions: [] },
+            overallDiagnosis: "语法结构多样，which 从句和比较级使用准确。",
+            prioritizedSuggestions: ["继续保持"],
           }),
         };
       },
     };
     __setProviderForTests("mock", provider);
     const question = getTestQuestion();
+    const answer = "The book which I bought yesterday was better than the old one.";
+
+    const result = await analyzeSpeakingWithLlm(answer, question, "trc_019_safety_c");
+
+    // which/comparative evidence 应保留（用户确实使用了）
+    const grammarEvidence = result.ieltsAnalysis?.grammaticalRange?.evidence ?? [];
+    expect(grammarEvidence.length).toBeGreaterThan(0);
+    expect(grammarEvidence.some((e) => e.includes("which"))).toBe(true);
+    expect(grammarEvidence.some((e) => e.includes("better") || e.includes("比较级"))).toBe(true);
+
+    // which/comparative 相关 evidence 必须保留
+    // 注意：其他维度的抽象 evidence（如"回答流畅"）可能仍被 sanitize，这是正确行为
+  });
+});
+
+describe("BC-019-SAFETY: D. no-detection-enforcement-drift", () => {
+  it("gate 和 sanitizer 使用同一共享 grounding primitive，结果一致", () => {
+    const answer = "I like books. Reading is fun. I read often.";
+    const answerWords = buildAnswerWordSet(answer);
+
+    // 同一组 evidence，gate 的 hasAnyGroundedEvidence 和 sanitizer 的 isEvidenceGrounded 必须一致
+    const testCases = [
+      { ev: "使用了 books", expected: true },
+      { ev: "使用了 which 定语从句", expected: false },
+      { ev: "语速 98 WPM", expected: true },
+      { ev: "reading 出现多次", expected: true },
+      { ev: "使用了被动语态", expected: false },
+    ];
+
+    for (const { ev, expected } of testCases) {
+      // sanitizer 路径（通过 re-export 的共享 primitive）
+      expect(isEvidenceGrounded(ev, answerWords)).toBe(expected);
+    }
+
+    // gate 路径：validateFeedbackQuality 对同一 analysis 的 EVIDENCE_MISMATCH 判定
+    // 应与 sanitizer 的 grounding 结果一致
+    const analysisWithUngrounded = makeHallucinatedAnalysis();
+    const qc = validateFeedbackQuality(analysisWithUngrounded, answer);
+    const hasEvidenceMismatch = qc.issues.some((i) => i.type === "EVIDENCE_MISMATCH");
+    expect(hasEvidenceMismatch).toBe(true); // gate 检测到 mismatch
+
+    const { report } = sanitizeUngroundedAnalysis(analysisWithUngrounded, answer, qc);
+    expect(report.sanitized).toBe(true); // sanitizer 执行了 sanitization
+    expect(report.evidenceRemoved).toBeGreaterThan(0); // 移除了 ungrounded evidence
+  });
+});
+
+describe("BC-019-SAFETY: E. all-rendered-factual-fields-contained", () => {
+  it("所有 UI 渲染的 factual 字段都在 containment 范围内", async () => {
+    const provider = makeHallucinatingProvider();
+    __setProviderForTests("mock", provider);
+    const question = getTestQuestion();
     const answer = "I like books. Reading is fun. I read often.";
 
-    const result = await analyzeSpeakingWithLlm(answer, question, "trc_019_vague");
+    const result = await analyzeSpeakingWithLlm(answer, question, "trc_019_safety_e");
 
-    // actionabilityCheck 仍运行：要么 qualityWarning 包含 vague，要么质量门失败触发 fallback
-    const hasVagueWarning = result.qualityWarning?.issues?.some((i) => i.includes("泛化") || i.includes("vague") || i.includes("VAGUE"));
-    const hasFallback = result.ieltsAnalysis === undefined;
-    expect(hasVagueWarning || hasFallback).toBe(true);
+    // UI 渲染的 factual 字段（speaking-feedback.tsx）：
+    // 1. ieltsAnalysis.overallDiagnosis (line 155)
+    // 2. analysis.summary (line 157, 225)
+    // 3. ieltsAnalysis.*.evidence (line 68-74)
+    // 4. ieltsAnalysis.*.issues (line 83-88) — SAFETY PATCH 新增
+    // 5. mainIssue.description (line 196)
+
+    const allText = JSON.stringify({
+      overallDiagnosis: result.ieltsAnalysis?.overallDiagnosis,
+      summary: result.summary,
+      evidence: Object.values(result.ieltsAnalysis ?? {}).flatMap((d) => (d as any)?.evidence ?? []),
+      issues: Object.values(result.ieltsAnalysis ?? {}).flatMap((d) => (d as any)?.issues ?? []),
+      mainIssue: result.mainIssue.description,
+    });
+
+    // 所有 factual 字段都不得含幻觉断言
+    expect(allText).not.toContain("which 定语从句");
+    expect(allText).not.toContain("被动语态");
+    expect(allText).not.toContain("比较级");
+    expect(allText).not.toContain("多个复合句");
+
+    // replacedFields 应覆盖所有被修改的 factual 字段
+    const replaced = result.qualityWarning?.sanitization?.replacedFields ?? [];
+    expect(replaced.length).toBeGreaterThan(0);
+    // 至少包含 summary 和 mainIssue.description（Frozen fixture 中这两个含幻觉）
+    expect(replaced).toContain("summary");
+    expect(replaced).toContain("mainIssue.description");
+  });
+
+  it("candidateIssues 虽不在 UI 渲染，但也被 sanitize（防御性）", () => {
+    const answer = "I like books. Reading is fun. I read often.";
+    const analysis = makeHallucinatedAnalysis();
+    const qc = validateFeedbackQuality(analysis, answer);
+    const { analysis: sanitized } = sanitizeUngroundedAnalysis(analysis, answer, qc);
+
+    for (const issue of sanitized.candidateIssues) {
+      expect(issue.description).not.toContain("which 定语从句");
+      expect(issue.description).not.toContain("被动语态");
+    }
   });
 });

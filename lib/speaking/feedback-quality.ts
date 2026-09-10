@@ -11,6 +11,7 @@
  */
 
 import type { SpeakingAnalysisResult, DimensionAnalysis } from "@/lib/speaking/types";
+import { buildAnswerWordSet, hasAnyGroundedEvidence } from "@/lib/speaking/evidence-grounding";
 import type {
   FeedbackQualityResult,
   FeedbackQualityIssue,
@@ -131,8 +132,9 @@ function evidenceConsistencyCheck(
   userAnswer: string,
   issues: FeedbackQualityIssue[],
 ): void {
+  // BC-M3-004-SAFETY: 使用共享 grounding primitive（SSOT），避免与 sanitizer 漂移
+  const answerWords = buildAnswerWordSet(userAnswer);
   const answerLower = userAnswer.toLowerCase();
-  const answerWords = new Set(answerLower.split(/\s+/).filter((w) => w.length > 2));
 
   // 检查 ieltsAnalysis 各维度
   if (analysis.ieltsAnalysis) {
@@ -156,27 +158,14 @@ function evidenceConsistencyCheck(
         continue;
       }
 
-      // evidence 是否与用户回答有关联
-      if (dim.evidence.length > 0) {
-        const hasRelevantEvidence = dim.evidence.some((ev) => {
-          const evLower = ev.toLowerCase();
-          // 证据中包含用户回答的关键词（至少 1 个 >3 字母的词匹配）
-          // 或者证据包含数据型内容（WPM、秒、次）
-          const hasDataEvidence = /\d+\s*(wpm|秒|次|%)/i.test(ev);
-          if (hasDataEvidence) return true;
-
-          const evWords = evLower.split(/\s+/).filter((w) => w.length > 3);
-          return evWords.some((w) => answerWords.has(w));
+      // evidence 是否与用户回答有关联（使用共享 primitive）
+      if (dim.evidence.length > 0 && !hasAnyGroundedEvidence(dim.evidence, answerWords)) {
+        issues.push({
+          type: "EVIDENCE_MISMATCH",
+          severity: "minor",
+          description: `${path}.evidence 中未找到与用户回答相关的引用`,
+          fieldPath: `${path}.evidence`,
         });
-
-        if (!hasRelevantEvidence) {
-          issues.push({
-            type: "EVIDENCE_MISMATCH",
-            severity: "minor",
-            description: `${path}.evidence 中未找到与用户回答相关的引用`,
-            fieldPath: `${path}.evidence`,
-          });
-        }
       }
     }
   }

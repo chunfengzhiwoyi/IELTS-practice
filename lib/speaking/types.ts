@@ -61,6 +61,7 @@ export interface SpeakingAnalysisResult {
     issues: string[];
     /** BC-M3-004: evidence sanitization 执行信息 */
     sanitization?: {
+      applied: boolean;
       evidenceRemoved: number;
       affectedDimensions: string[];
       replacedFields: string[];

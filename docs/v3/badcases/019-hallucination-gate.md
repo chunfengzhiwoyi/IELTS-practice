@@ -184,6 +184,67 @@ ELS-EVAL-019 预期：
 
 **不声明 ELS-EVAL-019 PASS**——最终判定由独立 Eval Runner 完成。
 
+
+## Safety Patch (BC-M3-004-SAFETY-PATCH)
+
+### Public Boundary Contradiction
+
+主体修复后发现：`qualityWarning.sanitization` 为 API-visible，需确认不含 raw hallucinated claims。
+
+**审计结果**：
+- `qualityWarning.sanitization` 只含安全摘要：`applied` / `evidenceRemoved` / `affectedDimensions` / `replacedFields`
+- 不含 `ungroundedClaims` / `safeReplacements` / raw claim text
+- 详细诊断（`ungroundedClaims` 含 label + matchedText）仅在内部 Trace `validation.result.payload.evidence_sanitization`
+- Trace 中只记录 claim label（类别名如"which/that 定语从句"），不记录原始 hallucinated sentence
+
+**Public / Internal Boundary**：
+| 层级 | 字段 | 内容 |
+|------|------|------|
+| Public API | qualityWarning.sanitization | applied, evidenceRemoved, affectedDimensions, replacedFields |
+| Internal Trace | validation.result.payload.evidence_sanitization | evidence_removed, affected_dimensions, replaced_fields, ungrounded_claims (labels only) |
+
+### Grounding SSOT (Single Source of Truth)
+
+**审计发现**：`feedback-quality.ts` (evidenceConsistencyCheck) 和 `evidence-sanitizer.ts` 各自实现了 grounding matching，存在 drift：
+- Gate：`answerWords = answerLower.split(/\s+/)`（不去除词尾标点）
+- Sanitizer：`answerWords = answerLower.split(/\s+/).map(w => w.replace(/[.,!?;:，。！？；：]+$/, ""))`（去除标点）
+
+**修复**：抽出共享 primitive `lib/speaking/evidence-grounding.ts`：
+- `buildAnswerWordSet(userAnswer)` — 构建关键词集合（去除词尾标点）
+- `isDataEvidence(evidence)` — 数据型 evidence 检测
+- `isEvidenceGrounded(evidence, answerWords)` — 单条 grounding 判断
+- `filterGroundedEvidence(evidenceList, answerWords)` — 批量过滤
+- `hasAnyGroundedEvidence(evidenceList, answerWords)` — Gate 用
+
+Gate（detection）和 Sanitizer（enforcement）共用同一 primitive，消除漂移。
+
+### UI Rendered Factual Fields Audit
+
+`speaking-feedback.tsx` 实际渲染字段：
+| 字段 | 行号 | 可承载 factual claim | Containment |
+|------|------|---------------------|-------------|
+| ieltsAnalysis.overallDiagnosis | 155 | 是 | ✓ sanitized |
+| analysis.summary | 157, 225 | 是 | ✓ sanitized |
+| ieltsAnalysis.*.evidence | 68-74 | 是 | ✓ sanitized |
+| **ieltsAnalysis.*.issues** | **83-88** | **是** | **✓ 新增 sanitize** |
+| mainIssue.description | 196 | 是 | ✓ sanitized |
+| mainIssue.suggestion | 199 | 否（教学建议） | N/A |
+| ieltsAnalysis.*.suggestions | 97-99 | 否（教学建议） | N/A |
+| prioritizedSuggestions | 209-215 | 否（教学建议） | N/A |
+| candidateIssues | — | 是但**未渲染** | ✓ 防御性 sanitize |
+
+**新增**：`ieltsAnalysis.*.issues` sanitization — 含 ungrounded linguistic claim 的 issue 替换为安全通用文案。
+
+### Safety Tests (A-E)
+
+| Test | 验证 |
+|------|------|
+| A. public-response-no-raw-hallucination | factual 字段 JSON 不含 which/被动语态/比较级/复合句；sanitization 不含内部诊断字段 |
+| B. internal-trace-can-record-safe-diagnostic | sanitizationReport 可记录 ungrounded claim labels（仅 label，非 raw text） |
+| C. legitimate-grammar-evidence-preserved | 用户确实使用 which/better 时，对应 evidence 不被移除 |
+| D. no-detection-enforcement-drift | gate 和 sanitizer 使用同一共享 primitive，结果一致 |
+| E. all-rendered-factual-fields-contained | 所有 UI 渲染的 factual 字段都在 containment 范围 |
+
 ## Files Changed
 
 1. `lib/speaking/evidence-sanitizer.ts` — 新增，evidence sanitization 逻辑

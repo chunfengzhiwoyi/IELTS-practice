@@ -6,48 +6,30 @@
  *
  * 设计原则：
  * - 纯确定性规则，不调用 LLM
- * - 复用 evidenceConsistencyCheck 的 grounding heuristic（不新造 detector）
- * - 只移除 ungrounded 的具体 factual claims，保留 level / issues / suggestions
+ * - Grounding detection 使用共享 primitive (lib/speaking/evidence-grounding.ts)
+ *   Detection SSOT + Enforcement Strategy，不维护第二套 detector
+ * - 只移除 ungrounded 的具体 factual claims，保留 level / suggestions
  * - 不修改原始 analysis（返回新对象）
  * - 生成 sanitizationReport 供 Trace 记录
  *
+ * BC-M3-004-SAFETY-PATCH:
+ * - Grounding logic 移至 evidence-grounding.ts（与 Quality Gate 共享）
+ * - 新增 ieltsAnalysis.*.issues sanitization（UI 渲染且可承载 factual claim）
+ * - Public API 只暴露安全摘要，raw claims 仅在内部 Trace
+ *
  * Product Decision (BC-M3-004 / ELS-EVAL-019):
  *   Option B — sanitize unsupported evidence, preserve rest of analysis.
- *   不采用 full fallback（Option A），因为仅 evidence 不可信时 level/issues/suggestions 仍可能有价值。
- *   不采用 repair/regenerate（Option C），因为增加延迟且可能再次幻觉。
- *   不采用 warn-only（Option D），已被 ELS-EVAL-019 证明不可接受。
  */
 
 import type { SpeakingAnalysisResult, IeltsSpeakingAnalysis } from "@/lib/speaking/types";
 import type { FeedbackQualityResult } from "@/lib/speaking/feedback-quality-types";
+import {
+  buildAnswerWordSet,
+  filterGroundedEvidence,
+} from "@/lib/speaking/evidence-grounding";
 
-// =============================================================
-// Grounding Check（复用 evidenceConsistencyCheck 的 heuristic）
-// =============================================================
-
-/**
- * 判断单条 evidence 是否在用户回答中有 grounding。
- * 复用 feedback-quality.ts evidenceConsistencyCheck 的逻辑：
- * - 数据型 evidence（WPM / 秒 / 次 / %）视为 grounded（来自 audioMetadata）
- * - 否则要求 evidence 中至少一个 >3 字母的英文词出现在回答中
- */
-export function isEvidenceGrounded(evidence: string, userAnswer: string): boolean {
-  const evLower = evidence.toLowerCase();
-  const answerLower = userAnswer.toLowerCase();
-  // 去除词尾标点（books. → books），避免标点导致匹配失败
-  const answerWords = new Set(
-    answerLower.split(/\s+/).map((w) => w.replace(/[.,!?;:，。！？；：]+$/, "")).filter((w) => w.length > 2),
-  );
-
-  // 数据型 evidence（来自 audioMetadata，不需要文本匹配）
-  if (/\d+\s*(wpm|秒|次|%)/i.test(evLower)) {
-    return true;
-  }
-
-  // 关键词匹配：evidence 中至少一个 >3 字母的英文词在回答中出现
-  const evWords = evLower.split(/[\s，。、！？,.!?;:：；""''（）()]+/).filter((w) => w.length > 3);
-  return evWords.some((w) => answerWords.has(w));
-}
+// Re-export for backward compatibility (tests import from here)
+export { isEvidenceGrounded } from "@/lib/speaking/evidence-grounding";
 
 // =============================================================
 // Linguistic Claim Detection（用于 free-text 字段）
@@ -57,14 +39,8 @@ export function isEvidenceGrounded(evidence: string, userAnswer: string): boolea
  * 检测文本中是否包含指向具体语言结构的断言，
  * 且该结构在用户回答中不存在。
  *
- * 这是保守的 pattern-based 检查，仅覆盖 ELS-EVAL-019 冻结的高风险模式：
- * - which/that 定语从句
- * - 被动语态
- * - 形容词/副词比较级
- * - 复合句/从句
- * - 具体时态
- *
- * 不做通用 NLP parsing（任务限制：不新造大型 detector）。
+ * 保守的 pattern-based 检查，仅覆盖 ELS-EVAL-019 冻结的高风险模式。
+ * 不做通用 NLP parsing。
  */
 const LINGUISTIC_CLAIM_PATTERNS: Array<{ pattern: RegExp; label: string; answerCheck: (answer: string) => boolean }> = [
   {
@@ -99,9 +75,6 @@ export interface UngroundedClaim {
   matchedText: string;
 }
 
-/**
- * 检测文本中包含的、在用户回答中无支持的语言结构断言。
- */
 export function detectUngroundedLinguisticClaims(text: string, userAnswer: string): UngroundedClaim[] {
   const claims: UngroundedClaim[] = [];
   for (const { pattern, label, answerCheck } of LINGUISTIC_CLAIM_PATTERNS) {
@@ -118,17 +91,12 @@ export function detectUngroundedLinguisticClaims(text: string, userAnswer: strin
 // =============================================================
 
 export interface SanitizationReport {
-  /** 是否执行了 sanitization */
   sanitized: boolean;
-  /** 被移除的 evidence 总数 */
   evidenceRemoved: number;
-  /** 受影响的维度 */
   affectedDimensions: string[];
-  /** 被替换的 free-text 字段 */
   replacedFields: string[];
-  /** 检测到的 ungrounded linguistic claims */
+  /** 内部诊断用：检测到的 ungrounded claim labels（仅在 Trace 中使用，不进入 public API） */
   ungroundedClaims: UngroundedClaim[];
-  /** 安全替换文案说明 */
   safeReplacements: Record<string, string>;
 }
 
@@ -136,12 +104,6 @@ export interface SanitizationReport {
 // Main Sanitizer
 // =============================================================
 
-/**
- * 对 analysis 执行 evidence sanitization。
- *
- * 仅在 qualityCheck 检测到 EVIDENCE_MISMATCH 相关 issue 时执行。
- * 返回 sanitized 后的 analysis（新对象，不修改原对象）和 report。
- */
 export function sanitizeUngroundedAnalysis(
   analysis: SpeakingAnalysisResult,
   userAnswer: string,
@@ -174,10 +136,10 @@ export function sanitizeUngroundedAnalysis(
     safeReplacements: {},
   };
 
-  // Shallow copy top-level
+  const answerWords = buildAnswerWordSet(userAnswer);
   const sanitized: SpeakingAnalysisResult = { ...analysis };
 
-  // ---- 1. Sanitize ieltsAnalysis.*.evidence ----
+  // ---- 1. Sanitize ieltsAnalysis.*.evidence + *.issues ----
   if (analysis.ieltsAnalysis) {
     const dims: Array<["fluency" | "lexicalResource" | "grammaticalRange", string]> = [
       ["fluency", "fluency"],
@@ -189,15 +151,37 @@ export function sanitizeUngroundedAnalysis(
 
     for (const [key, dimName] of dims) {
       const dim = newIelts[key];
-      if (!dim || dim.evidence.length === 0) continue;
+      if (!dim) continue;
 
-      const groundedEvidence = dim.evidence.filter((ev) => isEvidenceGrounded(ev, userAnswer));
-      const removed = dim.evidence.length - groundedEvidence.length;
+      // Evidence: 逐条 grounding filter
+      if (dim.evidence.length > 0) {
+        const grounded = filterGroundedEvidence(dim.evidence, answerWords);
+        const removed = dim.evidence.length - grounded.length;
+        if (removed > 0) {
+          report.evidenceRemoved += removed;
+          report.affectedDimensions.push(dimName);
+          newIelts[key] = { ...dim, evidence: grounded };
+        }
+      }
 
-      if (removed > 0) {
-        report.evidenceRemoved += removed;
-        report.affectedDimensions.push(dimName);
-        newIelts[key] = { ...dim, evidence: groundedEvidence };
+      // Issues: UI 渲染（speaking-feedback.tsx:83-88），可承载 factual linguistic claim
+      // 对每条 issue 检测 ungrounded linguistic claim，含 claim 的替换为安全通用 issue
+      const currentDim = newIelts[key]!;
+      if (currentDim.issues.length > 0) {
+        const safeIssues = currentDim.issues.map((issue) => {
+          const claims = detectUngroundedLinguisticClaims(issue, userAnswer);
+          if (claims.length > 0) {
+            report.ungroundedClaims.push(...claims);
+            if (!report.replacedFields.includes(`ieltsAnalysis.${dimName}.issues`)) {
+              report.replacedFields.push(`ieltsAnalysis.${dimName}.issues`);
+            }
+            return "该维度存在可提升空间，建议针对性练习。";
+          }
+          return issue;
+        });
+        if (safeIssues.some((s, i) => s !== currentDim.issues[i])) {
+          newIelts[key] = { ...currentDim, issues: safeIssues };
+        }
       }
     }
 
@@ -205,8 +189,6 @@ export function sanitizeUngroundedAnalysis(
   }
 
   // ---- 2. Sanitize mainIssue.description ----
-  // 不依赖 quality gate 的 EVIDENCE_MISMATCH（其有 descWords.length > 3 的阈值），
-  // 直接运行 linguistic claim detection，确保幻觉断言被拦截。
   if (analysis.mainIssue.description) {
     const claims = detectUngroundedLinguisticClaims(analysis.mainIssue.description, userAnswer);
     if (claims.length > 0) {
@@ -218,7 +200,7 @@ export function sanitizeUngroundedAnalysis(
     }
   }
 
-  // ---- 2b. Sanitize candidateIssues descriptions ----
+  // ---- 2b. Sanitize candidateIssues.description ----
   if (analysis.candidateIssues.length > 0) {
     const sanitizedCandidates = analysis.candidateIssues.map((issue) => {
       const claims = detectUngroundedLinguisticClaims(issue.description, userAnswer);
@@ -261,12 +243,16 @@ export function sanitizeUngroundedAnalysis(
   }
 
   // ---- 4. Attach sanitization info to qualityWarning ----
+  // PUBLIC BOUNDARY: 只暴露安全摘要（applied/evidenceRemoved/affectedDimensions/replacedFields）
+  // 不暴露 ungroundedClaims / safeReplacements / raw claim text
+  // 详细诊断仅在内部 Trace (validation.result.payload.evidence_sanitization)
   sanitized.qualityWarning = {
     score: qualityCheck.score,
     issues: qualityCheck.issues.map((i) => i.description),
     ...(report.sanitized
       ? {
           sanitization: {
+            applied: true,
             evidenceRemoved: report.evidenceRemoved,
             affectedDimensions: report.affectedDimensions,
             replacedFields: report.replacedFields,
@@ -282,10 +268,6 @@ export function sanitizeUngroundedAnalysis(
 // Safe Replacement Builders
 // =============================================================
 
-/**
- * 基于确定性输入事实构建安全的 mainIssue.description。
- * 不包含任何无法从用户回答中验证的语言结构断言。
- */
 function buildSafeMainIssueDescription(analysis: SpeakingAnalysisResult, userAnswer: string): string {
   const wordCount = analysis.metrics?.wordCount ?? userAnswer.trim().split(/\s+/).filter(Boolean).length;
   const sentenceCount = analysis.metrics?.sentenceCount ?? userAnswer.split(/[.!?]+/).filter((s) => s.trim()).length;
@@ -299,9 +281,6 @@ function buildSafeMainIssueDescription(analysis: SpeakingAnalysisResult, userAns
   return `回答内容可以进一步展开，建议补充具体例子和细节来增强说服力。`;
 }
 
-/**
- * 基于确定性输入事实构建安全的 summary。
- */
 function buildSafeSummary(analysis: SpeakingAnalysisResult, userAnswer: string): string {
   const wordCount = analysis.metrics?.wordCount ?? userAnswer.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount < 30) {
