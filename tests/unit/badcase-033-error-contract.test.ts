@@ -43,6 +43,17 @@ function makeGenericErrorProvider(): LlmProvider {
   };
 }
 
+
+function makeSecretErrorProvider(): LlmProvider {
+  return {
+    kind: "mock",
+    async chat(_req: LlmChatRequest): Promise<LlmChatResponse> {
+      // 模拟底层 SDK 抛出包含敏感信息的异常
+      throw new Error("sdk fatal: path C:\\foo\\bar\\config.json apiKey=sk-abc123secret internal_state=corrupted");
+    },
+  };
+}
+
 function makeSuccessProvider(): LlmProvider {
   return {
     kind: "mock",
@@ -175,8 +186,8 @@ describe("Bad Case 033: Error Contract — schema mismatch 不折叠", () => {
     expect(fallbacks.length).toBe(0);
   });
 
-  // ---- 3. Safety regression: generic error → MODEL_ERROR（不泄漏内部细节）----
-  it("底层 provider 异常 → 包装为 LlmError(MODEL_ERROR)，kind 不漂移", async () => {
+  // ---- 3. Safety regression: unknown error → safe public message（不泄漏 raw err.message）----
+  it("非 AppError 未知异常 → kind=MODEL_ERROR，不暴露 raw err.message", async () => {
     __setProviderForTests("mock", makeGenericErrorProvider());
 
     const res = await callLearnCard("galvanize", "trc_033_generic");
@@ -184,10 +195,45 @@ describe("Bad Case 033: Error Contract — schema mismatch 不折叠", () => {
 
     const json = (await res.json()) as ErrorResponse;
     expect(json.error?.kind).toBe("MODEL_ERROR");
-    // 响应结构化，无 stack trace
     expect(json.error?.message).toBeTruthy();
-    expect(json.error?.message).not.toContain("at ");
     expect(json.error?.trace_id).toBe("trc_033_generic");
+    // 关键安全断言：原始错误 message 不得出现在 API 响应中
+    expect(json.error?.message).not.toContain("connection reset by peer");
+    // 使用安全公开文案
+    expect(json.error?.message).toContain("模型服务暂时不可用");
+  });
+
+  it("包含 path/apiKey 的底层异常 → 客户端不泄漏任何敏感内容", async () => {
+    __setProviderForTests("mock", makeSecretErrorProvider());
+
+    const res = await callLearnCard("galvanize", "trc_033_secret");
+    expect(res.status).toBe(502);
+
+    const json = (await res.json()) as ErrorResponse;
+    expect(json.error?.kind).toBe("MODEL_ERROR");
+    // 严格安全断言：不得包含 path、apiKey、内部状态
+    expect(json.error?.message).not.toContain("C:\\foo");
+    expect(json.error?.message).not.toContain("apiKey");
+    expect(json.error?.message).not.toContain("sk-abc123");
+    expect(json.error?.message).not.toContain("internal_state");
+    expect(json.error?.message).not.toContain("sdk fatal");
+    // 使用安全公开文案
+    expect(json.error?.message).toContain("模型服务暂时不可用");
+    // 响应仍然是结构化 AppError
+    expect(json.error?.trace_id).toBe("trc_033_secret");
+  });
+
+  it("LlmError(MODEL_SCHEMA_MISMATCH) → kind 仍然保留，不因安全修复被折叠", async () => {
+    __setProviderForTests("mock", makeSchemaMismatchProvider());
+
+    const res = await callLearnCard("galvanize", "trc_033_schema_safety");
+    expect(res.status).toBe(502);
+
+    const json = (await res.json()) as ErrorResponse;
+    // 核心修复：具体 domain error code 必须保留
+    expect(json.error?.kind).toBe("MODEL_SCHEMA_MISMATCH");
+    // LlmError 的 message 是已分类的安全文案（Schema 校验失败: ...），可以保留
+    expect(json.error?.message).toContain("Schema");
   });
 
   // ---- 4. Normal path regression ----

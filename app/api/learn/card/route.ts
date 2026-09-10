@@ -5,6 +5,9 @@
  * M1: 使用中央 repository-factory
  * M2 Phase 2: state.read / retrieval.executed 埋点
  * BC-033: 保留 LLM 具体错误码（MODEL_SCHEMA_MISMATCH 等），不折叠为 MODEL_ERROR
+ * BC-033-SAFETY: LlmError(MODEL_ERROR) 可能包含 callAndValidate 包装的 raw err.message，
+ *   客户端只得到安全文案；其他具体 LlmError kind（SCHEMA_MISMATCH 等）保留已分类 message。
+ *   Trace 仍记录内部诊断 message（debug-only，受 M2 truncation/privacy contract 约束）。
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -19,12 +22,20 @@ import {
 import { getLearningRepository } from "@/lib/repository-factory";
 import { normalizeTerm } from "@/lib/learning/item-id";
 import { generateWordCardWithLlm } from "@/lib/llm/tasks/generate-word-card";
+import { LlmError } from "@/lib/llm/errors";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
 import { canonicalStateHash } from "@/lib/observability/trace-context";
 
 export const runtime = "nodejs";
+
+/**
+ * 未知/通用模型错误的公开安全文案。
+ * LlmError(MODEL_ERROR) 由 callAndValidate 包装底层 provider 异常产生，
+ * 其 message 可能包含 raw err.message（SDK path、apiKey 等），不得暴露给客户端。
+ */
+const UNKNOWN_MODEL_ERROR_PUBLIC_MESSAGE = "模型服务暂时不可用，请稍后重试";
 
 const RequestSchema = z.object({
   term: z.string().min(1, "term 不能为空").max(200),
@@ -67,16 +78,46 @@ export async function POST(request: Request) {
         seedItem = await generateWordCardWithLlm(parsed.data.term, traceId);
       } catch (err) {
         // BC-033: Preserve specific LLM error kind (MODEL_SCHEMA_MISMATCH, MODEL_TIMEOUT, etc.)
-        // instead of collapsing everything to MODEL_ERROR.
         // LlmError extends AppError, so instanceof AppError catches both.
+        //
+        // BC-033-SAFETY: Determine whether the error message is safe to expose:
+        // - LlmError with specific kind (SCHEMA_MISMATCH, TIMEOUT, etc.): message is
+        //   constructed by the LLM pipeline, classified and safe → preserve.
+        // - LlmError with kind MODEL_ERROR: produced by callAndValidate as a generic
+        //   wrapper for raw provider exceptions. message may contain SDK paths,
+        //   apiKeys, internal state → use safe public message.
+        // - Non-AppError unknown exception: wrapped as MODEL_ERROR, raw message → safe public message.
+        // - Other AppError (AUTH, INVALID_INPUT, etc.): preserve as before.
         const appErr =
           err instanceof AppError
             ? err
-            : new AppError("MODEL_ERROR", err instanceof Error ? err.message : "生成词卡失败", traceId);
+            : new AppError(
+                "MODEL_ERROR",
+                err instanceof Error ? err.message : "unknown error",
+                traceId,
+              );
+
+        // Trace records internal diagnostic message (debug-only endpoint, 4KB truncation)
         const { code, message } = appErrorToTrace(appErr);
         endTraceError(tctx, 502, code, message);
+
+        // Determine public message safety
+        const isGenericModelError =
+          appErr instanceof LlmError && appErr.kind === "MODEL_ERROR";
+        const isUnknownNonAppError = !(err instanceof AppError);
+        const useSafeMessage = isGenericModelError || isUnknownNonAppError;
+        const publicMessage = useSafeMessage
+          ? UNKNOWN_MODEL_ERROR_PUBLIC_MESSAGE
+          : appErr.message;
+
         return NextResponse.json(
-          { error: { kind: appErr.kind, message: `无法为「${parsed.data.term}」生成词卡: ${appErr.message}`, trace_id: traceId } },
+          {
+            error: {
+              kind: appErr.kind,
+              message: `无法为「${parsed.data.term}」生成词卡: ${publicMessage}`,
+              trace_id: traceId,
+            },
+          },
           { status: 502, headers: { "x-trace-id": traceId } },
         );
       }

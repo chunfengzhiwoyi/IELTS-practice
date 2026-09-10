@@ -228,22 +228,59 @@ app/api/learn/card/route.ts 内层 catch (line 67-74)
 
 ## 8. Security Trade-off
 
+### BC-033-SAFETY-PATCH 修正
+
+原始 BC-033 修复存在 Security Contract contradiction：
+Product Decision 声称"非 AppError 未知异常不泄漏内部细节"，
+但实现中 `callAndValidate`（`lib/llm/structured-output.ts:354-361`）会把 provider
+抛出的非 LlmError 包装为 `LlmError("MODEL_ERROR", err.message)`，
+导致 route 看到的是 AppError（LlmError 继承 AppError），
+`err.message`（可能包含 SDK path、apiKey、内部状态）被直接暴露给客户端。
+
+### 最终安全边界（BC-033-SAFETY-PATCH 后）
+
+| 错误类型 | API kind | API message | Trace message |
+|----------|----------|-------------|---------------|
+| LlmError(SCHEMA_MISMATCH/TIMEOUT/...) | 保留具体 kind | 保留已分类 message（Zod 字段名等，安全） | 保留 |
+| LlmError(MODEL_ERROR) from callAndValidate | MODEL_ERROR | **安全文案** "模型服务暂时不可用，请稍后重试" | 保留内部 message（debug-only） |
+| 非 AppError 未知异常 | MODEL_ERROR | **安全文案** "模型服务暂时不可用，请稍后重试" | 保留内部 message（debug-only） |
+| 其他 AppError (AUTH/INVALID_INPUT/...) | 保留 kind | 保留 message | 保留 |
+
+### 为什么 LlmError(MODEL_ERROR) 需要特殊处理
+
+- `MODEL_ERROR` 是 `callAndValidate` 的通用 catch-all，其 message = 原始 `err.message`
+- 其他 LlmError kind（SCHEMA_MISMATCH、EMPTY_RESPONSE、INVALID_JSON 等）的 message
+  由 LLM pipeline 构造，只包含字段名/分类信息，不包含底层 SDK 敏感内容
+- 因此安全判断条件为：`appErr instanceof LlmError && appErr.kind === "MODEL_ERROR"`
+
+### Trace 与 API 的职责分离
+
+- **API-visible message**：用户可见，必须安全，不得包含 arbitrary err.message
+- **Trace response.sent**：内部诊断（debug-only endpoint `/api/debug/traces/[traceId]`），
+  受 M2 Privacy Contract 约束（单条 payload 4KB 截断、raw output 512 char 截断），
+  可记录内部错误摘要用于问题定位
+- 两者语义一致（kind 相同），但 message 详细程度不同
+
 ### 保留了什么
 
-- `MODEL_SCHEMA_MISMATCH` 等 domain-level 错误码：这是产品级分类，不包含敏感信息
-- 错误 message 包含 Zod validation 错误摘要（字段名 + 错误信息）：这是可诊断的必要信息，不含 API Key / 内部路径
+- `MODEL_SCHEMA_MISMATCH` 等 domain-level 错误码：产品级分类，不包含敏感信息
+- 具体 LlmError kind 的已分类 message（Zod validation 字段名等）：可诊断的必要信息
 
 ### 保护了什么
 
-- 非 `AppError` 的未知异常 → `MODEL_ERROR`，不泄漏 `err.message` 中的内部细节（如 stack trace、文件路径、provider 内部错误）
-- API Key、provider 名称等敏感信息不在错误响应中
-- `classifyProviderError` 已经把底层 SDK 错误映射为安全的公开码
+- `LlmError(MODEL_ERROR)` 的 raw `err.message` → 安全公开文案，不暴露 SDK path/apiKey/内部状态
+- 非 AppError 未知异常的 raw `err.message` → 安全公开文案
+- API Key、provider 内部配置不在错误响应中
+- 无 stack trace 泄漏
 
 ### Trade-off
 
 - 保留具体错误码意味着 API contract 包含更多可能值（8 种 LLM 错误码）
-- 但这些错误码已经在 `ErrorKind` union type 中定义，是稳定的公开 contract
-- 前端可以根据不同错误码展示不同文案（如 `MODEL_SCHEMA_MISMATCH` → "服务暂时不可用"，`MODEL_RATE_LIMITED` → "请求过于频繁"）
+- 但这些错误码已在 `ErrorKind` union type 中定义，是稳定的公开 contract
+- `MODEL_ERROR` 的 API message 是固定文案，丢失了具体底层错误信息——
+  但内部 Trace 仍保留，可通过 debug endpoint 诊断
+- 前端可根据不同错误码展示不同文案（`MODEL_SCHEMA_MISMATCH` → "生成内容格式异常"，
+  `MODEL_RATE_LIMITED` → "请求过于频繁"，`MODEL_ERROR` → "服务暂时不可用"）
 
 ---
 
@@ -255,7 +292,7 @@ app/api/learn/card/route.ts 内层 catch (line 67-74)
 |--------|--------|------|
 | schema mismatch → MODEL_SCHEMA_MISMATCH | 3 | 错误码精确、响应结构化、无部分结果 |
 | Trace consistency | 3 | response.sent.app_error_code、llm.attempt、fallback 缺席 |
-| Safety regression | 1 | 未知异常 → MODEL_ERROR，不泄漏内部细节 |
+| Safety regression | 3 | 未知异常 → 安全文案、path/apiKey 不泄漏、SCHEMA_MISMATCH 不被折叠 |
 | Normal path | 2 | LLM 成功 200、seed 命中 200 |
 | Input validation | 1 | 空 term → INVALID_INPUT 400 |
 | LlmError 单元 | 2 | kind 保留、shouldFallback=false |
