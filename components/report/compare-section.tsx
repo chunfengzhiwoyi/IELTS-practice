@@ -36,6 +36,38 @@ export function CompareSection({
     { k: "复习次数", thisV: thisWeek.reviews, lastV: lastWeek.reviews, unit: "", isPct: false },
   ];
 
+  // BC-M3-003: 上一周期无任何活动 → 无 baseline，不得计算 delta
+  // 区分 MISSING（无数据）与 ZERO（有数据但真实值为 0）
+  if (!lastWeek.hasActivity) {
+    return (
+      <section>
+        <h3 className="section-label">最近七天 · 与前七天</h3>
+        <p className="lexicon__note">
+          暂无历史对比数据。继续学习几天后，这里会显示你与前七天的变化。
+        </p>
+        {thisWeek.activeDays > 0 && (
+          <div className="week-rule">
+            <div className="week-rule__track">
+              {weeklyActivity.map((c, i) =>
+                c.hasActivity ? (
+                  <span
+                    key={c.key}
+                    className={`week-rule__tick${c.isToday ? " week-rule__tick--today" : ""}`}
+                    style={{
+                      left: `${weeklyActivity.length > 1 ? (i / (weeklyActivity.length - 1)) * 100 : 0}%`,
+                    }}
+                    title={c.label}
+                  />
+                ) : null,
+              )}
+            </div>
+            <p className="week-rule__cap">本期活跃 {thisWeek.activeDays} 天。</p>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   const visible = rows.filter((r) => (r.thisV ?? 0) > 0 || (r.lastV ?? 0) > 0);
 
   return (
@@ -49,11 +81,15 @@ export function CompareSection({
           <div className="compare">
             {visible.map((r) => {
               const a = r.thisV ?? 0;
+              // BC-M3-003: lastV 为 null（该指标上周期无数据）时不计算 delta
+              const baselineMissing = r.lastV == null;
               const b = r.lastV ?? 0;
               let delta: { text: string; up: boolean } | null = null;
-              if (a > b) delta = { text: `▲ ${a - b}`, up: true };
-              else if (a < b) delta = { text: `▼ ${b - a}`, up: false };
-              else delta = { text: "持平", up: false };
+              if (!baselineMissing) {
+                if (a > b) delta = { text: `▲ ${a - b}`, up: true };
+                else if (a < b) delta = { text: `▼ ${b - a}`, up: false };
+                else delta = { text: "持平", up: false };
+              }
               return (
                 <div className="compare-row" key={r.k}>
                   <span className="compare-row__k">{r.k}</span>
@@ -61,11 +97,15 @@ export function CompareSection({
                   <span className="compare-row__arrow">
                     → {display(r.lastV, r.unit, r.isPct)}
                   </span>
-                  <span
-                    className={`compare-row__delta ${delta.up ? "compare-row__delta--up" : "compare-row__delta--flat"}`}
-                  >
-                    {delta.text}
-                  </span>
+                  {delta ? (
+                    <span
+                      className={`compare-row__delta ${delta.up ? "compare-row__delta--up" : "compare-row__delta--flat"}`}
+                    >
+                      {delta.text}
+                    </span>
+                  ) : (
+                    <span className="compare-row__delta compare-row__delta--flat">—</span>
+                  )}
                 </div>
               );
             })}

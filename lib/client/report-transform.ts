@@ -19,6 +19,9 @@ export interface WeekBucket {
   reviewAccuracy: number | null;
   activeDays: number;
   speakingCompleted: number;
+  /** BC-M3-003: 该周期是否存在任何学习/口语活动。
+   *  true = 有 baseline，0 是真实零值；false = 无数据，不得计算 delta */
+  hasActivity: boolean;
 }
 
 export interface SpeakingIssueDigest {
@@ -189,7 +192,8 @@ export function buildWeekBuckets(
       const t = new Date(s.createdAt).getTime();
       return t >= fromMs && t < toMs;
     }).length;
-    return { newItems, reviews, reviewAccuracy, activeDays, speakingCompleted };
+    const hasActivity = ev.length > 0 || speakingCompleted > 0;
+    return { newItems, reviews, reviewAccuracy, activeDays, speakingCompleted, hasActivity };
   };
 
   return { thisWeek: bucket(weekAgo, now), lastWeek: bucket(twoWeeksAgo, weekAgo) };

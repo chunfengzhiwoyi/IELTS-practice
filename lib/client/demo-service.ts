@@ -489,6 +489,7 @@ export interface WeekBucket {
   reviewAccuracy: number | null; // 本窗口会话内准确率（非掌握率）
   activeDays: number; // 本窗口活跃天数
   speakingCompleted: number; // 本窗口完成口语次数
+  hasActivity: boolean; // BC-M3-003: 本窗口是否有任何活动（区分 missing vs zero）
 }
 
 export interface SpeakingIssueDigest {
@@ -747,7 +748,8 @@ export function buildWeekBuckets(
       const t = new Date(s.createdAt).getTime();
       return t >= fromMs && t < toMs;
     }).length;
-    return { newItems, reviews, reviewAccuracy, activeDays, speakingCompleted };
+    const hasActivity = ev.length > 0 || speakingCompleted > 0;
+    return { newItems, reviews, reviewAccuracy, activeDays, speakingCompleted, hasActivity };
   };
 
   return { thisWeek: bucket(weekAgo, now), lastWeek: bucket(twoWeeksAgo, weekAgo) };
