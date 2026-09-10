@@ -150,7 +150,9 @@ Option D 已被 ELS-EVAL-019 证明不可接受。
 
 ## Regression
 
-### 新增测试：`tests/unit/badcase-019-hallucination-gate.test.ts`（20 tests）
+### 新增测试：`tests/unit/badcase-019-hallucination-gate.test.ts`（26 tests = 20 original + 6 safety）
+
+**Original 20 tests（主体修复）**：
 
 | 场景 | 用例数 | 覆盖 |
 |------|--------|------|
@@ -164,6 +166,17 @@ Option D 已被 ELS-EVAL-019 证明不可接受。
 | E. Band leakage (020) | 1 | band guard 不回归 |
 | F. Short-answer path (015) | 1 | 正常分析不破坏 |
 | G. Vague advice (016) | 1 | actionabilityCheck 仍运行 |
+
+**Safety Patch 新增 6 tests（BC-M3-004-SAFETY-PATCH）**：
+
+| Test | 验证 |
+|------|------|
+| A. public-response-no-raw-hallucination | factual 字段 JSON 不含 which/被动语态/比较级/复合句；sanitization 不含内部诊断字段 |
+| B. internal-trace-can-record-safe-diagnostic | sanitizationReport 可记录 ungrounded claim labels（仅 label，非 raw text） |
+| C. legitimate-grammar-evidence-preserved | 用户确实使用 which/better 时，对应 evidence 不被移除 |
+| D. no-detection-enforcement-drift | gate 和 sanitizer 使用同一共享 primitive，结果一致 |
+| E. all-rendered-factual-fields-contained | 所有 UI 渲染的 factual 字段都在 containment 范围 |
+| G. vague-advice direct actionabilityCheck | 直接验证 actionabilityCheck 独立运行，不受 019 修复影响（重写自原 G） |
 
 ### Regression Matrix
 
@@ -192,16 +205,17 @@ ELS-EVAL-019 预期：
 主体修复后发现：`qualityWarning.sanitization` 为 API-visible，需确认不含 raw hallucinated claims。
 
 **审计结果**：
-- `qualityWarning.sanitization` 只含安全摘要：`applied` / `evidenceRemoved` / `affectedDimensions` / `replacedFields`
-- 不含 `ungroundedClaims` / `safeReplacements` / raw claim text
-- 详细诊断（`ungroundedClaims` 含 label + matchedText）仅在内部 Trace `validation.result.payload.evidence_sanitization`
-- Trace 中只记录 claim label（类别名如"which/that 定语从句"），不记录原始 hallucinated sentence
+- `qualityWarning.sanitization`（Public API）只含安全摘要：`applied` / `evidenceRemoved` / `affectedDimensions` / `replacedFields`
+- 不含 `ungroundedClaims` / `safeReplacements` / raw claim text / matchedText
+- Sanitizer 内部 `SanitizationReport`（进程内对象）含 `ungroundedClaims: { label, matchedText }`，仅用于 containment 决策，不进入 public API，也不被序列化到 Trace
+- 序列化的 `validation.result` Trace 中 `ungrounded_claims` 只记录 normalized claim labels（类别名如"which/that 定语从句"），不记录 raw hallucinated sentence 或 matchedText
 
 **Public / Internal Boundary**：
-| 层级 | 字段 | 内容 |
-|------|------|------|
-| Public API | qualityWarning.sanitization | applied, evidenceRemoved, affectedDimensions, replacedFields |
-| Internal Trace | validation.result.payload.evidence_sanitization | evidence_removed, affected_dimensions, replaced_fields, ungrounded_claims (labels only) |
+| 层级 | 字段 | 内容 | matchedText |
+|------|------|------|-------------|
+| Public API | qualityWarning.sanitization | applied, evidenceRemoved, affectedDimensions, replacedFields | 无 |
+| In-process only | SanitizationReport.ungroundedClaims | { label, matchedText } — 仅用于 containment 决策 | 有（进程内） |
+| Serialized Trace | validation.result.payload.evidence_sanitization.ungrounded_claims | normalized labels only | 无 |
 
 ### Grounding SSOT (Single Source of Truth)
 
@@ -235,7 +249,7 @@ Gate（detection）和 Sanitizer（enforcement）共用同一 primitive，消除
 
 **新增**：`ieltsAnalysis.*.issues` sanitization — 含 ungrounded linguistic claim 的 issue 替换为安全通用文案。
 
-### Safety Tests (A-E)
+### Safety Tests（6 tests = A, B, C, D, E, G）
 
 | Test | 验证 |
 |------|------|
@@ -247,8 +261,20 @@ Gate（detection）和 Sanitizer（enforcement）共用同一 primitive，消除
 
 ## Files Changed
 
+**主体修复（commit 0e367ca）**：
 1. `lib/speaking/evidence-sanitizer.ts` — 新增，evidence sanitization 逻辑
 2. `lib/speaking/types.ts` — qualityWarning 增加可选 sanitization 字段
 3. `lib/llm/tasks/analyze-speaking.ts` — Quality Gate 后调用 sanitizer，Trace 记录 sanitization
 4. `tests/unit/badcase-019-hallucination-gate.test.ts` — 新增，20 tests
 5. `docs/v3/badcases/019-hallucination-gate.md` — 本文档
+
+**Safety Patch（commit eaeb236）**：
+6. `lib/speaking/evidence-grounding.ts` — 新增，共享 grounding primitive（SSOT）
+7. `lib/speaking/feedback-quality.ts` — evidenceConsistencyCheck 改用共享 primitive
+8. `lib/speaking/evidence-sanitizer.ts` — 改用共享 primitive + 新增 issues sanitization + public boundary 收紧
+9. `lib/speaking/types.ts` — sanitization 增加 `applied: boolean` 字段
+10. `tests/unit/badcase-019-hallucination-gate.test.ts` — 新增 6 safety tests（共 26 tests）
+11. `docs/v3/badcases/019-hallucination-gate.md` — Safety Patch 章节
+
+**Doc Close（本次）**：
+12. `docs/v3/badcases/019-hallucination-gate.md` — 测试数量同步为 26，internal boundary 澄清
