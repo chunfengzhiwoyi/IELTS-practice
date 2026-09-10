@@ -14,6 +14,7 @@ import { z } from "zod";
 import { callLlmStructured, type CallStructuredOptions } from "@/lib/llm/structured-output";
 import { analyzeSpeakingAnswer as ruleBasedAnalysis } from "@/lib/speaking/analysis";
 import { validateFeedbackQuality } from "@/lib/speaking/feedback-quality";
+import { sanitizeUngroundedAnalysis } from "@/lib/speaking/evidence-sanitizer";
 import { logger } from "@/lib/observability/logger";
 import { traceStore } from "@/lib/observability/trace-store";
 import { EVENT_TYPE_TO_LAYER, type TraceEvent } from "@/lib/observability/trace-contract";
@@ -183,6 +184,15 @@ export async function analyzeSpeakingWithLlm(
     // ─── Feedback Quality Gate ───────────────────────────────
     const qualityCheck = validateFeedbackQuality(llmResult, answer);
 
+    // ─── BC-M3-004: Evidence Sanitization ────────────────────
+    // Quality Gate 检测到 EVIDENCE_MISMATCH 后，移除未在用户回答中获得支持的具体断言。
+    const { analysis: sanitizedResult, report: sanitizationReport } = sanitizeUngroundedAnalysis(
+      llmResult,
+      answer,
+      qualityCheck,
+    );
+    const finalResult = sanitizedResult;
+
     // M2: validation.result（口语四门质量门）
     if (isTraceEnabled()) {
       const gateScores: Record<string, number> = {};
@@ -213,6 +223,14 @@ export async function analyzeSpeakingWithLlm(
             total: qualityCheck.score,
           },
           quality_warning: qualityCheck.issues.map((i) => i.description).join("; ").slice(0, 300),
+          evidence_sanitization: sanitizationReport.sanitized
+            ? {
+                evidence_removed: sanitizationReport.evidenceRemoved,
+                affected_dimensions: sanitizationReport.affectedDimensions,
+                replaced_fields: sanitizationReport.replacedFields,
+                ungrounded_claims: sanitizationReport.ungroundedClaims.map((cl) => cl.label),
+              }
+            : null,
         },
       };
       traceStore.appendEvent(valEvent);
@@ -260,15 +278,19 @@ export async function analyzeSpeakingWithLlm(
         trace_id: traceId,
         score: qualityCheck.score,
         issues: qualityCheck.issues.map((i) => i.type),
+        sanitized: sanitizationReport.sanitized,
+        evidence_removed: sanitizationReport.evidenceRemoved,
       });
-      // 附加警告但仍返回 LLM 结果
-      llmResult.qualityWarning = {
-        score: qualityCheck.score,
-        issues: qualityCheck.issues.map((i) => i.description),
-      };
+      // qualityWarning 已在 sanitizeUngroundedAnalysis 中设置（含 sanitization 信息）
+      if (!sanitizationReport.sanitized) {
+        finalResult.qualityWarning = {
+          score: qualityCheck.score,
+          issues: qualityCheck.issues.map((i) => i.description),
+        };
+      }
     }
 
-    return llmResult;
+    return finalResult;
   } catch (err) {
     logger.warn("llm.speaking.fallback", {
       trace_id: traceId,

@@ -59,6 +59,12 @@ export interface SpeakingAnalysisResult {
   qualityWarning?: {
     score: number;
     issues: string[];
+    /** BC-M3-004: evidence sanitization 执行信息 */
+    sanitization?: {
+      evidenceRemoved: number;
+      affectedDimensions: string[];
+      replacedFields: string[];
+    };
   };
 }
 
