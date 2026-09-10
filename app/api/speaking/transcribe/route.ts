@@ -15,25 +15,68 @@
  *   - request.received + llm.attempt(provider=whisper, prompt 字段 null, §1.6 特例)
  *   - response.sent 错误路径带 ui_fallback_offered（Case 034 前端文字回退）
  *   - 隐私：绝不记录音频字节，只记 metadata 指标（duration/wpm/pause）
+ *
+ * BC-034（ELS-EVAL-034 Required Trace Fields: audio_metadata）：
+ *   - request.received 携带结构化 audio_metadata 摘要（content_type / size_bytes /
+ *     has_filename / extension / empty_audio_flag）
+ *   - FormData 在 startTrace 前解析：即使 STT config 缺失（503 CONFIG_ERROR）或
+ *     上游 5xx（502 MODEL_ERROR），audio_metadata 仍然可见（关键路径）
+ *   - 错误日志（logger.error）同样携带 audio_metadata 摘要
+ *   - 绝不记录：audio bytes / base64 / 原始音频内容 / Authorization / 完整 filename
  */
 import { NextResponse } from "next/server";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { logger } from "@/lib/observability/logger";
 import { startTrace, endTraceSuccess } from "@/lib/observability/trace-api-helper";
 import type { AudioMetadata, PauseInfo, TranscribeResponse, WordTimestamp } from "@/lib/speaking/audio-types";
+import type { RequestReceivedPayload } from "@/lib/observability/trace-contract";
 
 export const runtime = "nodejs";
 
 // Whisper API 支持的最大文件大小：25MB
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
+/** 结构化音频元数据摘要（BC-034；不落音频字节/文件名原文）。导出供单测覆盖边界（如空 filename）。 */
+export function buildAudioMetadataSummary(file: File): NonNullable<RequestReceivedPayload["audio_metadata"]> {
+  const name = file.name ?? "";
+  const dot = name.lastIndexOf(".");
+  const extension = dot >= 0 && dot < name.length - 1 ? name.slice(dot + 1).toLowerCase() : undefined;
+  return {
+    content_type: file.type || undefined,
+    size_bytes: file.size,
+    has_filename: name.length > 0,
+    extension,
+    empty_audio_flag: file.size === 0,
+  };
+}
+
 export async function POST(request: Request) {
   const traceId = traceIdFromHeaders(request.headers);
-  const tctx = startTrace(traceId, "/api/speaking/transcribe", {
-    input_summary: "speaking transcribe (audio metadata only)",
-    method: "POST",
-  });
   const started = Date.now();
+
+  // ---- BC-034: 先解析 FormData，构造 audio_metadata 摘要（错误路径也可见）----
+  let audioFile: File | null = null;
+  let formParseError: string | null = null;
+  try {
+    const formData = await request.formData();
+    const candidate = formData.get("audio");
+    if (candidate instanceof File) {
+      audioFile = candidate;
+    }
+  } catch (err) {
+    formParseError = err instanceof Error ? err.message : "formData parse failed";
+  }
+
+  const audioMetadataSummary = audioFile ? buildAudioMetadataSummary(audioFile) : undefined;
+  const inputSummary = audioFile
+    ? `audio upload: ${audioFile.type || "unknown-mime"} ${audioFile.size}B`
+    : `speaking transcribe (no audio file${formParseError ? `; formData error: ${formParseError.slice(0, 80)}` : ""})`;
+
+  const tctx = startTrace(traceId, "/api/speaking/transcribe", {
+    input_summary: inputSummary,
+    method: "POST",
+    ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
+  });
 
   // 失败路径统一出口：错误响应 + ui_fallback_offered（前端可回退文字输入）
   function fail(httpStatus: number, kind: string, message: string, llmErrorCode: string | null = null) {
@@ -63,6 +106,14 @@ export async function POST(request: Request) {
       ui_fallback_offered: true, // Case 034: 前端文字回退可用
     });
     tctx.trace.finalize(httpStatus, kind);
+    // BC-034: 错误日志含 trace_id 与 audio_metadata 摘要
+    logger.error("speaking.transcribe.failed", {
+      trace_id: traceId,
+      http_status: httpStatus,
+      kind,
+      error: message.slice(0, 500),
+      ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
+    });
     return NextResponse.json(
       { error: { kind, message } },
       { status: httpStatus, headers: { "x-trace-id": traceId } },
@@ -70,12 +121,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. 解析 FormData
-    const formData = await request.formData();
-    const audioFile = formData.get("audio");
-
-    if (!audioFile || !(audioFile instanceof File)) {
-      return fail(400, "INVALID_INPUT", "缺少 audio 文件");
+    // 1. 校验 audio 文件（FormData 解析已在 startTrace 前完成）
+    if (!audioFile) {
+      return fail(400, "INVALID_INPUT", formParseError ? `表单解析失败: ${formParseError}` : "缺少 audio 文件");
     }
 
     if (audioFile.size > MAX_FILE_SIZE) {
@@ -112,6 +160,7 @@ export async function POST(request: Request) {
         trace_id: traceId,
         status: whisperRes.status,
         body: errBody.slice(0, 200),
+        ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
       });
       return fail(502, "MODEL_ERROR", `语音识别失败 (${whisperRes.status})`, "MODEL_ERROR");
     }
@@ -164,6 +213,7 @@ export async function POST(request: Request) {
       wpm,
       pauseCount: pauses.pauseCount,
       latency_ms: Date.now() - started,
+      ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
     });
 
     const resp = NextResponse.json(response, {
@@ -173,7 +223,11 @@ export async function POST(request: Request) {
     return endTraceSuccess(tctx, resp, `transcript=${transcript.slice(0, 200)}, duration=${duration}, wpm=${wpm}`, false);
   } catch (err) {
     const message = err instanceof Error ? err.message : "transcribe failed";
-    logger.error("speaking.transcribe.error", { trace_id: traceId, error: message });
+    logger.error("speaking.transcribe.error", {
+      trace_id: traceId,
+      error: message,
+      ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
+    });
     return fail(500, "INTERNAL", message, "MODEL_ERROR");
   }
 }

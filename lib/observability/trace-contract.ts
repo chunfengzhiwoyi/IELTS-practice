@@ -110,6 +110,20 @@ export interface RequestReceivedPayload {
   session_id?: string;
   method: string;
   content_length?: number;
+  /**
+   * BC-034（ELS-EVAL-034 Required Trace Fields: audio_metadata）：
+   * 语音转写请求的结构化音频元数据摘要。
+   * 隐私约束（M2 Contract §3）：绝不记录 audio bytes / base64 / 原始音频内容；
+   * filename 可能含个人信息 → 只记 has_filename 与 extension，不记完整 filename。
+   * 该摘要必须在 request.received 阶段就位（STT config 缺失等错误路径也可见）。
+   */
+  audio_metadata?: {
+    content_type?: string;
+    size_bytes?: number;
+    has_filename: boolean;
+    extension?: string;
+    empty_audio_flag?: boolean;
+  };
 }
 
 /** llm.attempt payload */
