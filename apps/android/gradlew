@@ -1,0 +1,21 @@
+#!/bin/sh
+# Gradle start up script (minimal POSIX variant) for the IELTS Android project.
+# APP_HOME is resolved to a Windows-style absolute path (e.g. D:/Codex/...)
+# because the native Windows java.exe does not understand Cygwin/Git-Bash
+# mount paths like /d/Codex/... used for the classpath.
+
+APP_HOME=$( cd "${0%/*}" && pwd -W ) || exit 1
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+
+if [ -n "$JAVA_HOME" ]; then
+  JAVACMD="$JAVA_HOME/bin/java"
+else
+  JAVACMD=java
+fi
+
+if [ ! -f "$JAVACMD" ]; then
+  echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
+  exit 1
+fi
+
+exec "$JAVACMD" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
