@@ -287,6 +287,17 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 .today-zone__secondary a { color: var(--accent); font-weight: 600; }
 .today-zone__secondary a:hover { text-decoration: underline; }
+.today-zone__actions {
+  list-style: none; margin: 18px 0 0; padding: 0;
+  display: grid; gap: 8px; font-family: var(--font-ui);
+}
+.today-zone__actions li {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+  font-size: 0.9375rem; color: var(--ink-soft);
+}
+.today-zone__action-label { color: var(--ink); font-weight: 600; }
+.today-zone__action-reason { flex: 1 1 auto; min-width: 12ch; }
+.today-zone__action-meta { font-variant-numeric: tabular-nums; }
 
 /* ---------- 能力货架（文本条目，非等权彩卡） ---------- */
 .ability-shelf { display: grid; gap: 0; }

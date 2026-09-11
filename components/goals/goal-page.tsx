@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getGoalProfile,
-  saveGoalProfile,
-  type GoalProfile,
-} from "@/lib/goal";
+import { saveGoalProfile, getGoalProfile } from "@/lib/goal";
+import type { GoalProfile } from "@/lib/goal/types";
+import { saveGoalAuthoritative } from "@/lib/client/goal-client";
+import { useGoalProfile } from "@/lib/client/use-goal-profile";
 import {
   generateStudyPlan,
   type StudyPlan,
@@ -27,25 +26,33 @@ const FEAS_LABEL: Record<StudyPlan["feasibility"], string> = {
   atRisk: "有风险",
 };
 
+/**
+ * GoalPage — 备考目标设定页（PRODUCT-LOOP-02B）
+ * Goal 档案：服务端 GoalRepository 为权威；首次加载自动从 localStorage 迁移。
+ * 保存：先写本地缓存（setAt/plannedWeeks 补全），再 PUT /api/goal；
+ * API 不可用时保留本地缓存（离线回退），不静默假装已持久化。
+ * 学习概况来自服务端 /api/learning/stats（SSOT）。
+ */
 export function GoalPage() {
   const router = useRouter();
+  const goal = useGoalProfile();
   const [examDate, setExamDate] = useState<string | null>(null);
   const [targetBand, setTargetBand] = useState<number>(6.5);
   const [currentBand, setCurrentBand] = useState<number>(5.0);
   const [dailyMinutes, setDailyMinutes] = useState<number>(30);
   const [target, setTarget] = useState<number>(200);
   const [plan, setPlan] = useState<StudyPlan | null>(null);
-  // 当前学习概况来自服务端 /api/learning/stats（SSOT），不再读 localStorage。
   const stats = useLearningStats();
 
   useEffect(() => {
-    const p: GoalProfile = getGoalProfile();
+    if (!goal.loaded) return;
+    const p: GoalProfile = goal.profile;
     setExamDate(p.examDate);
     setTargetBand(p.targetBand);
     setCurrentBand(p.currentBand);
     setDailyMinutes(p.dailyMinutes);
     setTarget(p.weeklyWordTarget);
-  }, []);
+  }, [goal.loaded, goal.profile]);
 
   // 服务端统计（stats 未就绪时为 null → UI 显示占位）
   const learned = stats?.learnedCount ?? null;
@@ -83,17 +90,23 @@ export function GoalPage() {
     setTarget(plan.recommendedWeeklyWords);
     setDailyMinutes(plan.dailyMinutes);
   };
-  const save = () => {
+  const save = async () => {
+    // 1) 本地缓存写通（saveGoalProfile 自动补全 setAt / plannedWeeks）
     saveGoalProfile({
       examDate,
       targetBand,
       currentBand,
       dailyMinutes,
       weeklyWordTarget: Math.max(1, Math.round(target)),
-      // setAt / plannedWeeks 由 saveGoalProfile 自动补全与保留，无需前端传入
       setAt: null,
       plannedWeeks: null,
     });
+    // 2) 新的 Goal 修改必须走 API（服务端成为权威）
+    try {
+      await saveGoalAuthoritative(getGoalProfile());
+    } catch {
+      // API 不可用 → 保持本地缓存（离线回退）；不静默假装已持久化
+    }
     router.push("/report");
   };
 
@@ -253,7 +266,7 @@ export function GoalPage() {
       <button className="btn btn--primary goal-save" onClick={save}>
         保存
       </button>
-      <p className="pf-note">灵犀 · IELTS — 个人主体 · 数据先存于本机</p>
+      <p className="pf-note">灵犀 · IELTS — 个人主体 · 目标与学习数据存于本机</p>
     </main>
   );
 }

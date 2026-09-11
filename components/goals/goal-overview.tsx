@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { getGoalProfile } from "@/lib/goal";
 import { generateStudyPlan, type StudyPlan } from "@/lib/goal/plan";
+import { useGoalProfile } from "@/lib/client/use-goal-profile";
 import { useLearningStats } from "@/lib/client/use-learning-stats";
 
 const FEAS_LABEL: Record<StudyPlan["feasibility"], string> = {
@@ -14,11 +14,12 @@ const FEAS_LABEL: Record<StudyPlan["feasibility"], string> = {
 /**
  * 报告页顶部的「备考目标」概览卡：有考试日期时展示倒计时 + 阶段进度 + 可行性，
  * 否则引导去 /goals 设定。整卡可点，进入目标页。
- * 学习概况（已学/掌握/连续天数）来自服务端 /api/learning/stats（SSOT），不再读 localStorage。
+ * Goal 档案来自服务端 GoalRepository（首次加载自动迁移 localStorage）；
+ * 学习概况来自服务端 /api/learning/stats（SSOT）。
  */
 export function GoalOverview() {
-  const p = getGoalProfile();
-  const hasGoal = !!p.examDate;
+  const { profile: p, loaded } = useGoalProfile();
+  const hasGoal = loaded && !!p.examDate;
   const stats = useLearningStats();
 
   const plan =
