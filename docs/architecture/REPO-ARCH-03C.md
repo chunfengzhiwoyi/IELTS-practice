@@ -57,7 +57,7 @@ Root adaptations (build hygiene, not external source): root `tsconfig.json` excl
 - Excluded from migration: dist*, preview, .swc, *.log, build_clean.txt / build_log.txt, shot-mini*.mjs QA scripts, scripts/_probe.js / _smoke.js / _smoke2.js scratch.
 
 ## Install / Build / Test Result
-- Install: `npm install` in apps/miniapp (NO_SOURCE_LOCKFILE; fresh install, 1176 packages, exit 0). node_modules/@ielts/core resolves via file: dep.
+- Install: `npm install` in apps/miniapp (NO_SOURCE_LOCKFILE; fresh install, 1176 packages, exit 0). node_modules/@ielts/core resolves via file: dep. Generated package-lock.json committed (commit 63a3ada) for reproducible installs; source had no lockfile.
 - Miniapp typecheck (`tsc --noEmit`): FAILS with 4 pre-existing source errors (identical to original monorepo run; original had 5 incl. @ielts/core/mini resolution error which migration FIXED):
   - src/pages/profile-edit/index.tsx (MonogramColor missing export, TS2724/TS7053 ×3)
   - src/pages/report/index.tsx (useDidShow imported from 'react', TS2305)
