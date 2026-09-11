@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-11（REPO-ARCH-03G-CANONICAL-SWITCH 完成后）。
+> 最后更新：2026-09-11（PRODUCT-LOOP-02-E2E-CLOSE 完成后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_02_SLICES_INTEGRATED** — 02B Goal Planner V1 / 02C Vocab→Speaking V1 / 02D Band Safety 已 cherry-pick 入 canonical（0 冲突），focused 112/112 + typecheck + build PASS。下一 Gate：**PRODUCT_LOOP_02_E2E**（真实用户流程验证）。
+**PRODUCT_LOOP_02_COMPLETE** — 02B/02C/02D 已入 canonical；真实用户闭环 E2E **16/16 PASS**，判定 **CONTINUOUS_LEARNING_SYSTEM**（full loop truth table 11/11 PASS）。产品代码 0 修改（仅新增 E2E harness + 报告 + 本状态文件）。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-PRODUCT_LOOP_02_E2E（Goal→Planner→Today / Vocab→Speaking 建议表达 / Band 安全回退的真实用户流程验证）。
+待 Control Plane 指定。候选：SPEAKING_TO_VOCAB V1.1（Speaking→Vocabulary 反向写回，当前 NOT_IMPLEMENTED）、Supabase Goal persistence（当前 MEMORY_REFERENCE_ONLY / SUPABASE_NOT_IMPLEMENTED）、或进入 PRODUCT_LOOP_03。
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
@@ -78,13 +78,13 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 - focused tests 44/44 PASS；typecheck PASS；next build PASS。
 
 ## PRODUCT_LOOP_02B（GOAL PLANNER V1）
-**IMPLEMENTED_PENDING_E2E — 已入 canonical（cherry-pick `6a8369d`，PRODUCT-LOOP-02-INTEGRATE）**
+**COMPLETE（E2E 已验证）— 已入 canonical（cherry-pick `6a8369d`，PRODUCT-LOOP-02-INTEGRATE）**
 - GOAL_PLANNER：V1_IMPLEMENTED。GET/PUT `/api/goal` + GET `/api/today`；`lib/planner/planner-v1.ts` 纯函数确定性，不调用 LLM；targetBand/currentBand 不参与任何数量/优先级决策。
 - GOAL_DURABILITY：**MEMORY_REFERENCE_ONLY / SUPABASE_NOT_IMPLEMENTED**（lib/goal/repository.ts：ENV-SUPABASE-01 BLOCKED，V1 恒回退 MemoryGoalRepository，显式告警 NOT durable / NOT synced across devices）。
 - 未实现：跨设备 Goal 持久化、Planner 调 LLM（明确不做）。
 
 ## PRODUCT_LOOP_02C（VOCAB→SPEAKING V1）
-**IMPLEMENTED_PENDING_E2E — 已入 canonical（cherry-pick `63119ad`，PRODUCT-LOOP-02-INTEGRATE）**
+**COMPLETE（E2E 已验证）— 已入 canonical（cherry-pick `63119ad`，PRODUCT-LOOP-02-INTEGRATE）**
 - VOCAB_TO_SPEAKING：V1_IMPLEMENTED。session response 返回 `suggestedExpressions`（上限 `MAX_TARGET_EXPRESSIONS = 2`）；无匹配 → `[]` + 普通 Speaking（SAFE FALLBACK）。
 - **NO_LONG_TERM_WRITEBACK**：target-selection 只读 UserItemState，不写 applicationLevel/recallLevel/status/nextReviewAt/currentIntervalDays/consecutiveCorrect。
 
@@ -112,6 +112,18 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 - 验证：02D（6）+ badcase-019（26）+ badcase-033（14）= **46/46 PASS**；完整 run **432/1**（唯一失败 llm-safety 预存在）；`npx tsc --noEmit` **PASS**；`npx next build` **PASS**。
 - 单泄漏 fixture（1 条 leak、原 score≈85→PASS）已新增，覆盖旧 run-04 未覆盖的“少条泄漏仍安全”路径。
 - 完整 run 实测（02D worktree，无 .env.local）：432/1（仅 llm-safety）；integrated canonical 实测详见上节 PRE_EXISTING_TEST_DEBT（REBASELINED，CURRENT_REPRODUCIBLE_TEST_DEBT = 6）。
+
+## PRODUCT_LOOP_02_E2E（REAL-LEARNING-LOOP-E2E）
+**COMPLETE / PASS 16/16 — 固化 commit：本次（test(product): freeze product-loop-02 end-to-end learning loop）**
+- **PRODUCT_CLASSIFICATION: CONTINUOUS_LEARNING_SYSTEM**（同一用户状态沿 Goal→Planner→Today→Learn→Review→Speaking→Report→Next Today 连续流动）。
+- **FULL_LOOP_TRUTH_TABLE: 11/11 PASS**（GOAL_TO_PLAN / PLAN_TO_TODAY / TODAY_TO_LEARN / LEARN_TO_STATE / STATE_TO_REVIEW / REVIEW_TO_STATE / STATE_TO_SPEAKING / SPEAKING_COMPLETION / SPEAKING_NO_STATE_POLLUTION / STATE_TO_REPORT / REPORT_STATE_TO_NEXT_PLAN）。
+- **REFERENCE_PROVIDER: MEMORY** — E2E PASS ≠ cross-device / Supabase persistence PASS。
+- **GOAL_DURABILITY: MEMORY_REFERENCE_ONLY**；**SUPABASE_GOAL_PERSISTENCE: NOT_IMPLEMENTED**（ENV-SUPABASE-01 BLOCKED）。
+- **VOCAB_TO_SPEAKING: V1 COMPLETE**（suggestedExpressions ≤2、来自已学 learner state、无匹配 SAFE FALLBACK=[]）；**SPEAKING_TO_VOCAB: NOT_IMPLEMENTED（V1.1 FUTURE）**（Speaking 零反向状态污染已验证）。
+- **BAND_SAFETY: PASS**（单条泄漏也强制安全回退，public response band-free）。
+- **M3: PAUSED**；**020: PRODUCT_FIXED_FORMAL_EVAL_PENDING**；**019_030: FIXED_PENDING_REGRESSION_1_OF_3**；**023_025_035: UNVERIFIED**。本任务未创建新 Eval run、未推进 lifecycle、未改 Frozen Gold。
+- E2E_FINDING：无产品 bug（初始 6 个失败均为 harness 契约假设错误，已修正）。
+- 产物：harness `tests/unit/product-loop-02-e2e.test.ts`（16 用例）；报告 `docs/product/PRODUCT-LOOP-02-E2E.md`。
 
 ## LAST_VERIFIED_EVAL_RUN
 `m3-20260910-125036` — 35 PASS / 0 FAIL / 4 UNVERIFIED（020/023/025/035）
