@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "rootDir": ".",
+    "paths": {
+      "@ielts/core": ["./core/src/index.ts"],
+      "@ielts/core/mini": ["./core/src/storage/mini.ts"],
+      "@ielts/core/*": ["./core/src/*"]
+    },
+    "types": ["node", "webpack-env"]
+  },
+  "include": ["./src", "./types"],
+  "exclude": ["node_modules", "dist"]
+}

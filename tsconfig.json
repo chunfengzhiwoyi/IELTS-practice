@@ -28,5 +28,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next", "dist", "playwright-report", "test-results", "data", "scripts/_dashboard_kit_extracted"]
+  "exclude": ["apps/miniapp", "node_modules", ".next", "dist", "playwright-report", "test-results", "data", "scripts/_dashboard_kit_extracted"]
 }

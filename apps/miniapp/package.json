@@ -1,0 +1,53 @@
+{
+    "name":  "mini",
+    "version":  "0.1.0",
+    "private":  true,
+    "description":  "IELTS 学习助手微信小程序 (Taro + React + TS)",
+    "templateInfo":  {
+                         "framework":  "react",
+                         "compiler":  "webpack5",
+                         "typescript":  true,
+                         "css":  "sass"
+                     },
+    "scripts":  {
+                    "build:weapp":  "taro build --type weapp",
+                    "dev:weapp":  "npm run build:weapp -- --watch",
+                    "build:h5":  "node scripts/build-h5.mjs",
+                    "typecheck":  "tsc --noEmit"
+                },
+    "dependencies":  {
+                         "@babel/runtime":  "^7.24.4",
+                         "@tarojs/components":  "4.2.1",
+                         "@tarojs/helper":  "4.2.1",
+                         "@tarojs/plugin-platform-weapp":  "4.2.1",
+                         "@tarojs/plugin-platform-h5":  "4.2.1",
+                         "@tarojs/runtime":  "4.2.1",
+                         "@tarojs/shared":  "4.2.1",
+                         "@tarojs/taro":  "4.2.1",
+                         "@tarojs/plugin-framework-react":  "4.2.1",
+                         "@tarojs/react":  "4.2.1",
+                         "react":  "^18.3.1",
+                         "react-dom":  "^18.3.1",
+                         "@ielts/core":  "file:./core"
+                     },
+    "devDependencies":  {
+                            "@tarojs/cli":  "4.2.1",
+                            "@tarojs/taro-loader":  "4.2.1",
+                            "@tarojs/webpack5-runner":  "4.2.1",
+                            "@types/react":  "^18.0.0",
+                            "@types/react-dom":  "^18.0.0",
+                            "@types/node":  "^18",
+                            "@types/webpack-env":  "^1.13.6",
+                            "babel-preset-taro":  "4.2.1",
+                            "@babel/core":  "^7.24.4",
+                            "@babel/preset-react":  "^7.24.1",
+                            "@babel/plugin-transform-class-properties":  "7.25.9",
+                            "react-refresh":  "^0.14.0",
+                            "@pmmmwh/react-refresh-webpack-plugin":  "^0.5.5",
+                            "tsconfig-paths-webpack-plugin":  "^4.1.0",
+                            "typescript":  "^5.4.5",
+                            "webpack":  "5.91.0",
+                            "sass":  "^1.75.0",
+                            "postcss":  "^8.5.6"
+                        }
+}

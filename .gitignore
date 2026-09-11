@@ -64,3 +64,10 @@ Thumbs.db
 
 # Dashboard implementation kit (local extracted copy; baseline zip kept out of tree)
 /scripts/_dashboard_kit_extracted/
+
+# Miniapp build artifacts
+/apps/miniapp/dist*/
+/apps/miniapp/.swc/
+/apps/miniapp/preview/
+
+node_modules/
