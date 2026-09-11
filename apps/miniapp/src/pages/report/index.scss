@@ -1,0 +1,203 @@
+@import "../../styles/tokens.scss";
+
+/* 顶部返回头 */
+.rp-top {
+  display: flex;
+  align-items: center;
+  height: 88px;
+  padding: 0 24px;
+  border-bottom: 1px solid $line;
+  background: $paper;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.rp-top__back {
+  display: flex;
+  align-items: center;
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $accent;
+  font-weight: 600;
+  flex: none;
+  padding-right: 16px;
+}
+.rp-top__chev { font-size: 38px; margin-right: 4px; line-height: 1; }
+.rp-top__title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 34px;
+  color: $ink;
+}
+
+/* 卡片基底 */
+.rp-card {
+  background: $paper-2;
+  border: 1px solid $line;
+  border-radius: $r-lg;
+  padding: 30px 28px 32px;
+  margin-bottom: 36px;
+}
+.rp-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.rp-card__kicker {
+  font-family: $font-ui;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: $bronze;
+}
+.rp-card__range { font-family: $font-ui; font-size: 22px; color: $ink-meta; letter-spacing: 0.04em; }
+
+/* 1. 目标板 */
+.rp-goal-board { cursor: pointer; }
+.rp-goal-board__set { font-family: $font-ui; font-size: 24px; color: $accent; font-weight: 600; }
+.rp-goal-board__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-soft;
+  margin-bottom: 14px;
+}
+.rp-goal-board__t .b { font-family: $font-display; color: $ink; font-size: 30px; font-weight: 600; }
+.rp-goal-board__pct { font-family: $font-ui; color: $accent; font-weight: 600; }
+.rp-goal__ruler { height: 10px; border-radius: 6px; background: $line; overflow: hidden; }
+.rp-goal__fill { height: 100%; background: $accent; border-radius: 6px; }
+
+/* 阶段进度（备考目标概览） */
+.rp-goal-phases {
+  display: flex;
+  gap: 16px;
+}
+.rp-goal-phase {
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $ink-meta;
+  letter-spacing: 0.02em;
+}
+.rp-goal-phase--on {
+  color: $accent;
+  font-weight: 600;
+}
+.rp-goal-phase--on::before {
+  content: "· ";
+}
+
+/* 2. 概览瓷片 */
+.rp-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.rp-tile {
+  flex: 1 1 calc(33.333% - 14px);
+  min-width: 0;
+  background: $paper;
+  border: 1px solid $line;
+  border-top: 3px solid $bronze;
+  border-radius: $r-md;
+  padding: 22px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-tile__num { display: flex; align-items: baseline; gap: 4px; }
+.rp-tile__n {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1;
+  color: $ink;
+  font-variant-numeric: lining-nums;
+}
+.rp-tile__u { font-family: $font-ui; font-size: 22px; color: $ink-meta; }
+.rp-tile__label { font-family: $font-ui; font-size: 24px; color: $ink-soft; margin-top: 6px; }
+.rp-tile__delta { font-family: $font-ui; font-size: 20px; color: $pos; font-weight: 600; }
+.rp-tile__delta--neg { color: $neg; }
+.rp-tile__delta--na { color: $line-strong; }
+
+/* 3. 趋势柱状图（自包含，避免依赖其他页 scss） */
+.pf-chart {
+  position: relative;
+  height: 360px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 8px;
+  padding-top: 26px;
+}
+.pf-chart__goal { position: absolute; left: 0; right: 0; border-top: 1px dashed $line-strong; }
+.pf-chart__goallab { position: absolute; right: 0; top: -22px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.pf-col__v { position: absolute; top: -22px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col--today .pf-col__v { color: $accent; font-weight: 600; }
+.pf-col__bar { width: 100%; max-width: 56px; background: $bar; border-radius: 6px 6px 3px 3px; }
+.pf-col--today .pf-col__bar { background: $accent; }
+.pf-col__lab { margin-top: 12px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col--today .pf-col__lab { color: $accent; font-weight: 600; }
+.rp-trend-foot { display: flex; align-items: baseline; gap: 14px; margin-top: 18px; }
+.rp-trend-foot__delta { font-family: $font-ui; color: $pos; font-weight: 600; font-size: 24px; }
+.rp-trend-foot__delta--neg { color: $neg; }
+.rp-trend-foot__cap { font-family: $font-ui; font-size: 22px; color: $ink-meta; }
+
+/* 4. 掌握分布堆叠条 */
+.rp-stack {
+  display: flex;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: $line;
+  gap: 2px;
+}
+.rp-stack__seg { height: 100%; }
+.rp-stack__seg--new { background: $line-strong; }
+.rp-stack__seg--learning { background: $bronze; }
+.rp-stack__seg--reviewing { background: $accent-deep; }
+.rp-stack__seg--mastered { background: $accent; }
+.rp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-top: 18px;
+}
+.rp-leg { display: flex; align-items: center; gap: 8px; font-family: $font-ui; font-size: 22px; color: $ink-soft; }
+.rp-leg__dot { width: 18px; height: 18px; border-radius: 4px; flex: none; }
+.rp-leg__dot--new { background: $line-strong; }
+.rp-leg__dot--learning { background: $bronze; }
+.rp-leg__dot--reviewing { background: $accent-deep; }
+.rp-leg__dot--mastered { background: $accent; }
+
+/* 5. 复习正确率 */
+.rp-rate { display: flex; align-items: baseline; gap: 12px; }
+.rp-rate__num {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 56px;
+  line-height: 1;
+  color: $ink;
+  font-variant-numeric: lining-nums;
+}
+.rp-rate__cap { font-family: $font-ui; font-size: 24px; color: $ink-soft; }
+.rp-note-sm { display: block; margin-top: 14px; font-family: $font-ui; font-size: 22px; color: $ink-meta; }
+
+/* 6. 下一步 */
+.rp-next { display: flex; flex-direction: column; gap: 8px; }
+.rp-next__t { font-family: $font-ui; font-size: 26px; font-weight: 600; color: $accent; }
+.rp-next__b { font-family: $font-text; font-size: 26px; color: $ink-soft; line-height: 1.5; }
+
+.pf-note {
+  margin-top: 44px;
+  text-align: center;
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $ink-meta;
+  letter-spacing: 0.04em;
+}

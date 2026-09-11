@@ -1,0 +1,46 @@
+// ============================================================================
+// IELTS 学习助手 · 小程序设计令牌
+// 由 web 端 OKLCH 令牌转译（微信 WXSS 不认 OKLCH，统一用 hex）。
+// 来源：apps/web/app/globals.css :root
+// ============================================================================
+
+// 纸墨（暖白底）
+$paper:        #faf8f4;
+$paper-2:      #f3f0ea;
+$paper-3:      #ece8e0;
+
+// 墨色
+$ink:          #2a2723;
+$ink-soft:     #5c574f;
+$ink-meta:     #767067;
+
+// 细线
+$line:         #e0dbd2;
+$line-strong:  #c4bdb1;
+
+// 强调（酒红 oxblood，占比克制）
+$accent:       #7a2e2b;
+$accent-deep:  #5e211f;
+$accent-wash:  #f4eaea;
+$accent-contrast: #faf7f2;
+
+// 古铜 hairline
+$bronze:       #a07c4a;
+
+// 柱状图非今日柱（沉静灰褐）
+$bar:          #c4bcae;
+
+// 语义（小面积，沉静）
+$pos:          #3f7a4f;   // 在线 / 就绪（沉静绿）
+$neg:          #b04a3a;   // 离线 / 错误（如需）
+
+// 字体（web 用 Fraunces/Newsreader/Instrument Sans；小程序经 wx.loadFontFace 注入，
+// H5 预览走 index.html 的 Google Fonts link；未加载时回退系统衬线/无衬线）
+$font-display: "Fraunces", "Noto Serif SC", Georgia, "Songti SC", serif;
+$font-text:    "Newsreader", "Noto Serif SC", Georgia, "Songti SC", serif;
+$font-ui:      "Instrument Sans", "Noto Sans SC", system-ui, sans-serif;
+
+// 圆角
+$r-sm: 4px;
+$r-md: 7px;
+$r-lg: 12px;

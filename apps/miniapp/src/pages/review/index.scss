@@ -1,0 +1,167 @@
+@import "../../styles/tokens.scss";
+
+.recall-card {
+  margin-top: 28px;
+  background: $paper;
+  border: 1px solid $line-strong;
+  border-radius: $r-lg;
+  padding: 48px 40px;
+  min-height: 420px;
+}
+.recall-card__term {
+  display: block;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 72px;
+  color: $ink;
+  line-height: 1.05;
+}
+.recall-card__prompt {
+  display: block;
+  font-family: $font-text;
+  font-size: 30px;
+  color: $ink-soft;
+  margin: 20px 0 32px;
+  max-width: 44ch;
+}
+.recall-card__hint {
+  align-self: flex-start;
+  margin: 8px 0 4px;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.recall-card__hint:active {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+.recall-card__clue-panel {
+  margin: 20px 0 8px;
+  background: $paper-2;
+  border: 1px solid $line;
+  border-left: 4px solid $accent;
+  border-radius: $r-md;
+  padding: 24px 28px;
+  animation: clueIn 0.22s ease both;
+}
+@keyframes clueIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.recall-card__clue-label {
+  display: block;
+  font-family: $font-ui;
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $ink-meta;
+  margin-bottom: 8px;
+}
+.recall-card__clue {
+  display: block;
+  font-family: $font-text;
+  font-size: 32px;
+  color: $ink;
+  line-height: 1.4;
+}
+.recall-card__clue-note {
+  display: block;
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $bronze;
+  margin-top: 12px;
+}
+
+.rating { margin-top: 36px; border-top: 1px solid $line; padding-top: 32px; }
+.rating__label {
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-meta;
+  margin-bottom: 20px;
+}
+.rating__row { display: flex; gap: 16px; }
+.rating__btn {
+  flex: 1;
+  min-height: 92px;
+  border-radius: $r-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 36px;
+  border: 1px solid $line-strong;
+  background: $paper;
+  color: $ink;
+}
+.rating__btn--skilled { border-color: $accent; color: $accent; }
+.rating__btn--fuzzy { border-color: $bronze; color: $bronze; }
+
+.feedback-card {
+  position: relative;
+  margin-top: 36px;
+  background: $paper-2;
+  border-radius: $r-md;
+  padding: 36px 32px 32px;
+  overflow: hidden;
+}
+.feedback-card__rule {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: $accent;
+}
+.feedback-card__title {
+  display: block;
+  font-family: $font-ui;
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $ink-meta;
+}
+.feedback-card__when {
+  display: block;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 56px;
+  color: $ink;
+  margin: 8px 0 16px;
+  font-variant-numeric: lining-nums;
+}
+.feedback-card__body {
+  display: block;
+  font-family: $font-text;
+  font-size: 30px;
+  color: $ink-soft;
+}
+
+.review__feedback { margin-top: 8px; }
+.review__done { margin-top: 80px; }
+
+.recall-card__ima-cta {
+  margin-top: 24px;
+  align-self: flex-start;
+}
+.recall-card__ima {
+  margin-top: 20px;
+}
+.recall-card__ima-title {
+  display: block;
+  font-family: $font-ui;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  color: $bronze;
+  margin-bottom: 10px;
+}
+.recall-card__ima-body {
+  display: block;
+  font-family: $font-text;
+  font-size: 28px;
+  color: $ink-soft;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}

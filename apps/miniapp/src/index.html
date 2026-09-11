@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"
+    />
+    <meta name="format-detection" content="telephone=no,address=no" />
+    <title>灵犀 IELTS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      !(function (n) {
+        function e() {
+          var docEl = n.document.documentElement;
+          // 与 config/index.ts 的 designWidth(750) 对齐；rootValue=40 为 Taro px2rem 实际换算率
+          // （实测源码 4px → 编译 .1rem ⇒ 40）。手机 375 宽 => html=20px，桌面封顶 430 宽 => 21.6px
+          var designWidth = 750;
+          var rootValue = 40;
+          var maxWidth = 430;      // 桌面端封顶，避免宽屏被无限放大
+          var width = Math.min(docEl.clientWidth, maxWidth);
+          docEl.style.fontSize = (width / designWidth) * rootValue + 'px';
+        }
+        n.addEventListener('resize', e);
+        n.addEventListener('pageshow', e);
+        e();
+      })(window);
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+@import "../../styles/tokens.scss";
+
+/* 身份行（紧凑） */
+.pf-identity {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 8px 4px 26px;
+  margin-bottom: 8px;
+}
+.pf-identity__avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 40px;
+  flex: none;
+  border: 1px solid $line-strong;
+}
+.pf-identity__meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pf-identity__name {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 44px;
+  line-height: 1.1;
+  color: $ink;
+}
+.pf-identity__sub {
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+}
+.pf-identity__edit {
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  color: $accent;
+  flex: none;
+}
+
+/* 本周成就卡片 */
+.pf-achieve {
+  background: $paper-2;
+  border: 1px solid $line;
+  border-left: 4px solid $accent;
+  border-radius: $r-lg;
+  padding: 30px 28px 32px;
+  margin-bottom: 36px;
+}
+.pf-achieve__head { display: flex; align-items: baseline; justify-content: space-between; }
+.pf-achieve__kicker {
+  font-family: $font-ui;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: $bronze;
+}
+.pf-achieve__range { font-family: $font-ui; font-size: 22px; color: $ink-meta; letter-spacing: 0.04em; }
+
+/* 头部巨数 */
+.pf-achieve__hero { display: flex; align-items: flex-end; gap: 10px; margin-top: 18px; }
+.pf-achieve__num {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 68px;
+  line-height: 0.9;
+  color: $ink;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.01em;
+}
+.pf-achieve__unit { font-family: $font-ui; font-size: 24px; color: $ink-soft; padding-bottom: 10px; }
+.pf-achieve__herocap { font-family: $font-ui; font-size: 24px; color: $ink-soft; margin-top: 6px; }
+
+/* 对比注脚 */
+.pf-achieve__annot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 14px; font-size: 24px; }
+.pf-achieve__delta { font-family: $font-ui; color: $pos; font-weight: 600; }
+.pf-achieve__delta--neg { color: $neg; }
+.pf-achieve__antext { font-family: $font-ui; color: $ink-meta; }
+.pf-achieve__split { font-family: $font-ui; color: $ink-meta; }
+.pf-achieve__split .b { color: $ink-soft; font-weight: 600; }
+
+/* 柱状图：父容器固定高，柱用百分比高（规避 px/rpx 内联歧义） */
+.pf-chart {
+  position: relative;
+  height: 360px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 28px;
+  padding-top: 26px;
+}
+.pf-chart__goal { position: absolute; left: 0; right: 0; border-top: 1px dashed $line-strong; }
+.pf-chart__goallab { position: absolute; right: 0; top: -22px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.pf-col__v { position: absolute; top: -22px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col--today .pf-col__v { color: $accent; font-weight: 600; }
+.pf-col__bar { width: 100%; max-width: 56px; background: $bar; border-radius: 6px 6px 3px 3px; }
+.pf-col--today .pf-col__bar { background: $accent; }
+.pf-col__lab { margin-top: 12px; font-family: $font-ui; font-size: 20px; color: $ink-meta; }
+.pf-col--today .pf-col__lab { color: $accent; font-weight: 600; }
+
+/* 目标完成 */
+.pf-goal { margin-top: 30px; }
+.pf-goal__top { display: flex; justify-content: space-between; align-items: baseline; font-family: $font-ui; font-size: 24px; color: $ink-soft; }
+.pf-goal__top .b { font-family: $font-display; color: $ink; font-size: 26px; font-weight: 600; }
+.pf-goal__pct { font-family: $font-ui; color: $accent; font-weight: 600; }
+.pf-goal__ruler { margin-top: 12px; height: 10px; border-radius: 6px; background: $line; overflow: hidden; }
+.pf-goal__fill { height: 100%; background: $accent; border-radius: 6px; }
+
+/* 连续学习 + 今日打卡 */
+.pf-streak { margin-top: 30px; padding-top: 26px; border-top: 1px solid $line; display: flex; align-items: center; justify-content: space-between; }
+.pf-streak__lab { font-family: $font-ui; font-size: 24px; color: $ink-soft; }
+.pf-streak__big { font-family: $font-display; font-size: 40px; font-weight: 600; color: $ink; }
+.pf-streak__u { font-family: $font-ui; font-size: 22px; color: $ink-meta; font-weight: 400; margin-left: 4px; }
+.pf-checkin { font-family: $font-ui; font-size: 22px; color: $accent; background: $accent-wash; border: 1px solid $accent; border-radius: 999px; padding: 8px 18px; font-weight: 600; }
+
+/* 本周每日打卡（独立行） */
+.pf-weekstrip { margin-top: 24px; }
+.pf-weekstrip__cap { display: flex; justify-content: space-between; font-family: $font-ui; font-size: 22px; color: $ink-meta; }
+.pf-weekstrip__cap .b { color: $ink-soft; font-weight: 600; }
+.pf-weekdots { margin-top: 14px; display: flex; gap: 12px; }
+.pf-wd { flex: 1; height: 64px; border-radius: 10px; border: 1px solid $line-strong; background: transparent; display: flex; align-items: flex-end; justify-content: center; position: relative; }
+.pf-wd__d { position: absolute; bottom: 6px; font-family: $font-ui; font-size: 18px; color: $ink-meta; }
+.pf-wd--on { background: $bronze; border-color: $bronze; }
+.pf-wd--on .pf-wd__d { color: #fff; }
+.pf-wd--today { border-color: $accent; box-shadow: 0 0 0 4px $accent-wash; }
+.pf-wd--today .pf-wd__d { color: $accent; font-weight: 600; }
+
+/* 里程碑 */
+.pf-miles { margin-top: 26px; display: flex; gap: 14px; }
+.pf-chip { flex: 1; border: 1px solid $line-strong; border-radius: 14px; padding: 18px 18px; background: $paper; }
+.pf-chip__k { font-family: $font-ui; font-size: 18px; letter-spacing: 0.05em; color: $ink-meta; text-transform: uppercase; }
+.pf-chip__t { font-family: $font-display; font-size: 28px; font-weight: 600; margin-top: 6px; display: block; }
+.pf-chip--hot { border-color: $accent; background: $accent-wash; }
+.pf-chip--hot .pf-chip__t { color: $accent; }
+
+/* 最近掌握 */
+.pf-wordlist { border-top: 1px solid $line; }
+.pf-word {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 24px 4px;
+  border-bottom: 1px solid $line;
+}
+.pf-word__t {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 32px;
+  color: $ink;
+  min-width: 180px;
+}
+.pf-word__d {
+  font-family: $font-text;
+  font-size: 28px;
+  color: $ink-soft;
+  flex: 1;
+}
+.pf-word__check {
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $bronze;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pf-empty {
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-meta;
+  padding: 24px 4px 30px;
+}
+
+/* 设置分组 */
+.pf-settings {
+  background: $paper-2;
+  border: 1px solid $line;
+  border-radius: $r-lg;
+  overflow: hidden;
+}
+.pf-set {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 26px;
+  border-bottom: 1px solid $line;
+}
+.pf-set:last-child { border-bottom: none; }
+.pf-set__t { font-family: $font-ui; font-size: 30px; font-weight: 500; color: $ink; }
+.pf-set__chev { color: $ink-meta; font-size: 36px; }
+.pf-set__status {
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+  margin-right: 14px;
+}
+.pf-set__status--on {
+  color: $accent;
+  font-weight: 600;
+}
+
+.pf-note {
+  margin-top: 44px;
+  text-align: center;
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $ink-meta;
+  letter-spacing: 0.04em;
+}

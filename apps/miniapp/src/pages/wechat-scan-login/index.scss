@@ -1,0 +1,36 @@
+.scan-card {
+  margin-top: 40px;
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: #fffdf9;
+  border: 1px solid #e6ddd0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.scan-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #e6ddd0;
+  border-top-color: #7a2e2b;
+  animation: scan-rotate 0.9s linear infinite;
+}
+
+@keyframes scan-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.scan-msg {
+  font-size: 15px;
+  color: #4a4540;
+  text-align: center;
+}
+
+.scan-msg--ok {
+  color: #2f7d4f;
+}

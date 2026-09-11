@@ -1,0 +1,146 @@
+@import "../../styles/tokens.scss";
+
+.pe-head {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: $paper;
+  border-bottom: 1px solid $line;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+.pe-back {
+  font-family: $font-ui;
+  font-size: 30px;
+  color: $accent;
+  font-weight: 600;
+  min-width: 120px;
+}
+.pe-title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 34px;
+  color: $ink;
+}
+.pe-head__spacer { min-width: 120px; }
+
+.pe-preview {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: $paper-2;
+  border: 1px solid $line;
+  border-radius: $r-lg;
+  padding: 28px 24px;
+  margin-top: 24px;
+}
+.pe-preview__avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 44px;
+  flex: none;
+}
+.pe-preview__avatar--img { border: 1px solid $line-strong; }
+.pe-preview__meta { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pe-preview__name {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 36px;
+  color: $ink;
+}
+.pe-preview__sub {
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+}
+
+.pe-field {
+  border: 1px solid $line-strong;
+  border-radius: $r-md;
+  background: $paper;
+  padding: 18px 22px;
+}
+.pe-input {
+  font-family: $font-text;
+  font-size: 32px;
+  color: $ink;
+}
+
+.pe-choice-row {
+  display: flex;
+  gap: 16px;
+}
+.pe-choice {
+  flex: 1;
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink-soft;
+  background: $paper;
+  border: 1px solid $line-strong;
+  border-radius: $r-md;
+  padding: 24px 0;
+  text-align: center;
+  line-height: 1.2;
+  margin: 0;
+  &::after { border: none; }
+}
+.pe-choice--on {
+  color: $accent;
+  border-color: $accent;
+  background: $accent-wash;
+}
+
+.pe-swatches {
+  display: flex;
+  gap: 16px;
+}
+.pe-swatch {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 0;
+  border: 1px solid $line-strong;
+  border-radius: $r-md;
+  background: $paper;
+}
+.pe-swatch--on {
+  border-color: $accent;
+  background: $accent-wash;
+}
+.pe-swatch__dot {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+.pe-swatch__label {
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-soft;
+}
+.pe-swatch--on .pe-swatch__label { color: $accent; font-weight: 600; }
+
+.pe-save {
+  margin-top: 44px;
+  width: 100%;
+}
+.pe-hint {
+  margin-top: 18px;
+  text-align: center;
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+  letter-spacing: 0.02em;
+}

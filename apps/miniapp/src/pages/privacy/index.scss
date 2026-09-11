@@ -1,0 +1,60 @@
+@import "../../styles/tokens.scss";
+
+.sub-back {
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $ink-soft;
+  padding: 4px 0 16px;
+}
+
+.privacy__title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 56px;
+  line-height: 1.1;
+  color: $ink;
+  margin: 12px 0 8px;
+}
+
+.privacy__updated {
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-meta;
+  margin-bottom: 28px;
+}
+
+.privacy__sec {
+  padding: 28px 0;
+  border-top: 1px solid $line;
+}
+
+.privacy__h {
+  display: block;
+  font-family: $font-ui;
+  font-weight: 600;
+  font-size: 32px;
+  color: $accent;
+  margin-bottom: 14px;
+}
+
+.privacy__b {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.privacy__line {
+  font-family: $font-text;
+  font-size: 30px;
+  line-height: 1.55;
+  color: $ink-soft;
+}
+
+.privacy__official {
+  margin-top: 36px;
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  color: $accent;
+  padding: 16px 0;
+}

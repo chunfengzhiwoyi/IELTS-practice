@@ -1,0 +1,420 @@
+@import "./tokens.scss";
+
+// ---------- 基础重置（小程序环境） ----------
+page, view, text, button, input, textarea, image {
+  box-sizing: border-box;
+}
+page {
+  background: $paper;
+  color: $ink;
+  font-family: $font-text;
+  font-size: 32px; // Taro 以 px 作为 rpx 等价，按设计稿 375 宽
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.muted { color: $ink-meta; }
+.font-ui { font-family: $font-ui; }
+
+// ---------- 版心 ----------
+.folio-page {
+  width: 100%;
+  padding: 48px 0 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+// 栏目标签（大写小字 + 古铜短线）
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: $font-ui;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: $ink-meta;
+  margin: 0 0 20px;
+  &::before {
+    content: "";
+    width: 28px;
+    height: 3px;
+    background: $bronze;
+  }
+}
+
+// 大衬线数字（folio）
+.folio {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 72px;
+  line-height: 1;
+  color: $accent;
+  font-variant-numeric: lining-nums;
+}
+
+// ---------- 报头 MASTHEAD ----------
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: $paper;
+  border-bottom: 1px solid $line;
+}
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 28px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand__seal { width: 56px; height: 56px; }
+.brand__mark {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 40px;
+  color: $accent;
+  letter-spacing: -0.01em;
+}
+.brand__tag {
+  font-family: $font-ui;
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: $bronze;
+}
+.nav-trigger {
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink-soft;
+  background: transparent;
+  border: 1px solid $line-strong;
+  border-radius: $r-md;
+  padding: 12px 24px;
+}
+.nav-overlay {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 28px;
+  right: 28px;
+  background: $paper;
+  border: 1px solid $line-strong;
+  border-radius: $r-lg;
+  box-shadow: 0 18px 44px -22px rgb(40 30 22 / 0.35);
+  padding: 8px;
+  z-index: 60;
+}
+.nav-overlay__item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 20px 16px;
+  border-radius: $r-md;
+}
+.nav-overlay__item--current {
+  background: $paper-2;
+  box-shadow: inset 4px 0 0 $accent;
+}
+.nav-overlay__title {
+  font-family: $font-ui;
+  font-weight: 600;
+  font-size: 30px;
+  color: $ink;
+}
+.nav-overlay__item--current .nav-overlay__title { color: $accent; }
+.nav-overlay__desc {
+  font-family: $font-ui;
+  font-size: 22px;
+  color: $ink-meta;
+}
+
+// ---------- 今日区 ----------
+.today-zone {
+  border-left: 4px solid $accent;
+  padding-left: 24px;
+}
+.today-zone__title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 60px;
+  line-height: 1.05;
+}
+.today-zone__sub {
+  color: $ink-soft;
+  margin: 16px 0 28px;
+  max-width: 46ch;
+  font-size: 30px;
+}
+.today-zone__secondary {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid $line;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 36px;
+  align-items: baseline;
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $ink-soft;
+}
+.today-zone__secondary .link { color: $accent; font-weight: 600; }
+
+// ---------- 能力货架 ----------
+.ability-shelf { display: flex; flex-direction: column; }
+.entry {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 36px 0;
+  border-top: 3px solid $line-strong;
+}
+.entry:last-child { border-bottom: 3px solid $line-strong; }
+.entry .folio { font-size: 48px; }
+.entry__body { flex: 1; padding-left: 8px; min-width: 0; }
+.e-title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 40px;
+  margin: 0 0 8px;
+  color: $ink;
+}
+.e-desc {
+  font-family: $font-text;
+  color: $ink-soft;
+  font-size: 28px;
+  max-width: 42ch;
+}
+.entry__more {
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $accent;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// ---------- 进度带 ----------
+.progress-band {
+  display: flex;
+  gap: 36px;
+}
+.stat {
+  flex: 1;
+  border-top: 3px solid $bronze;
+  padding-top: 20px;
+}
+.stat__num {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1;
+  color: $ink;
+  font-variant-numeric: lining-nums;
+}
+.stat__num-unit {
+  font-style: normal;
+  font-size: 0.45em;
+  color: $ink-meta;
+  margin-left: 3px;
+}
+.stat__label {
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $ink-meta;
+  letter-spacing: 0.04em;
+  margin-top: 12px;
+}
+
+// ---------- 学习助手边注 ----------
+.companion {
+  border-left: 4px solid $bronze;
+  padding-left: 24px;
+}
+.companion__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.monogram {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: $ink;
+  color: $paper;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 32px;
+}
+.companion__name {
+  font-family: $font-ui;
+  font-weight: 600;
+  font-size: 28px;
+  color: $ink;
+}
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $accent;
+  margin-left: auto;
+}
+.companion__body {
+  font-family: $font-text;
+  color: $ink-soft;
+  font-size: 30px;
+}
+
+// ---------- 按钮层级 ----------
+.btn {
+  font-family: $font-ui;
+  font-size: 30px;
+  font-weight: 600;
+  padding: 22px 36px;
+  border-radius: $r-md;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 88px;
+}
+.btn--primary { background: $accent; color: $accent-contrast; }
+.btn--ghost { background: transparent; color: $ink; border-color: $line-strong; }
+
+// ---------- 容器 ----------
+.pad { padding-left: 28px; padding-right: 28px; }
+
+// ---------- 子页 ----------
+.subpage { padding-bottom: 96px; }
+.subhead { border-bottom: 1px solid $line; padding: 48px 0 32px; margin-bottom: 32px; }
+.subhead__title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1.05;
+  margin: 12px 0;
+  color: $ink;
+}
+.lead { color: $ink-soft; max-width: 54ch; font-size: 30px; }
+
+.note {
+  border: 1px solid $line;
+  background: $paper-2;
+  border-radius: $r-md;
+  padding: 24px 28px;
+  font-size: 28px;
+  color: $ink-soft;
+}
+.note--accent { border-left: 4px solid $accent; }
+.note--bronze { border-left: 4px solid $bronze; }
+
+// ---------- 连续学习徽标 ----------
+.streak {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-meta;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.streak__num {
+  font-family: $font-display;
+  font-size: 34px;
+  color: $accent;
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+}
+.link { color: $accent; font-weight: 600; }
+
+// ---------- 全宽主 CTA ----------
+.cta-full {
+  width: 100%;
+  min-height: 96px;
+  font-family: $font-ui;
+  font-size: 34px;
+  font-weight: 600;
+  color: $accent-contrast;
+  background: $accent;
+  border-radius: $r-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+// ---------- 细线进度（accent 填充） ----------
+.progress-rule {
+  position: relative;
+  height: 6px;
+  background: $line;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-rule__fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: $accent;
+  transition: width 0.3s ease;
+}
+
+// ---------- 周节奏刻度（替代火焰/贡献格） ----------
+.week-rule {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 0 4px;
+}
+.week-rule__tick {
+  flex: 1;
+  height: 28px;
+  border-bottom: 3px solid $line-strong;
+}
+.week-rule__tick--on { border-bottom-color: $bronze; }
+.week-rule__tick--today { border-bottom-color: $accent; height: 40px; }
+
+// ---------- 引文（里程碑，无星星/徽章） ----------
+.pullquote {
+  border-left: 4px solid $accent;
+  padding: 8px 0 8px 24px;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.3;
+  color: $ink;
+}
+
+// ---------- 页面容器（H5 必须有高度，否则塌陷） ----------
+.page {
+  min-height: 100vh;
+  position: relative;
+  /* 确保页面内容可滚动（尤其内容超长页面如学习页） */
+  overflow: visible;
+}
+
+// ---------- 页面主体（避开自定义导航栏） ----------
+// 三层保障：
+//   ① CSS 兜底：env(safe-area-inset-top) 微信原生变量，自动适配所有机型状态栏
+//   ② JS 精细优化：PageBody 组件 inline paddingTop 覆盖此值（inline > class）
+//   ③ 底部留白：tabBar 页需避开底部导航栏（~50px + 安全区）
+.page__body {
+  padding-top: calc(env(safe-area-inset-top) + 56px + 20px);
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  /* 确保长内容页（学习页词卡）可正常滚动 */
+  min-height: calc(100vh - env(safe-area-inset-top));
+  overflow: visible;
+}
+
+// ---------- Toast 文字 ----------
+.toast {
+  font-family: $font-ui;
+  font-size: 28px;
+}

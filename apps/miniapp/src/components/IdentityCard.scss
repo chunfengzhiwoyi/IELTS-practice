@@ -1,0 +1,70 @@
+@import "../styles/tokens.scss";
+
+.identity-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.avatar-btn {
+  width: 160px;
+  height: 160px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  line-height: 1;
+  &::after {
+    border: none;
+  }
+}
+
+.avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 3px solid $bronze;
+  background: $paper-2;
+}
+
+.avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 72px;
+  color: $accent;
+}
+
+.identity-card__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nick-input {
+  width: 100%;
+  min-height: 88px;
+  background: $paper;
+  border: 1px solid $line-strong;
+  border-radius: $r-md;
+  padding: 0 24px;
+  font-family: $font-text;
+  font-size: 32px;
+  color: $ink;
+}
+
+.identity-card__hint {
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $ink-meta;
+  text-align: center;
+}
+
+.identity-card__save {
+  width: 100%;
+}

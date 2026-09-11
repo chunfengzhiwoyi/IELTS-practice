@@ -1,0 +1,67 @@
+@import "../../styles/tokens.scss";
+
+.today {
+  border-left: 4px solid $accent;
+  padding-left: 24px;
+  margin: 40px 0 32px;
+}
+.today__title {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1.04;
+  color: $ink;
+  margin: 8px 0 14px;
+}
+.today__sub {
+  color: $ink-soft;
+  font-size: 30px;
+  max-width: 46ch;
+  margin-bottom: 8px;
+}
+.today__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 36px;
+  margin-top: 24px;
+  font-family: $font-ui;
+  font-size: 28px;
+}
+.today__links .link { padding: 8px 0; }
+
+.note__title {
+  display: block;
+  font-family: $font-ui;
+  font-weight: 600;
+  font-size: 28px;
+  color: $ink;
+  margin-bottom: 8px;
+}
+.note__body {
+  font-family: $font-text;
+  font-size: 28px;
+  color: $ink-soft;
+}
+
+.today__meta {
+  display: flex;
+  gap: 28px;
+  margin-top: 44px;
+  border-top: 1px solid $line;
+  padding-top: 28px;
+}
+.meta { flex: 1; text-align: center; }
+.meta__num {
+  display: block;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 56px;
+  color: $ink;
+  font-variant-numeric: lining-nums;
+}
+.meta__label {
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+  letter-spacing: 0.06em;
+}

@@ -1,0 +1,32 @@
+@import "../styles/tokens.scss";
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: $paper;
+  border-bottom: 1px solid $line;
+  /* CSS 兜底：状态栏 + 导航栏内容区（seal图标52px+间距），确保无 JS 时 NavBar 完整可见 */
+  padding-top: env(safe-area-inset-top);
+  min-height: calc(env(safe-area-inset-top) + 56px);
+}
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* height & paddingRight 由 NavBar 组件根据 useNavHeight() 动态注入（覆盖此 CSS 值） */
+  padding-left: 28px;
+  min-height: 56px;
+}
+.navbar__seal {
+  width: 52px;
+  height: 52px;
+}
+.navbar__date {
+  font-family: $font-ui;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  color: $ink-meta;
+}

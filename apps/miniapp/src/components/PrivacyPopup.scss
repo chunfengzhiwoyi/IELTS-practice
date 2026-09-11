@@ -1,0 +1,76 @@
+@import "../styles/tokens.scss";
+
+.privacy-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(42, 39, 35, 0.42);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.privacy-card {
+  width: 100%;
+  background: $paper;
+  border-top: 3px solid $accent;
+  border-radius: $r-lg $r-lg 0 0;
+  padding: 40px 28px calc(40px + env(safe-area-inset-bottom));
+  animation: privacy-up 0.28s ease;
+}
+
+@keyframes privacy-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.privacy-card__title {
+  display: block;
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 44px;
+  color: $ink;
+  margin-bottom: 16px;
+}
+
+.privacy-card__body {
+  display: block;
+  font-family: $font-text;
+  font-size: 30px;
+  line-height: 1.6;
+  color: $ink-soft;
+  margin-bottom: 28px;
+}
+
+.privacy-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.privacy-card__link {
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  color: $accent;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.privacy-card__btns {
+  display: flex;
+  gap: 16px;
+}
+
+.privacy-btn {
+  flex: 1;
+}

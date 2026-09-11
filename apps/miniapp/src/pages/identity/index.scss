@@ -1,0 +1,29 @@
+@import "../../styles/tokens.scss";
+
+.sub-back {
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $ink-soft;
+  padding: 4px 0 16px;
+}
+
+.identity {
+  text-align: center;
+}
+
+.identity__lead {
+  font-family: $font-text;
+  font-size: 30px;
+  color: $ink-soft;
+  max-width: 46ch;
+  margin: 8px auto 28px;
+  text-align: center;
+}
+
+.identity__later {
+  margin-top: 24px;
+  font-family: $font-ui;
+  font-size: 28px;
+  color: $ink-meta;
+  padding: 16px 0;
+}

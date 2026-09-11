@@ -1,0 +1,146 @@
+@import "../../styles/tokens.scss";
+
+.learn__count {
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+  text-align: right;
+  margin: 12px 0 20px;
+  letter-spacing: 0.06em;
+}
+
+.wordcard {
+  position: relative;
+  background: $paper;
+  border: 1px solid $line-strong;
+  border-radius: $r-lg;
+  padding: 56px 40px 48px;
+  min-height: 560px;
+  box-shadow: 0 24px 60px -40px rgb(40 30 22 / 0.4);
+  overflow: hidden;
+}
+.wordcard__pos {
+  font-family: $font-ui;
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $bronze;
+  margin-bottom: 20px;
+}
+.wordcard__term {
+  display: block;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 84px;
+  line-height: 1.04;
+  color: $ink;
+}
+.wordcard__phon {
+  display: block;
+  font-family: $font-text;
+  font-style: italic;
+  font-size: 32px;
+  color: $ink-soft;
+  margin-top: 16px;
+}
+.wordcard__recall {
+  margin-top: 44px;
+  border-top: 1px solid $line;
+  padding-top: 32px;
+}
+.wordcard__recall-tip {
+  display: block;
+  font-family: $font-text;
+  font-size: 30px;
+  color: $ink-soft;
+  margin-bottom: 24px;
+}
+.wordcard__actions {
+  display: flex;
+  gap: 20px;
+}
+.wordcard__actions .btn { flex: 1; }
+
+.wordcard__reveal {
+  margin-top: 40px;
+  border-top: 1px solid $line;
+  padding-top: 32px;
+}
+.wordcard__clue {
+  display: block;
+  font-family: $font-ui;
+  font-size: 26px;
+  color: $bronze;
+  margin-bottom: 18px;
+}
+.wordcard__meaning {
+  display: block;
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 44px;
+  color: $ink;
+  margin-bottom: 18px;
+}
+.wordcard__example {
+  display: block;
+  font-family: $font-text;
+  font-size: 30px;
+  color: $ink;
+  line-height: 1.5;
+}
+.wordcard__example-zh {
+  display: block;
+  font-family: $font-text;
+  font-size: 28px;
+  color: $ink-meta;
+  margin-top: 8px;
+}
+
+.wordcard__hint {
+  position: absolute;
+  top: 32px;
+  font-family: $font-ui;
+  font-size: 28px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: $r-sm;
+}
+.wordcard__hint--know { right: 28px; color: $accent; border: 1px solid $accent; }
+.wordcard__hint--unknow { left: 28px; color: $ink-meta; border: 1px solid $line-strong; }
+
+.learn__feedback { margin-top: 36px; }
+.learn__done { margin-top: 80px; }
+.learn__swipe-tip {
+  margin-top: 36px;
+  text-align: center;
+  font-family: $font-ui;
+  font-size: 24px;
+  color: $ink-meta;
+  letter-spacing: 0.04em;
+}
+
+.empty { margin-top: 80px; }
+
+.wordcard__ima-cta {
+  margin-top: 28px;
+  width: 100%;
+}
+.wordcard__ima {
+  margin-top: 24px;
+}
+.wordcard__ima-title {
+  display: block;
+  font-family: $font-ui;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  color: $bronze;
+  margin-bottom: 10px;
+}
+.wordcard__ima-body {
+  display: block;
+  font-family: $font-text;
+  font-size: 28px;
+  color: $ink-soft;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
