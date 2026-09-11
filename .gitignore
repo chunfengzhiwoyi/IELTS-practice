@@ -71,3 +71,14 @@ Thumbs.db
 /apps/miniapp/preview/
 
 node_modules/
+
+# Android build / local artifacts
+apps/android/.gradle/
+apps/android/**/build/
+apps/android/local.properties
+apps/android/keystore.properties
+apps/android/*.jks
+apps/android/*.keystore
+apps/android/*.aab
+apps/android/*.apk
+apps/android/captures/
