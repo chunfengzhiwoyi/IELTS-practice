@@ -70,11 +70,29 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 ## LAST_VERIFIED_PRODUCT_CHECKPOINT
 `496ae31`（历史 Eval run 归属，不重写；当前 consolidation HEAD 不是新的独立评估产品 checkpoint）
 
+## PRODUCT_LOOP_02A（STATE-CONSISTENCY-01）
+**COMPLETE** — commit `2a897e9`（已入 canonical）。
+- Fix A：masthead streak 改读 `/api/learning/stats`（共享 hook `lib/client/use-learning-stats.ts`），不再读 localStorage events。
+- Fix B：goal 页/概览「当前情况」改读服务端 stats（learnedCount/masteredCount/streak）；`getStudyHistory` 已无活跃组件调用者（legacy 死代码待清理）。
+- Fix C：口语显式完成 `POST /api/speaking/complete` → `completeSession`（幂等；second-answer/retry 流程保留）。
+- 无新 DB schema；weeklyGoal 档案持久化未动（PRODUCT-LOOP-02B 职责）。
+- focused tests 44/44 PASS；typecheck PASS；next build PASS。
+
+## PRE_EXISTING_TEST_DEBT
+全量 unit 中 **24 个失败可在 ff01160 基线复现**（git stash 验证），非 02A 回归，不扩大 scope 修复：
+- llm-safety：`ModelSettingsPanel.tsx` import `@/lib/llm`（静态检查违规，组件未改）
+- badcase-019 / badcase-033：LLM mock 路径约 5s/例超时（环境/性能类）
+- badcase-026 / badcase-035：learn/card 路由 e2e 断言失败
+- int-m3-01-combined-path：组合路径 e2e
+- env.test：Supabase 占位 URL 识别
+修复建议：后续单独任务（非产品主线 blocker）。
+
 ## LAST_VERIFIED_EVAL_RUN
 `m3-20260910-125036` — 35 PASS / 0 FAIL / 4 UNVERIFIED（020/023/025/035）
 
 ## KNOWN_DEBT
 - **TD-MINI-01**：miniapp 4 个 pre-existing TS errors。
+- **PRE_EXISTING_TEST_DEBT**：24 个 unit 失败可在基线复现（详见上节），非产品回归。
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行）。
 - **M3 UNVERIFIED**：020/023/025/035。
 - docs/tools/*.py 硬编码旧 canonical 路径（provenance only）。
