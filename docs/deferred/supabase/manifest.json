@@ -1,0 +1,15 @@
+{
+  "manifest": "deferred-supabase-migration-preservation",
+  "task": "SUPABASE-0009-DEFER-01",
+  "date": "2026-09-11",
+  "file": "0009_p6_instrumentation.sql",
+  "source_path": "D:/Codex/IELTS-practice/supabase/migrations/0009_p6_instrumentation.sql",
+  "source_size": 2611,
+  "source_sha256": "9886F65E6CABE5D841D54DA2EF6F58A51AB04E27E7C4C4A9D4FA262CC5E466EB",
+  "target_path": "docs/deferred/supabase/0009_p6_instrumentation.sql",
+  "target_sha256": "9886F65E6CABE5D841D54DA2EF6F58A51AB04E27E7C4C4A9D4FA262CC5E466EB",
+  "status": "DEFERRED",
+  "blocker": "ENV-SUPABASE-01",
+  "do_not_apply_automatically": true,
+  "activation_rule": "Only when ENV-SUPABASE-01 is cleared and remote schema/environment verification completes may this be re-evaluated for entry into active migrations."
+}
