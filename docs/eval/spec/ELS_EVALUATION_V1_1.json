@@ -1,0 +1,1789 @@
+{
+  "meta": {
+    "spec": "ELS_EVALUATION_V1_1",
+    "spec_version": "1.1",
+    "created_at": "2026-09-09",
+    "status": "SPEC_FINALIZED_NO_RUNNER_V1_1",
+    "product_target": "IELTS AI Learning Agent（Next.js + Supabase + 单 Agent + LLM Provider 抽象）",
+    "parallel_constraint": "与 M1 Single Source of Truth 迁移并行，零代码冲突；本轮不实现自动化测试代码",
+    "code_freeze_note": "仅新增/更新 ELS_EVALUATION_V1_1.md/.json 与校验脚本；不修改业务代码/DB Schema/Repository/API/页面",
+    "fact_basis": "docs/v2-system-audit.md (2026-09-09)",
+    "case_count": 39,
+    "case_set_version": "ELS-EVAL-V1.1",
+    "date_range_floor": "2026-09-09",
+    "baseline": "ELS_EVALUATION_V1 / spec_version 1.0",
+    "review_round": "第一次设计审查（10 条 Review Findings → FIX-01~10）",
+    "validation": {
+      "case_count": 39,
+      "id_contiguous": true,
+      "severity_distribution": {
+        "S1": 6,
+        "S2": 25,
+        "S3": 8,
+        "S4": 0
+      },
+      "audit_source_distribution": {
+        "V2_FACT": 25,
+        "MANUAL_GOLD": 4,
+        "FUTURE_TARGET": 3,
+        "PRODUCT_CONTRACT": 7
+      },
+      "current_expected_distribution": {
+        "PASS": 31,
+        "UNVERIFIED": 5,
+        "FAIL": 3
+      },
+      "errors": [],
+      "ok": true
+    }
+  },
+  "categories": [
+    {
+      "id": "INTENT_ROUTING",
+      "name": "Intent / Routing",
+      "cases": [
+        "ELS-EVAL-001",
+        "ELS-EVAL-002"
+      ]
+    },
+    {
+      "id": "NEW_WORD_LEARNING",
+      "name": "New Word Learning",
+      "cases": [
+        "ELS-EVAL-003",
+        "ELS-EVAL-004"
+      ]
+    },
+    {
+      "id": "LEARNING_STATE_MEMORY",
+      "name": "Learning State / Memory",
+      "cases": [
+        "ELS-EVAL-013",
+        "ELS-EVAL-014"
+      ]
+    },
+    {
+      "id": "REVIEW_SCHEDULING",
+      "name": "Review Scheduling",
+      "cases": [
+        "ELS-EVAL-009",
+        "ELS-EVAL-010",
+        "ELS-EVAL-011",
+        "ELS-EVAL-012"
+      ]
+    },
+    {
+      "id": "ANSWER_JUDGEMENT",
+      "name": "Answer Judgement",
+      "cases": [
+        "ELS-EVAL-005",
+        "ELS-EVAL-006",
+        "ELS-EVAL-007",
+        "ELS-EVAL-008"
+      ]
+    },
+    {
+      "id": "SPEAKING_ANALYSIS",
+      "name": "Speaking Analysis",
+      "cases": [
+        "ELS-EVAL-015",
+        "ELS-EVAL-016",
+        "ELS-EVAL-017",
+        "ELS-EVAL-018",
+        "ELS-EVAL-019",
+        "ELS-EVAL-020",
+        "ELS-EVAL-021"
+      ]
+    },
+    {
+      "id": "RETRIEVAL_KNOWLEDGE",
+      "name": "Retrieval / Knowledge",
+      "cases": [
+        "ELS-EVAL-022",
+        "ELS-EVAL-023",
+        "ELS-EVAL-024",
+        "ELS-EVAL-025",
+        "ELS-EVAL-026"
+      ]
+    },
+    {
+      "id": "LEARNING_REPORT",
+      "name": "Learning Report",
+      "cases": [
+        "ELS-EVAL-027",
+        "ELS-EVAL-028",
+        "ELS-EVAL-029",
+        "ELS-EVAL-030"
+      ]
+    },
+    {
+      "id": "FALLBACK_FAILURE",
+      "name": "Fallback / Failure Handling",
+      "cases": [
+        "ELS-EVAL-031",
+        "ELS-EVAL-032",
+        "ELS-EVAL-033",
+        "ELS-EVAL-034",
+        "ELS-EVAL-035",
+        "ELS-EVAL-036"
+      ]
+    },
+    {
+      "id": "CROSS_MODULE_STATE",
+      "name": "Cross-module State Consistency",
+      "cases": [
+        "ELS-EVAL-037",
+        "ELS-EVAL-038",
+        "ELS-EVAL-039"
+      ]
+    }
+  ],
+  "failure_layer_taxonomy": {
+    "fixed": [
+      "INPUT",
+      "ROUTING",
+      "STATE_READ",
+      "RETRIEVAL",
+      "PROMPT",
+      "MODEL",
+      "OUTPUT_VALIDATION",
+      "BUSINESS_RULE",
+      "STATE_WRITE",
+      "REPORT_AGGREGATION",
+      "FALLBACK",
+      "UI_PRESENTATION",
+      "UNKNOWN"
+    ],
+    "proposed_additions": [
+      {
+        "id": "STT",
+        "reason": "Whisper 属独立 AI 能力，与 MODEL/FALLBACK 边界清晰；本轮 STT 失败暂记 MODEL",
+        "enabled_in_v1": false
+      },
+      {
+        "id": "IDEMPOTENCY",
+        "reason": "重复 clientEventId 是事件层确定性问题的精确层级；本轮暂记 STATE_WRITE",
+        "enabled_in_v1": false
+      }
+    ]
+  },
+  "severity": [
+    {
+      "id": "S1",
+      "name": "Critical",
+      "criterion": "数据损坏/状态不可恢复错乱；红线结论对外可见（Band 分、无据进步、无据证据断言）；幂等失效重复计分——仅限 §4 三类，禁止仅因重要升级",
+      "blocking": true
+    },
+    {
+      "id": "S2",
+      "name": "High",
+      "criterion": "核心流程主路径失败：判题反转、错误路由、fallback 失效 5xx/空态、状态推进错误（可恢复）",
+      "blocking": "视影响面"
+    },
+    {
+      "id": "S3",
+      "name": "Medium",
+      "criterion": "非主路径但用户可见质量下降：空泛反馈、维度缺失、空态误导、统计口径偏差",
+      "blocking": false
+    },
+    {
+      "id": "S4",
+      "name": "Low",
+      "criterion": "措辞/展示细节/非阻断日志缺失",
+      "blocking": false
+    }
+  ],
+  "case_fields": [
+    "case_id",
+    "category",
+    "scenario",
+    "precondition",
+    "user_input",
+    "expected_behavior",
+    "must_not_happen",
+    "pass_criteria",
+    "failure_criteria",
+    "failure_layer",
+    "severity",
+    "required_trace_fields",
+    "notes"
+  ],
+  "required_trace_field_dictionary": [
+    {
+      "group": "链路",
+      "fields": [
+        "trace_id",
+        "request_id",
+        "user_id",
+        "client_event_id"
+      ]
+    },
+    {
+      "group": "意图",
+      "fields": [
+        "intent_decision",
+        "ui_action_type",
+        "fallback_used_flag"
+      ]
+    },
+    {
+      "group": "Prompt",
+      "fields": [
+        "prompt_key",
+        "prompt_version"
+      ]
+    },
+    {
+      "group": "模型",
+      "fields": [
+        "provider",
+        "model_name",
+        "model_version",
+        "temperature",
+        "tier"
+      ]
+    },
+    {
+      "group": "LLM",
+      "fields": [
+        "llm_raw_output",
+        "zod_validation_result",
+        "repair_attempts",
+        "llm_error_code"
+      ]
+    },
+    {
+      "group": "Fallback",
+      "fields": [
+        "fallback_chain",
+        "degradation_flag",
+        "quality_warning"
+      ]
+    },
+    {
+      "group": "检索",
+      "fields": [
+        "retrieval_query",
+        "knowledge_object_ids",
+        "knowledge_injected_count"
+      ]
+    },
+    {
+      "group": "状态",
+      "fields": [
+        "state_before",
+        "state_after",
+        "next_review_at_before",
+        "next_review_at_after",
+        "correctness_judged",
+        "schedule_quality",
+        "recall_level_delta"
+      ]
+    },
+    {
+      "group": "口语",
+      "fields": [
+        "session_id",
+        "part",
+        "audio_metadata",
+        "quality_gate_scores",
+        "analysis_path"
+      ]
+    },
+    {
+      "group": "报告",
+      "fields": [
+        "period",
+        "aggregate_checksum",
+        "summary_generated"
+      ]
+    },
+    {
+      "group": "通用",
+      "fields": [
+        "http_status",
+        "app_error_code",
+        "latency_ms",
+        "token_usage",
+        "clock_snapshot"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "id": "M1",
+      "name": "Eval Pass Rate",
+      "formula": "通过 Case 数 / 执行 Case 总数 × 100%（表驱动按行计）",
+      "notes": "主指标；可选 S1×2/S2×1.5/S3×1/S4×0.5 权重版本"
+    },
+    {
+      "id": "M2",
+      "name": "Bad Case Rate",
+      "formula": "1 − Eval Pass Rate（按行口径）",
+      "notes": "按 severity 分层展示 S1/S2 占比"
+    },
+    {
+      "id": "M3",
+      "name": "Critical Failure Rate",
+      "formula": "S1 失败行数 / 总执行行数 × 100%（仅 S1）",
+      "notes": "[FIX-09] 仅计 S1；S2 在 Registry 单独分层展示；发布阻断判定改看 M10"
+    },
+    {
+      "id": "M4",
+      "name": "Intent Accuracy",
+      "formula": "正确路由行数 / 意图行总数 × 100%（intent_decision+ui_action 双一致）",
+      "notes": "按意图分类拆解定位劣化点"
+    },
+    {
+      "id": "M5",
+      "name": "State Consistency Rate",
+      "formula": "通过的状态断言数 / 状态断言总数 × 100%（replay==snapshot / server==report / 幂等终态 / 三读一致）",
+      "notes": "取自 012/013/014/037/038 等逐断言"
+    },
+    {
+      "id": "M6",
+      "name": "Retrieval Success Rate",
+      "formula": "Precision = 相关命中数/注入总数；Recall@5 = gold 命中数/gold 总数",
+      "notes": "当前关键词引擎 023 类 recall 低；数值差即语义检索升级收益基线（实现技术待定）"
+    },
+    {
+      "id": "M7",
+      "name": "Answer Judge Accuracy",
+      "formula": "判题与 gold 一致行数 / 判题行总数 × 100%",
+      "notes": "拆 False Accept vs False Reject"
+    },
+    {
+      "id": "M8",
+      "name": "Speaking Feedback Quality Pass Rate",
+      "formula": "口语行中通过质量门且无红线（band/幻觉证据）的行数 / 口语行总数 × 100%",
+      "notes": "gate 分项单独报；人工复核一致率配套"
+    },
+    {
+      "id": "M9",
+      "name": "Fallback Success Rate",
+      "formula": "降级返回结构完整可用结果次数 / 触发 fallback 总次数 × 100%",
+      "notes": "配 fallback 未触发率、错误码漂移率"
+    },
+    {
+      "id": "M10",
+      "name": "Release-Blocking Failure Rate",
+      "formula": "(S1 失败行数 + 阻断型 S2 失败行数) / 总执行行数 × 100%",
+      "notes": "[FIX-09] 真正的发布闸门：S1>0 即红；阻断型 S2 阈值由发布策略定并逐案登记"
+    }
+  ],
+  "bad_case_registry": {
+    "name": "Bad Case Registry",
+    "fields": [
+      "BAD_CASE_ID",
+      "Source",
+      "Related Case",
+      "Trace ID",
+      "Expected",
+      "Actual",
+      "Failure Layer",
+      "Root Cause",
+      "Severity",
+      "Fix",
+      "Prompt Version",
+      "Model Version",
+      "Regression Status",
+      "Created At",
+      "Resolved At"
+    ],
+    "source_enum": [
+      "EVAL_RUN",
+      "ONLINE_FEEDBACK",
+      "TRACE_ANOMALY",
+      "STAGING_PROBE",
+      "MANUAL"
+    ],
+    "regression_status_enum": [
+      "OPEN",
+      "FIXED",
+      "IN_REGRESSION_SET",
+      "VERIFIED_CLOSED",
+      "WONTFIX",
+      "KNOWN_LIMITATION"
+    ],
+    "lifecycle": "收集 → 去重 → 脱敏 → 关联 Trace → 归类(Failure Layer) → 定级(Severity) → 双人确认金标 → OPEN → 修复 → IN_REGRESSION_SET → 回归通过 → VERIFIED_CLOSED",
+    "governance": "金标变更需记录理由与批准人；历史行只增不改（追加 correction）；UNKNOWN layer 48h 内转正"
+  },
+  "regression_loop": [
+    "收集：用户反馈（P2-6 前用日志标记）/ Trace 异常扫描 / 随机抽样",
+    "确认金标：回灌前双人确认 Expected 语义（候选≠有效样本）",
+    "转化：命中既有 ELS-EVAL 则仅关联去重；新类型追加新 Case；依赖缺失能力标 KNOWN_LIMITATION 挂升级项",
+    "入集门槛：每个 minor set 增补 <= 总量 20%，须真实路径+有 trace+金标可复述+可判",
+    "回归触发：prompt 变更/模型换版/调度状态逻辑改动/M1 迁移合入前跑全量 Regression Set 并出指标快照对比",
+    "闭环：转 Regression → 连续 3 次 eval run 通过 → VERIFIED_CLOSED；否则打回循环"
+  ],
+  "anti_gaming": [
+    "冻结金标：case_set 发布后 gold 冻结，修改走变更记录",
+    "Holdout 集：发布前抽 15-20% blind 只跑不训，定期轮换",
+    "禁止对着用例改 prompt：prompt 变更评审不得引用具体 ELS-EVAL 文本",
+    "线上随机抽样与 Bad Case 回灌并行，防选择偏差",
+    "temp>0 Case 以 N=5 次通过率判定（如 >=4/5），防单次 flaky",
+    "断言引用 Trace 字段与产品语义，不引用实现细节（M1 后仍有效）",
+    "每 4-6 周人工抽查 20% 已通过 Case 的原始 LLM 输出"
+  ],
+  "human_vs_auto": {
+    "fully_auto": "确定性断言 + gate/规则断言 + 红线规则扫描；约 35/39 Case 主断言",
+    "human_scored_cases": [
+      "ELS-EVAL-006",
+      "ELS-EVAL-016",
+      "ELS-EVAL-018",
+      "ELS-EVAL-019"
+    ],
+    "human_scope": "语义金标合理性、改善显著性、建议可执行性、幻觉证据争议裁定",
+    "never_auto": "Registry 金标双人确认；红线泄漏命中必进人工复核清单（防 regex/gate 同漏）"
+  },
+  "cases": [
+    {
+      "case_id": "ELS-EVAL-001",
+      "category": "INTENT_ROUTING",
+      "scenario": "用户用自然语言表达四类学习诉求，Agent 应路由到正确意图与 UI 动作。",
+      "precondition": "已登录用户（demo-user-001）；冻结时钟 T0；`/api/agent/message` 使用已知 prompt_version 与 provider 快照；conversation_state 为空。",
+      "user_input": "（4 行）:\n  1. `想背个新单词` → intent=`NEW_ITEM`, ui_action=`SHOW_WORD_CARD`（term 可由用户后续给出或引导输入）\n  2. `开始复习今天到期的词` → intent=`REVIEW`, ui_action=`OPEN_REVIEW`\n  3. `我想练口语，当我的考官` → intent=`SPEAKING`, ui_action=`OPEN_SPEAKING`\n  4. `看看我这一周学得怎么样` → intent=`REPORT`, ui_action=`SHOW_REPORT`(period=7d)",
+      "expected_behavior": "四行分别命中上表意图，且 reply 与该意图匹配、含引导下一步的可执行文案；未出现跨模块混淆。",
+      "must_not_happen": "学新词请求被路由到 REVIEW；口语请求被当成普通聊天回复而**不**触发 OPEN_SPEAKING；任一请求静默降级为关键词 mock 且未标记 fallback。",
+      "pass_criteria": [
+        "`intent_decision` 与 gold 完全一致（4/4）；",
+        "`ui_action_type` 与意图语义一致；",
+        "结构化响应通过 AgentResponseSchema；",
+        "`fallback_used_flag=false`（gold 场景不依赖兜底）。"
+      ],
+      "failure_criteria": "任意一行 intent 错误；或 ui_action 与 intent 矛盾；或 schema 校验失败。",
+      "failure_layer": "ROUTING（误路由）或 OUTPUT_VALIDATION（契约失败）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "user_id",
+        "intent_decision",
+        "ui_action_type",
+        "prompt_key/version",
+        "model_name",
+        "llm_raw_output",
+        "zod_validation_result",
+        "fallback_used_flag",
+        "http_status"
+      ],
+      "notes": "指标「Intent Accuracy」分母的基准组。行 2 与 ELS-EVAL-009/014 是「意图→调度→状态读取」三段的入口，刻意分开以隔离故障层。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-002",
+      "category": "INTENT_ROUTING",
+      "scenario": "用户输入无法唯一映射到学习意图，或完全不属于本产品域；Agent 应澄清或礼貌拒绝，且不产生副作用。",
+      "precondition": "同 ELS-EVAL-001 快照。",
+      "user_input": "（2 行）:\n  1. `随便学点啥吧`（模糊） → 允许澄清或给出合理默认（如引导选新词/复习），但不得静默随机路由\n  2. `帮我写一封求职邮件`（域外） → intent=`UNSUPPORTED`，礼貌说明能力边界",
+      "expected_behavior": "行 1 产出澄清问题或明确默认并取得可中断性；行 2 明确拒绝且回复不含任何\"已完成\"表述。",
+      "must_not_happen": "把行 2 误路由到 NEW_ITEM/REVIEW 并生成词卡/打开复习（无谓副作用）；把行 1 当 REPORT 输出一份空报告；兜底 mock 返回与输入无关的固定文案且未标 fallback。",
+      "pass_criteria": [
+        "行 2 `intent_decision=UNSUPPORTED` 且 `persistence_required=false` / 无对应写路径调用；",
+        "行 1 未产生任何 ui_action 到具体模块，或产生前有澄清；",
+        "若走关键词兜底，`fallback_used_flag=true` 且回复语义仍安全（拒绝/澄清而非瞎承诺）。"
+      ],
+      "failure_criteria": "域外请求产生任何学习/复习状态写入；模糊请求直接落地一个不可撤销的流程。",
+      "failure_layer": "ROUTING",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "intent_decision",
+        "ui_action_type",
+        "fallback_used_flag",
+        "persistence_required",
+        "http_status"
+      ],
+      "notes": "\"边界输入不产生副作用\"是 AI 产品最重要的安全属性之一，优先级高于\"答得多好\"。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-003",
+      "category": "NEW_WORD_LEARNING",
+      "scenario": "用户第一次学习一个不在 22 词 seed 目录中的词，`/api/learn/card` 生成并返回词卡；条目被幂等创建，状态停留在初始态——\"查看词卡\"本身不推进学习状态。",
+      "precondition": "用户对 `mitigate` 无任何历史（learning_items / user_item_states / els_* 均无）；T0 冻结；knowledge-objects-v1.json 与 prompt `v1.1-knowledge-layer` 快照；**本 Case 仅调用词卡主链（POST /api/learn/card），不触发 /api/learn/submit**。",
+      "user_input": "学习页/聊天提交 term=`mitigate` → `POST /api/learn/card { term }`。",
+      "expected_behavior": "返回结构完整词卡（含嵌套 ielts 对象与 knowledgeObjectIds）；`createOrGetItem` 幂等创建/返回单条 `learning_items`（canonical_form=mitigate）；`getUserItemState` 返回 `alreadyLearned=false` 且状态为初始态（默认 `NEW`）、nextReviewAt=null；**本次调用不写入任何 learning_events，也不把 user_item_states 推进到 EXPOSED/已掌握**——学习事件与状态写入绑定 submit（§2 状态写入时点）。",
+      "must_not_happen": "词卡字段缺失/释义编造与知识库冲突；重复创建 learning_items；把\"查看词卡\"当已完成学习（写入事件或推进 EXPOSED）；状态直接置为已掌握；把\"未生成词卡\"当作\"无此词\"误导用户。",
+      "pass_criteria": [
+        "响应通过 WordCardSchema（含嵌套 ielts 对象），HTTP 2xx；",
+        "`retrieval` 命中对象均见于 `knowledge_object_ids`，词卡释义未与命中对象冲突；",
+        "`learning_items` 唯一（item_type, canonical_form 唯一约束），`alreadyLearned=false`；",
+        "本次调用前后 `user_item_states` 无推进（`state_before == state_after`，仍为初始态），`learning_events` 新增计数 = 0（读取无写入副作用）；",
+        "主链路成功（LLM 失败路径由 031–036 覆盖，本 Case 不注入）。"
+      ],
+      "failure_criteria": "词卡 schema 失败；item 重复创建；词卡读取产生学习事件或状态推进副作用；状态机提前离开初始态。",
+      "failure_layer": "MODEL（内容质量）或 STATE_WRITE（落库副作用）或 RETRIEVAL（知识污染，见 025）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "client_event_id（若生成）",
+        "canonical_form",
+        "knowledge_object_ids",
+        "prompt_version",
+        "model_name",
+        "llm_raw_output",
+        "zod_validation_result",
+        "state_before/after",
+        "event_count",
+        "http_status"
+      ],
+      "notes": "**[FIX-01]** V1.0 断言\"user_item_states 置 EXPOSED\"与 V2 Audit 不符——`/api/learn/card` 仅 createOrGetItem + getUserItemState，learning event / state write 在 `/api/learn/submit`。若产品未来冻结\"展示即 exposure\"，须先落 Product Decision 再单独立 Case，不得直接作为 Gold。EXPOSED 语义与首答 submit 的关系由 005/007/008 覆盖。AUDIT: V2_FACT / CURRENT=PASS / TARGET=PASS。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-004",
+      "category": "NEW_WORD_LEARNING",
+      "scenario": "用户再次学习一个 3 天前已学过并进入复习周期的词。",
+      "precondition": "词 `decline` 已于 D-3 学习并进入复习周期，当前 `nextReviewAt < T0`（已到期，处于复习队列）；词条状态 `RECALLED_INDEPENDENTLY`、recall_level=1；无待处理的重复提交。",
+      "user_input": "`再学一遍 \"decline\"`（学习页/聊天二选一入口）。",
+      "expected_behavior": "响应明确 `alreadyLearned=true`，展示既有掌握状态并引导进入复习/巩固，而不是重新走 EXPOSED 新词流程；已学进度（recall_level、事件历史）不被覆盖或重置。",
+      "must_not_happen": "把已学词当新词重置 levels/nextReviewAt；为同一 canonical_form 新建重复 learning_item；提示文案让用户以为\"从零开始\"。",
+      "pass_criteria": [
+        "响应含 alreadyLearned 语义及当前状态摘要；",
+        "服务端状态与事件数在本次请求前后无回退（无新 EXPOSED 事件，除显式\"再学一遍\"生成的合法 REVIEW/NEW 事件外）；",
+        "到期词同时出现在复习队列（若用户随后进复习）。"
+      ],
+      "failure_criteria": "状态被重置或覆盖；重复 item；提示误导。",
+      "failure_layer": "STATE_READ 或 BUSINESS_RULE（重学语义判定）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "item_id/canonical_form",
+        "state_before/after",
+        "already_learned_flag",
+        "event_type",
+        "http_status"
+      ],
+      "notes": "直接关联维度 3「Learning State/Memory」——\"记住用户学过什么\"是记忆正确性的最小可测单元。当前 `repo.getUserItemState` 已具备，重点测 API 层与文案层是否尊重它。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-005",
+      "category": "ANSWER_JUDGEMENT",
+      "scenario": "学习/复习 MEANING_RECALL 任务，用户给出的释义与词义无关，应被判错并按错误分支推进。",
+      "precondition": "词 `mitigate`（coreMeaning≈\"减轻/缓和\"）；T0 冻结；判题走 fast tier、temp=0；fixture 固定 `schedule_quality`（学习链断言其映射值）。",
+      "user_input": "`answer = \"to make something bigger\"`（提交 learn/submit 或 review/submit）。",
+      "expected_behavior": "`api_result`：判定 incorrect（correct=false）；`event_correctness`：学习链按映射落 `FAIL`、复习链落 `INCORRECT`（三层分别核验，不得以 API 值直接代写事件值）；`state_transition`：学习链走 `computeInitialReviewAt(scheduleQuality)` 错误档（契约 24h/8h/2h 映射，fixture 冻结后精确断言），复习链 nextReviewAt=提交时刻+4h；反馈解释有据、不剧透正确答案。",
+      "must_not_happen": "把明显错误答案判对（False Accept，尤其不能因 LLM 对\"变体表达的过度宽容\"放行）；反馈中出现幻觉性\"你漏了 X 词\"；事件层/状态层与 api_result 的映射漂移。",
+      "pass_criteria": [
+        "`api_result.correct=false`，与 gold 一致；",
+        "`event_correctness` = FAIL（学习）/ INCORRECT（复习），与 api_result 按业务映射一致（经 trace 核验）；",
+        "`state_transition` 按错误分支推进（学习：初始档 24/8/2 映射值；复习：+4h；均以该行提交时刻为基）；",
+        "判定置信度字段存在（供指标分析）。"
+      ],
+      "failure_criteria": "判对（False Accept）；事件层或状态层未按错误分支推进。",
+      "failure_layer": "MODEL（语义误判）或 STATE_WRITE（事件/状态映射）",
+      "severity": "S2（判题反转属 §4 S2 核心主路径失败，可恢复，不满足 S1 升格条件）",
+      "required_trace_fields": [
+        "trace_id",
+        "client_event_id",
+        "correctness_judged(api_result)",
+        "event.correctness",
+        "schedule_quality",
+        "state_after",
+        "next_review_at_after",
+        "model_name",
+        "llm_raw_output",
+        "fallback_chain"
+      ],
+      "notes": "与 006 互为镜像（False Accept vs False Reject），两类必须同时守。**[FIX-04]** V1.0 标 S1 无据——普通 False Accept/False Reject 按 §4 定义属 S2（可恢复），V1.1 降为 S2。**[FIX-03]** 学习链错误档按 scheduleQuality 映射（非固定），复习链 +4h，三层分别断言。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-006",
+      "category": "ANSWER_JUDGEMENT",
+      "scenario": "用户用不同措辞表达了正确含义（换词、换句式、同义词），判题应识别语义等价。",
+      "precondition": "词 `mitigate`；已配置 acceptedAnswers/answerKeywords 作为判题输入。",
+      "user_input": "（多行）: `to reduce the harmful effects of something` ／ `make the damage less severe` ／ `to make something bad less harmful`。",
+      "expected_behavior": "全部判对；正确率映射独立正确分支（学习 INDEPENDENT / 复习 CORRECT_INDEPENDENT，若未看提示）。",
+      "must_not_happen": "因\"措辞不同\"判错（False Reject）——这是判题最常见且最伤体验的 AI 缺陷；也不得因宽松而把 005 型错误答案放行。",
+      "pass_criteria": [
+        "各行 gold 均为 correct=true 且实际判定一致；",
+        "学习提交 → INDEPENDENT + 对应初始档（契约 24h/8h/2h 映射，fixture 冻结后精确断言）；复习提交 → CORRECT_INDEPENDENT（+72h、recall_level+1）。事件层与状态层值须经 trace 核验（§6.0.1），不得以 api_result 直接代写。"
+      ],
+      "failure_criteria": "任一行 False Reject；或该 Case 与 005 出现同侧系统性偏移（提示 prompt 判别力问题）。",
+      "failure_layer": "MODEL（语义等价判别）或 PROMPT（判别指令不清晰）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "correctness_judged",
+        "user_answer",
+        "accepted_answers",
+        "answer_keywords",
+        "model_name",
+        "confidence",
+        "llm_raw_output"
+      ],
+      "notes": "**[H] 人工复核项**：LLM 判\"对\"本身仍需抽样人工确认 gold 合理（防止把错误 gold 固化成回归）。典型的多义词/文化背景词另建 Case，不在此堆量。",
+      "audit_source": "MANUAL_GOLD",
+      "current_expected": "UNVERIFIED",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-007",
+      "category": "ANSWER_JUDGEMENT",
+      "scenario": "用户先看提示（hint）再答出正确释义；学习链与复习链的分支映射与间隔**必须按各自契约分开断言**（两条链规则不同，禁止统一断言 +24h）。",
+      "precondition": "词 `benevolent`；任务支持 hint（hintLevel≥1）；`usedHint=true` 随提交传入；T0 冻结；两条链各自独立的词条（学习链 item-L、复习链 item-R，均无历史干扰）。",
+      "user_input": "（2 行）:\n  1. 学习链：`POST /api/learn/submit { itemId: item-L, usedHint: true, answer: \"kind and helpful\" }`（正确）；\n  2. 复习链：`POST /api/review/submit { itemId: item-R, usedHint: true, answer: \"kind and helpful\" }`（正确）。",
+      "expected_behavior": "  - 行 1（学习链）：api_result=correct；映射 `HINTED`；`event_correctness=HINTED`；**首次**复习间隔 = `computeInitialReviewAt(scheduleQuality)` 契约映射值（24h/8h/2h，**非固定 +24h**，fixture 冻结 schedule_quality 后精确断言）；recall_level 不升（首次学习无累进）；\n  - 行 2（复习链）：映射 `CORRECT_WITH_HINT`；event_correctness=CORRECT_WITH_HINT；nextReviewAt=提交时刻+24h；**不**升 recall_level。",
+      "must_not_happen": "看提示答对被当成独立掌握（复习 +72h / recall_level+1）；学习链被套用复习链的 +24h 或反之；`usedHint` 被忽略导致调度虚高；事件层与 api_result 映射漂移。",
+      "pass_criteria": [
+        "行 1：映射 HINTED，间隔=scheduleQuality 契约档（fixture 冻结值，T0 下精确），recall_level 不升；",
+        "行 2：映射 CORRECT_WITH_HINT，间隔=+24h，recall_level 不升；",
+        "三层（api_result/event_correctness/state_transition）逐项等于上表 gold（§6.0.1）。"
+      ],
+      "failure_criteria": "任一行分支映射错误或间隔错；学习/复习两链规则串用。",
+      "failure_layer": "BUSINESS_RULE（映射/间隔）或 STATE_WRITE",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "used_hint",
+        "correctness_judged",
+        "event.correctness",
+        "schedule_quality",
+        "next_review_at_before/after",
+        "recall_level_delta",
+        "state_after"
+      ],
+      "notes": "**[FIX-02]** V1.0 统一断言 +24h 与 V2 契约不符：学习链首次间隔走 24h/8h/2h（scheduleQuality），仅复习链 CORRECT_WITH_HINT 固定 +24h。与 ELS-EVAL-011 行 2 对照，防止两条链路分支规则漂移。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-008",
+      "category": "ANSWER_JUDGEMENT",
+      "scenario": "用户提交空字符串 / 纯空白 / 仅标点。",
+      "precondition": "学习与复习两条提交链路；mock provider 计数可观测（用于断言\"未调 LLM\"）。",
+      "user_input": "（4 行）: `\"\"` ／ `\"   \"` ／ `\".\"` ／ 仅换行。",
+      "expected_behavior": "全部确定性判错（不进入 judgeAnswerWithLlm）；学习 → FAIL；复习 → INCORRECT（空答案规则），调度按错误档推进。",
+      "must_not_happen": "空答案触发 LLM 调用（浪费 token 且行为不可控）；空答案被判对或静默吞掉不落事件；服务端 4xx/5xx。",
+      "pass_criteria": [
+        "4 行均 correct=false；",
+        "该请求 LLM 调用计数为 0（Mock Provider 调用计数器断言）；",
+        "事件层落库：event_correctness=FAIL（学习）/ INCORRECT（复习），经 trace 核验，与 api_result 按业务映射一致（§6.0.1）。"
+      ],
+      "failure_criteria": "触发 LLM；判对；不落库。",
+      "failure_layer": "BUSINESS_RULE（确定性短路缺失）",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "client_event_id",
+        "correctness_judged",
+        "llm_call_count=0",
+        "state_after"
+      ],
+      "notes": "这是\"AI 边界\"经典样本：确定性能力内的事不允许交给模型。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-009",
+      "category": "REVIEW_SCHEDULING",
+      "scenario": "今日有多个到期词，复习会话按到期时间出队。",
+      "precondition": "用户有 4 个词：A(nextReviewAt=T0-3h)、B(T0-1h)、C(T0+5h 未到期)、D(T0-2h)；limit=10。",
+      "user_input": "进入 `/review` → `POST /api/review/session { mode:\"DUE\", limit:10 }`。",
+      "expected_behavior": "返回 tasks=[A, D, B]（按 nextReviewAt 升序：-3h→-2h→-1h）；totalDue=3；C 不在列。",
+      "must_not_happen": "C（未到期）混入；排序错误；totalDue 与 tasks 口径不一致。",
+      "pass_criteria": [
+        "tasks 顺序 = [A, D, B]；",
+        "totalDue=3；",
+        "每个 task 携带词条完整内容（可作答）。"
+      ],
+      "failure_criteria": "任意一项与 gold 不符。",
+      "failure_layer": "STATE_READ（到期筛选）或 BUSINESS_RULE",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "user_id",
+        "next_review_at 集合（读前快照）",
+        "tasks 顺序",
+        "total_due",
+        "http_status"
+      ],
+      "notes": "与 014 的区别：009 是纯筛选正确性（单模块）；014 是\"状态写入→读取→下游\"链路一致性（跨模块）。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-010",
+      "category": "REVIEW_SCHEDULING",
+      "scenario": "所有词均未到期时，DUE 会话为空；用户不因空队列收到错误词。",
+      "precondition": "3 个词 nextReviewAt 均在 T0+1h 之后；无其他到期项。",
+      "user_input": "`POST /api/review/session { mode:\"DUE\", limit:10 }`。",
+      "expected_behavior": "`tasks=[]`、`totalDue=0`；前端展示\"暂无到期\"空态并可引导新词学习。",
+      "must_not_happen": "返回未到期词；为凑数把已掌握词或新词拉入复习；空态文案暗示用户已完成复习。",
+      "pass_criteria": [
+        "tasks=[] 且 totalDue=0；",
+        "空态引导文案语义正确。"
+      ],
+      "failure_criteria": "出现任何未到期词。",
+      "failure_layer": "STATE_READ",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "next_review_at 集合",
+        "tasks",
+        "total_due"
+      ],
+      "notes": "MANUAL 模式不在本 Case（手动拉取是显式用户动作，属另一契约），在 notes 中记录防误用。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-011",
+      "category": "REVIEW_SCHEDULING",
+      "scenario": "四种复习提交结果对应四档间隔与状态更新（表驱动精确断言）。",
+      "precondition": "4 个相互独立的词 W1–W4，均到期；各自无历史 recall 干扰；T0 冻结；逐行提交时时钟推进 Δt 可测。",
+      "user_input": "（4 行）:\n  1. W1：正确、未看提示 → CORRECT_INDEPENDENT\n  2. W2：正确、看了提示 → CORRECT_WITH_HINT\n  3. W3：错误 → INCORRECT\n  4. W4：跳过 → SKIPPED",
+      "expected_behavior": "按 §2 间隔表精确映射：W1 → nextReviewAt≈提交时刻+72h 且 recall_level+1；W2 → +24h 且 recall_level 不变；W3 → +4h；W4 → +2h（SKIPPED 事件）。",
+      "must_not_happen": "任何一行间隔/level 偏移；SKIPPED 被当 INCORRECT 处理；`consecutiveCorrect` 在错误/跳过时被累加。",
+      "pass_criteria": [
+        "4 行 correctness 与状态字段逐项等于 gold（含 consecutiveCorrect 行为）；",
+        "nextReviewAt 计算基于**该行提交时刻**而非固定 T0（相对时间正确）。"
+      ],
+      "failure_criteria": "任一行违反间隔表或状态更新规则。",
+      "failure_layer": "BUSINESS_RULE 或 STATE_WRITE",
+      "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+      "required_trace_fields": [
+        "trace_id",
+        "client_event_id",
+        "correctness_judged",
+        "event.correctness",
+        "schedule_quality",
+        "state_before/after",
+        "next_review_at_before/after",
+        "recall_level_delta",
+        "consecutive_correct"
+      ],
+      "notes": "表驱动压缩了 4 个独立\"类型\"（独立正确/提示正确/错误/跳过）为一个 Case 的四行，每行仍独立可判，覆盖「Review 必覆盖清单」4 项。**[FIX-04]** V1.0 因\"调度是记忆系统核心正确性\"标 S1 属\"仅因重要而升格\"——调度写错可由事件流重建/修复（可恢复），V1.1 降为 S2；若错误升级为幂等失效重复计分，由 037（S1）承接。**[FIX-03]** 三层分别断言：api_result（响应结果）→ event_correctness（业务映射核验）→ state_transition（状态/调度值）。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-012",
+      "category": "REVIEW_SCHEDULING",
+      "scenario": "同一词连续多轮复习（对→错→对），验证调度单调推进且不因幂等重放漂移。",
+      "precondition": "词 W，首轮独立正确（+72h）；到期后第二轮答错（+4h）；随后第三轮独立正确（+72h，以第二轮结果为基）。",
+      "user_input": "三轮提交（各自独立 clientEventId，第二轮与第三轮间冻结时钟校验相对时间）。",
+      "expected_behavior": "每轮 nextReviewAt 都 ≥ 该轮提交时刻；第三轮结果 = 第二轮提交时刻 + 4h + 72h 的正确链式计算；状态事件总数 = 3。",
+      "must_not_happen": "nextReviewAt 回拨到过去；间隔在错误后仍沿用 72h（未降档）；同一 clientEventId 重放导致状态被二次推进（与 037 呼应）。",
+      "pass_criteria": [
+        "三轮 nextReviewAt 均 = 公式值（提交时刻 + 对应档位），单调递增；",
+        "事件数=3，状态快照与事件重放一致。"
+      ],
+      "failure_criteria": "任何一轮时间错误或回拨。",
+      "failure_layer": "BUSINESS_RULE",
+      "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+      "required_trace_fields": [
+        "trace_id×3",
+        "client_event_id×3",
+        "next_review_at 序列",
+        "state_after 终态",
+        "event_count"
+      ],
+      "notes": "覆盖「状态更新后下一次复习时间正确」必覆盖项；\"相对提交时刻\"是最易被 mock 测试掩盖的错误，要求时钟快照可注入。**[FIX-04]** V1.0 标 S1 属\"仅因调度是记忆核心而升格\"；调度值可重建可修复，V1.1 降为 S2（S1 保留给 013 数据损坏类不变式与 037 幂等双计）。AUDIT: V2_FACT / CURRENT=PASS / TARGET=PASS。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-013",
+      "category": "LEARNING_STATE_MEMORY",
+      "scenario": "对一段随机操作序列（学/答错/复习/跳过），从 append-only 事件流重放得到的状态必须等于 user_item_states 快照。",
+      "precondition": "空用户；执行脚本化操作序列 S（含学习 3 词 × 若干提交、复习若干轮、1 次重复 clientEventId）。",
+      "user_input": "操作序列 S 中的每个 submit 请求（构造数据，非真实 UI 点击）。",
+      "expected_behavior": "重放器从 events 计算出的每词状态（status/levels/nextReviewAt/consecutiveCorrect）与 repo 快照逐字段相等；事件总数与去重后一致。",
+      "must_not_happen": "事件与状态分叉（双路径漂移）；重复事件进入流；重放结果 ≠ 快照。",
+      "pass_criteria": [
+        "replay(events) == user_item_states（逐字段比较）；",
+        "events 无重复 client_event_id；",
+        "快照 updated_at 单调。"
+      ],
+      "failure_criteria": "任意字段不等。",
+      "failure_layer": "STATE_WRITE 或 STATE_READ",
+      "severity": "S1（[FIX-04] 保留 S1：replay≠snapshot 属**数据损坏类**（两个持久化存储分叉、用户可见记录失真），命中 §4 S1 类 1；与 011/012 的可重建调度错误区分）",
+      "required_trace_fields": [
+        "event 全集",
+        "state_before/after 全量",
+        "client_event_id 集合",
+        "replay_checksum"
+      ],
+      "notes": "这是 M1「Single Source of Truth」的 AI 行为侧验收不变式；当前 localStorage 双路径下该 Case 预期**失败**，M1 完成后必须转绿——属迁移验收用例。**[FIX-04]** 该不变式判定不因迁移目标而改变：无论本地路径是否存在，服务端 events↔snapshot 必须一致。AUDIT: FUTURE_TARGET（M1 收敛前）/ CURRENT=FAIL / TARGET=PASS。",
+      "audit_source": "FUTURE_TARGET",
+      "current_expected": "FAIL",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-014",
+      "category": "LEARNING_STATE_MEMORY",
+      "scenario": "\"记忆写入后被正确读取并驱动下游\"：D-1 学的词今日到期，复习队列召回它，报告统计也包含它。",
+      "precondition": "D-1 学习 1 词并独立答对（nextReviewAt=D-1+24h=T0）；无其他数据。",
+      "user_input": "今日依次：进入复习会话 → 复习该词 → 查看 7d 报告。",
+      "expected_behavior": "复习队列含该词；复习后状态正确推进；报告词汇量/正确率统计包含学习与复习两条事件且数值精确。",
+      "must_not_happen": "复习队列漏该词（读了旧缓存）；报告与队列数据源不一致（如报告算了他没复习过）；统计翻倍/漏计。",
+      "pass_criteria": [
+        "DUE 队列含该 item；",
+        "报告 aggregated 数值 = 由事件集手工推导的 gold；",
+        "三处（队列/状态/报告）读到的 nextReviewAt/正确率同源一致。"
+      ],
+      "failure_criteria": "任一处不一致或漏读。",
+      "failure_layer": "STATE_READ 或 REPORT_AGGREGATION",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "state 快照",
+        "due 队列",
+        "report 聚合值",
+        "aggregate_checksum"
+      ],
+      "notes": "覆盖维度 3「Learning State/Memory」+ 维度 10「Cross-module」的读取侧；与 037（写入侧幂等）互补。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-015",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "P2 题用户只答一句/极短，分析应识别\"内容量不足\"而不是煞有介事地逐维度点评。",
+      "precondition": "P2 题（期望长度若干句）；`/api/speaking/analyze` main tier；quality gate 开启。",
+      "user_input": "`answer=\"It is good.\"`（≤ 短阈值）。",
+      "expected_behavior": "分析明确指出\"回答过短/展开不足\"为主问题（mainIssue 或 summary 层），不给虚构的语法/词汇细节结论；或质量门拦截后走规则引擎并给出可用反馈。",
+      "must_not_happen": "对过短回答输出大段\"具体证据\"（无证据可引）；把它评成流利/词汇好的正面反馈；LLM 幻觉编造句子。",
+      "pass_criteria": [
+        "输出含\"长度/展开不足\"语义；",
+        "evidence 字段引用的文本片段确实存在于回答中（无幻觉）；",
+        "结构完整（EnhancedAnalysisSchema 通过或明确走 rule 路径并标记）。"
+      ],
+      "failure_criteria": "无长度提示的正面空泛反馈；幻觉证据。",
+      "failure_layer": "MODEL 或 OUTPUT_VALIDATION（quality gate 未拦）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "session_id",
+        "part",
+        "answer",
+        "analysis_path(llm|rule)",
+        "quality_gate_scores",
+        "main_issue",
+        "model_name"
+      ],
+      "notes": "与 021 的区别：015 是\"LLM 成功但内容不当\"；021 是\"LLM 失败走 fallback\"。",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-016",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "回答本身冗长但空洞（\"我觉得教育很重要，因为……很重要\"车轱辘话），反馈不应给\"你可以用更多连接词\"这类放之四海皆准的建议。",
+      "precondition": "同 015；actionabilityCheck 开启。",
+      "user_input": "一段无细节、无例子的空洞回答（≥2 句）。",
+      "expected_behavior": "actionabilityCheck 将空泛建议判为不通过 → 反馈被降级（NEEDS_REVIEW warning）或走规则引擎；最终建议必须可执行、与该回答相关。",
+      "must_not_happen": "输出\"多背单词/多练\"等无法执行的通用建议而不加 warning；把空洞内容包装成高完成度。",
+      "pass_criteria": [
+        "若返回 LLM 结果，`quality_warning` 存在且 actionable 建议与回答内容可对应；",
+        "无 actionability 的通用建议被拦截。"
+      ],
+      "failure_criteria": "泛化建议无标记直达用户。",
+      "failure_layer": "OUTPUT_VALIDATION（actionabilityCheck 漏判）或 PROMPT",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "quality_gate_scores",
+        "quality_warning",
+        "prioritized_suggestions",
+        "analysis_path"
+      ],
+      "notes": "该 Case 部分依赖人工评分（建议是否\"可执行\"需语义判断），建议 LLM+人工双轨（见 §12）。",
+      "audit_source": "MANUAL_GOLD",
+      "current_expected": "UNVERIFIED",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-017",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "回答中大段重复同一句/同一观点，分析应指出重复，而非把重复当流利。",
+      "precondition": "同 015。",
+      "user_input": "`\"I think reading is good because it helps me relax. Reading is really good. Reading helps me relax a lot.\"`",
+      "expected_behavior": "反馈命中\"重复/观点单一\"问题（fluency 或 mainIssue 层面）；不给 fluency 高分。",
+      "must_not_happen": "对明显复读输出\"流利度高/表达自然\"；反馈不提及重复。",
+      "pass_criteria": [
+        "输出包含重复/内容单一语义；",
+        "ieltsAnalysis.fluency 级别不与\"存在复读\"矛盾（如不判 high）。"
+      ],
+      "failure_criteria": "判流利高分且未识别重复。",
+      "failure_layer": "MODEL 或 PROMPT（缺\"识别重复\"指令）",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "ielts_analysis",
+        "main_issue",
+        "llm_raw_output"
+      ],
+      "notes": "可用确定性重复检测做辅助断言（n-gram 重合率），但主判据是 LLM 语义识别。",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-018",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "同一会话首答差，采纳反馈重答后明显改善；系统应识别改善，评估反映提升，能力观察进入 IMPROVING。",
+      "precondition": "用户已有 ≥1 次历史会话（满足 totalSessions≥2 注入条件）；本次会话创建；quality gate 正常。",
+      "user_input": "首答（含已知弱项，如缺连接词）；重答（补连接词、内容更完整）。",
+      "expected_behavior": "第二次 analyze 的 abilityContext 注入含历史最弱维度；computeSessionEvaluation 显示维度改善；新 ability observation evidenceStatus 判定为 IMPROVING（而非 REPEATED）。",
+      "must_not_happen": "重答明显改善却判\"无变化/退步\"；evidenceStatus 仍停留 SINGLE/REPEATED 而忽略改善；abilityContext 注入陈旧或错误的最弱维度。",
+      "pass_criteria": [
+        "重答分析质量 ≥ 首答（维度级别变化为正）；",
+        "对应 observation.evidenceStatus=IMPROVING 且带正确 source 关联；",
+        "注入的 abilityContext 与历史观察一致（≤150 字，含最弱维度）。"
+      ],
+      "failure_criteria": "改善未被识别；状态机升迁错。",
+      "failure_layer": "MODEL（对比误判）或 STATE_WRITE（observation 写入/升迁）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "session_id",
+        "first/second_answer",
+        "ielts_analysis×2",
+        "ability_context_injected",
+        "evidence_status_before/after",
+        "evaluation_result"
+      ],
+      "notes": "**[H] 辅助人工评分**：维度改善是否\"真实显著\"需人工抽检，防止把 LLM 自评当金标。覆盖 Speaking 必覆盖项「首答较差、重答明显改善」。",
+      "audit_source": "MANUAL_GOLD",
+      "current_expected": "UNVERIFIED",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-019",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "LLM 反馈引用了回答中不存在的\"证据\"（如编造用户说过某词/某错误）。",
+      "precondition": "构造一个已知易幻觉的短回答；quality gate evidenceConsistencyCheck 开启。",
+      "user_input": "回答中**不含**某目标结构（如没有任何从句），人为构造 LLM 倾向幻觉的输入。",
+      "expected_behavior": "evidenceConsistencyCheck 检出\"证据与回答无关联\"→ 降级到 ruleBasedAnalysis 或附加 warning；用户最终看不到指向不存在文本的具体断言。",
+      "must_not_happen": "反馈中出现\"你说了 X\"但回答里没有 X；降级后仍把规则引擎的通用结论包装成\"根据你的回答\"。",
+      "pass_criteria": [
+        "若走 LLM 结果：evidence 引用均可在回答中定位；",
+        "若被拦截：analysis_path=rule 且无幻觉断言。"
+      ],
+      "failure_criteria": "幻觉证据直达 UI。",
+      "failure_layer": "OUTPUT_VALIDATION（evidenceConsistencyCheck 漏判）或 MODEL",
+      "severity": "S1（[FIX-04] 幻觉证据**对外可见**=欺骗性输出，命中 §4 S1 类 2）",
+      "required_trace_fields": [
+        "trace_id",
+        "quality_gate_scores",
+        "evidence_items",
+        "analysis_path",
+        "llm_raw_output",
+        "quality_warning"
+      ],
+      "notes": "覆盖 Speaking 必覆盖项「LLM 给出无证据反馈」。gate 分数阈值调整时必须回归本 Case。",
+      "audit_source": "MANUAL_GOLD",
+      "current_expected": "UNVERIFIED",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-020",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "系统提示明确\"不给 Band 分\"，但模型仍输出分数/等级暗示（如\"接近 6.5\"\"Band 6\"），质量门必须拦截。",
+      "precondition": "构造输出含 band 的注入/诱导场景；ieltsAlignmentCheck 开启。",
+      "user_input": "一段中上水平回答（易诱导模型给分）。",
+      "expected_behavior": "ieltsAlignmentCheck 检出 Band 泄漏 → 结果被降级/清洗，最终任何 UI 层（feedback、summary、warning）均不出现 band 或等效暗示（\"相当于 6 分\"、\"达到 7 分水平\"）。",
+      "must_not_happen": "band/分数/等效排名泄漏到用户可见层。",
+      "pass_criteria": [
+        "全链路响应体（含 quality_warning、raw 清洗后字段）正则扫描无 band 模式；",
+        "泄漏被标记（供指标统计泄漏率）。"
+      ],
+      "failure_criteria": "任意用户可见字段含 band。",
+      "failure_layer": "OUTPUT_VALIDATION（ieltsAlignmentCheck）或 PROMPT（指令被忽略）",
+      "severity": "S1（[FIX-04] Band 分/等效暗示**对外可见**=产品红线，命中 §4 S1 类 2）",
+      "required_trace_fields": [
+        "trace_id",
+        "quality_gate_scores",
+        "band_leakage_flag",
+        "analysis_path",
+        "final_response_redacted"
+      ],
+      "notes": "覆盖 Speaking 必覆盖项「LLM 给出 Band 分数」。防过拟合提醒：本 Case 不把 regex 清单写进 prompt，只测门禁。",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-021",
+      "category": "SPEAKING_ANALYSIS",
+      "scenario": "口语分析主模型超时/异常，系统应降级到确定性规则引擎并返回可用反馈。",
+      "precondition": "provider 层注入强制失败（模拟 MODEL_TIMEOUT/MODEL_ALL_PROVIDERS_FAILED）；quality gate 不可达。",
+      "user_input": "一段正常长度回答（能被规则引擎合理分析）。",
+      "expected_behavior": "`ruleBasedAnalysis` 返回结构完整分析（长度/连接词/paraphrase/句式维度，不含虚构证据）；响应带降级标记；HTTP 2xx（功能可用）。",
+      "must_not_happen": "5xx 空响应；半成品分析（缺 mainIssue/microDrill）；把规则引擎输出冒充 LLM 深度反馈而不标记。",
+      "pass_criteria": [
+        "analysis_path=rule 且结构字段齐备；",
+        "degradation_flag=true；",
+        "无幻觉证据（规则引擎天然确定性）。"
+      ],
+      "failure_criteria": "fallback 未触发/结构残缺/错误码。",
+      "failure_layer": "FALLBACK",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "llm_error_code",
+        "fallback_chain",
+        "degradation_flag",
+        "analysis_path",
+        "http_status"
+      ],
+      "notes": "覆盖 Speaking 必覆盖项「LLM 分析失败进入 fallback」；同时是指标「Fallback Success Rate」的基准样本之一。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-022",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "scenario": "学习词与知识库 taxonomy 关键词精确匹配，检索应命中相关对象并注入词卡生成。",
+      "precondition": "knowledge-objects-v1.json 快照；选择 1 个 term 精确出现在某 `project_taxonomy.associatedTerms`。",
+      "user_input": "学习该 term → `generateWordCardWithLlm`（seed 未命中前提下）。",
+      "expected_behavior": "retrieveKnowledge 返回 ≤5 个对象，含该 taxonomy 对象及关联 lexical_guidance；generationMeta.knowledgeObjectIds 记录命中；词卡内容与命中对象一致。",
+      "must_not_happen": "精确命中却召回空/召回错对象；命中对象未进 generationMeta（trace 断链）。",
+      "pass_criteria": [
+        "期望对象 ∈ knowledge_object_ids；",
+        "注入数 ≤5；",
+        "词卡释义不与该对象冲突。"
+      ],
+      "failure_criteria": "应命中未命中。",
+      "failure_layer": "RETRIEVAL",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "retrieval_query",
+        "knowledge_object_ids",
+        "knowledge_injected_count",
+        "prompt_version",
+        "generation_meta"
+      ],
+      "notes": "与 035 区分：022 是正常语义场景；035 是工程化漏检（规范化缺陷）。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-023",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "scenario": "用户学\"reduce\"但知识对象用\"decrease/mitigate\"表述，语义相关但无字面重合。",
+      "precondition": "知识库含 topic=environmental impact 的 lexical_guidance，其 appliesTo 含概念相关但字面不同词。",
+      "user_input": "学习该概念相关但字面不同的 term。",
+      "expected_behavior": "（产品目标语义）: 检索能通过 context 规则或语义召回命中相关 lexical_guidance，词卡获得该指导。",
+      "must_not_happen": "因检索漏召回而生成与知识库冲突的用法建议；或静默返回空却不做任何标记。",
+      "pass_criteria": [
+        "（目标）相关对象被召回（semantic coverage）；",
+        "若未召回（当前引擎预期），生成必须仍成功且 generationMeta 标记 knowledge_miss=true，词卡内容**不**与知识库冲突。"
+      ],
+      "failure_criteria": "生成被污染（注入无关对象）或在无召回时产生与知识库冲突内容。",
+      "failure_layer": "RETRIEVAL",
+      "severity": "S3",
+      "required_trace_fields": [
+        "retrieval_query",
+        "knowledge_object_ids",
+        "knowledge_miss_flag",
+        "prompt_version",
+        "generation_meta"
+      ],
+      "notes": "**[FIX-05]** 标题与 Gold 从实现绑定（`[RAG]`/embedding/vector）改为 capability-oriented `[SEMANTIC_RETRIEVAL]`：Gold 只规定\"语义相关内容应被合理召回\"，**不绑定任何实现技术**（关键词/规则/语义向量/混合方案待真实 Baseline Eval 后定，当前能力缺口对应审计 P0-4 检索升级项）。当前关键词引擎按设计会漏召回：改造前按行 2 口径**记录 miss 并保证生成不被污染**（不当 S1 缺陷上报）；改造后行 1 语义覆盖须达标。AUDIT: FUTURE_TARGET（行 1 语义覆盖）/ CURRENT=PASS（行 2 miss-记录口径）/ TARGET=PASS。",
+      "audit_source": "FUTURE_TARGET",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-024",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "scenario": "长尾冷门词在知识库中确无相关对象，生成不得被阻塞，也不得强行注入无关知识。",
+      "precondition": "选择知识库完全未覆盖的 term。",
+      "user_input": "学习该 term。",
+      "expected_behavior": "检索返回空 → 词卡仍正常生成（纯 prompt 能力）；knowledgeObjectIds=[]、injected_count=0 明确记录；无错误。",
+      "must_not_happen": "检索空时抛 5xx；强行注入 topic 不相干对象（污染词卡）；把\"无知识\"表述为\"无此词\"。",
+      "pass_criteria": [
+        "HTTP 2xx、schema 通过；",
+        "injected_count=0 且 knowledge_miss 标记可选；",
+        "词卡内容独立正确。"
+      ],
+      "failure_criteria": "注入无关对象或链路失败。",
+      "failure_layer": "RETRIEVAL 或 FALLBACK",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "retrieval_query",
+        "knowledge_object_ids=[]",
+        "http_status"
+      ],
+      "notes": "覆盖 Retrieval 必覆盖项「无知识对象可用」；与 034（无关注入是缺陷）互为镜像。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-025",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "scenario": "检索误召回与当前词 topic/语境无关的对象，且该对象内容\"污染\"了词卡。",
+      "precondition": "选择 term A 但检索规则存在误匹配路径（如含子串的 associatedTerms）；gold 为\"应只命中 X 对象\"。",
+      "user_input": "学习 term A。",
+      "expected_behavior": "knowledge_object_ids 不含无关对象；或即便含候选，词卡内容不被其错误主张影响。",
+      "must_not_happen": "词卡出现仅来自无关对象的断言（如 register 指导串味）。",
+      "pass_criteria": [
+        "返回对象集合 ⊄ 允许集时标 warning；",
+        "词卡核心字段与无关对象无冲突引用（内容级断言）。"
+      ],
+      "failure_criteria": "无关知识进入最终词卡内容。",
+      "failure_layer": "RETRIEVAL 或 PROMPT（上下文污染）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "retrieval_query",
+        "knowledge_object_ids",
+        "injected_context_snippet",
+        "generation_meta",
+        "llm_raw_output"
+      ],
+      "notes": "与 023 组合决定「Retrieval Success Rate」的 precision/recall 双口径。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-026",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "scenario": "两条 lexical_guidance 对同一用法给出矛盾指导（如 register 冲突），检索均命中，注入不应让词卡自相矛盾。",
+      "precondition": "构造/选择知识库中 register/appropriacy 冲突的两对象（若 V1 库不存在，用 fixture 注入测试库，注明）。",
+      "user_input": "学习同时命中两对象的 term。",
+      "expected_behavior": "检索层或 prompt 层必须**检测到冲突并处理**，使最终词卡不输出自相矛盾的 guidance；具体消解策略（取主源 / 双源并陈并提示差异 / 降级注入等）由实现决定，并在 trace 中记录——**本 Case 不把任何未经 Product Decision 冻结的冲突优先级写进 Gold**。",
+      "must_not_happen": "词卡同时出现\"A 场合禁用 / B 场合必用\"类直接矛盾建议且无取舍或差异提示；把未冻结的优先级规则当作既定事实输出。",
+      "pass_criteria": [
+        "词卡最终 guidance 无语义矛盾（无直接矛盾对并存）；",
+        "generationMeta / trace 记录冲突检测结果与消解动作（`conflict_resolution` 非空、可追踪）；",
+        "若走\"双源并陈\"路线，必须携带差异提示，不得并列两个互斥断言而不作说明。"
+      ],
+      "failure_criteria": "矛盾内容进入词卡且无可追踪的消解记录。",
+      "failure_layer": "RETRIEVAL 或 PROMPT",
+      "severity": "S2（[FIX-04] 矛盾内容进入词卡属内容质量缺陷，可修复可重建，不构成 S1 数据损坏）",
+      "required_trace_fields": [
+        "retrieval_query",
+        "knowledge_object_ids",
+        "conflict_detected",
+        "conflict_resolution",
+        "generation_meta",
+        "llm_raw_output"
+      ],
+      "notes": "**[FIX-06]** V1.0 把 \"official > lexical_guidance / 按 sourceType/sourceId 取主源\" 写为 Gold——该优先级**未冻结**，V1.1 删除该规则，改为 capability-oriented：只要求 (1) 检测冲突、(2) 不输出自相矛盾 guidance、(3) 消解行为可追踪。优先级策略待产品决策冻结后再立精确断言。覆盖 Retrieval 必覆盖项「多个知识对象冲突」；V1 库若缺真实冲突对，允许在 eval fixture 中构造，但须标记 provenance=fake-fixture。AUDIT: PRODUCT_CONTRACT / CURRENT=PASS / TARGET=PASS。\n---",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-027",
+      "category": "LEARNING_REPORT",
+      "scenario": "一周内数据充足，报告数值精确、LLM 总结基于数据。",
+      "precondition": "7 天内：学习 12 词、复习 30 次（独立 18/提示 6/错 4/跳 2）、口语 3 会话；T0 冻结。",
+      "user_input": "查看 7d 报告（服务端聚合 + llmSummary）。",
+      "expected_behavior": "新学/复习次数/正确率/到期分布与事件集推导的 gold 完全一致；llmSummary 引用的每个数字都能在 aggregated 数据中找到。",
+      "must_not_happen": "统计口径错误（如把 SKIPPED 计入错误率分子）；llmSummary 出现数据中不存在的数字/事件；前端与 API 数值不一致。",
+      "pass_criteria": [
+        "聚合字段 = 手工推导 gold；",
+        "llmSummary 数字 ↔ 数据可核对（引用一致性检查）；",
+        "推荐规则按 6 条优先级命中正确。"
+      ],
+      "failure_criteria": "任一统计或引用错误。",
+      "failure_layer": "REPORT_AGGREGATION 或 MODEL（总结幻觉）",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "period",
+        "aggregate_checksum",
+        "summary_generated",
+        "llm_raw_output",
+        "recommendations"
+      ],
+      "notes": "覆盖 Report 必覆盖项「数据充足」。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-028",
+      "category": "LEARNING_REPORT",
+      "scenario": "用户只有零星 1–2 次操作，报告主体应呈现\"数据太少\"，且不得生成无依据的 LLM 总结。",
+      "precondition": "全部历史仅 2 条事件；无口语数据。",
+      "user_input": "查看 7d 报告。",
+      "expected_behavior": "数据聚合正确但标记数据不足；`generateReportSummaryWithLlm` 返回 null（不调/调后短路）；前端不渲染总结区。",
+      "must_not_happen": "强行生成\"保持节奏/进步中\"等无数据支持的总结；把 null 当错误抛出。",
+      "pass_criteria": [
+        "insufficientData=true 且 summary=null；",
+        "报告主体（词数/次数）仍正确显示；",
+        "UI 无总结区或显示中立空态。"
+      ],
+      "failure_criteria": "出现任何带评判性的总结文案。",
+      "failure_layer": "BUSINESS_RULE（insufficientData 判定）或 MODEL",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "aggregate_checksum",
+        "insufficient_data_flag",
+        "summary_generated=null",
+        "ui_render_path"
+      ],
+      "notes": "覆盖 Report 必覆盖项「数据非常少」。敢于返回 null 是该产品的 AI 可信度设计，不是缺陷。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-029",
+      "category": "LEARNING_REPORT",
+      "scenario": "用户词汇数据正常但缺口语域（或复习域）数据，报告应对缺域显示空态而非编造能力结论。",
+      "precondition": "行 1：仅词汇学习事件、0 口语会话、0 复习；行 2：有学习+口语、0 复习。",
+      "user_input": "分别查看 7d 报告（两行）。",
+      "expected_behavior": "行 1：口语成长区/能力画像区不出现或显示\"暂无口语数据\"空态，无 fluency 断言；行 2：复习正确率区空态且不出现百分比。",
+      "must_not_happen": "无口语数据却输出\"你的流利度有所提升\"；无复习数据却显示\"复习正确率 80%\"或\"较上周进步\"。",
+      "pass_criteria": [
+        "缺域区块为空态/隐藏，语义正确；",
+        "全报告无该域的能力/统计断言。"
+      ],
+      "failure_criteria": "任意缺域断言泄漏。",
+      "failure_layer": "REPORT_AGGREGATION 或 UI_PRESENTATION",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "period",
+        "speaking_observations",
+        "review_stats",
+        "section_render_flags"
+      ],
+      "notes": "覆盖 Report 必覆盖项「没有口语数据 / 没有复习数据」。分域空态是最容易在\"图表组件复用\"时翻车的点。",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-030",
+      "category": "LEARNING_REPORT",
+      "scenario": "无历史基线（或数据不足以支持趋势）时，报告与推荐不得断言\"明显进步/大幅提升\"。",
+      "precondition": "用户仅本周有数据、无上周/更早基线；或虽有两次数据但间隔不足/类型不可比。",
+      "user_input": "查看 7d/30d 报告。",
+      "expected_behavior": "涉及\"进步/提升/落后\"的表述只允许出现在存在可比基线且差异达到阈值的区块；否则要么不出现，要么以\"趋势方向未知\"表述。",
+      "must_not_happen": "出现\"明显进步/显著提升/突破\"等无基线结论（llmSummary 或前端硬编码文案均不可）。",
+      "pass_criteria": [
+        "报告全文（API 响应 + 前端文案产物）扫描无违规结论；",
+        "CompareSection 在无上周数据时进入空态而非编造 Δ。"
+      ],
+      "failure_criteria": "任一数据不支持的趋势断言泄漏。",
+      "failure_layer": "REPORT_AGGREGATION（对比口径）或 PROMPT/UI_PRESENTATION（文案层）",
+      "severity": "S1（[FIX-04] 无据\"进步\"结论**对外可见**=欺骗性 AI 输出，命中 §4 S1 类 2）",
+      "required_trace_fields": [
+        "trace_id",
+        "baseline_availability",
+        "compare_section_data",
+        "llm_raw_output",
+        "summary_generated",
+        "ui_copy_strings"
+      ],
+      "notes": "覆盖 Report 必覆盖项「不允许生成无数据支持的结论」。这是报告维度最重要的一条红线，与 028/029 形成\"不足即沉默\"的家族。\n---",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-031",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "主 Provider 超时，系统按 `shouldFallback` 切换备 Provider 或走任务级兜底。",
+      "precondition": "primary 注入强制 timeout；fallback 已配置且 enabled；被测点=判题（fast）。",
+      "user_input": "语义正确但措辞不同的答案（复用 006 输入）。",
+      "expected_behavior": "若 fallback provider 可用 → 备模型返回且结果正确（标 fallback 链）；若不可用 → fallbackJudge 关键词降级 → 该答案仍判对（含关键词命中）或按规则判错，响应 2xx 带降级标记。",
+      "must_not_happen": "5xx 让用户重答；无任何降级标记（用户/日志无法区分质量档）。",
+      "pass_criteria": [
+        "`fallback_chain` 记录 primary(timeout) → fallback 路径；",
+        "结果正确且结构完整；",
+        "错误码分类符合 LlmError（MODEL_TIMEOUT 不落 500）。"
+      ],
+      "failure_criteria": "fallback 未触发或结果不可用。",
+      "failure_layer": "FALLBACK",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "llm_error_code",
+        "fallback_chain",
+        "degradation_flag",
+        "model_name×2",
+        "http_status",
+        "latency_ms"
+      ],
+      "notes": "覆盖 Failure 必覆盖项「Primary Model timeout」。「Fallback Success Rate」基准样本。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-032",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "模型返回非法 JSON（截断/尾逗号/包裹 markdown），管线应触发 1 次 fast-tier 修复并成功解析。",
+      "precondition": "在 LLM 管线层注入一次非法 JSON 输出（可控 mock），后续修复调用返回合法 JSON。",
+      "user_input": "触发任一结构化调用点（以判题为例）。",
+      "expected_behavior": "`JSON.parse` 失败 → `repair_attempts=1` 修复成功 → 返回正确结果；无用户可见错误。",
+      "must_not_happen": "直接抛 MODEL_INVALID_JSON 而不尝试修复；修复循环 >1 次（应单次）；修复后 schema 仍错却放行。",
+      "pass_criteria": [
+        "repair_attempts=1 且终态成功；",
+        "结果通过 Zod；",
+        "修复调用 tier=fast、temp=0。"
+      ],
+      "failure_criteria": "未修复即失败或修复>1 次。",
+      "failure_layer": "FALLBACK（修复链路）或 OUTPUT_VALIDATION",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "llm_raw_output(原始)",
+        "repair_attempts",
+        "zod_validation_result",
+        "llm_error_code"
+      ],
+      "notes": "覆盖 Failure 必覆盖项「Invalid JSON」。修复次数、温度是回归重点（防止悄悄改掉 temp=0）。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-033",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "模型输出合法 JSON 但不符合 Zod schema，修复后仍不匹配（顽固错），系统须以 MODEL_SCHEMA_MISMATCH 正确归类结束，不得 500 裸奔。",
+      "precondition": "注入 schema 顽固违规输出（缺必填字段且修复调用同样违规）。",
+      "user_input": "触发结构化调用点。",
+      "expected_behavior": "错误码 `MODEL_SCHEMA_MISMATCH`（不触发 Provider fallback，符合 shouldFallback 规则）；HTTP 错误响应结构化（AppError）；前端可展示\"服务暂时不可用/稍后再试\"。",
+      "must_not_happen": "错误码漂移成 500/MODEL_ERROR；静默返回部分结果；把 schema 错误误判为 Provider 故障去切换。",
+      "pass_criteria": [
+        "app_error_code / llm_error_code 精确；",
+        "响应体含可读错误信息（用户安全文案）；",
+        "fallback_chain 未错误触发 provider 切换（记录尝试）。"
+      ],
+      "failure_criteria": "错误归类错误或用户侧不可恢复。",
+      "failure_layer": "OUTPUT_VALIDATION 或 FALLBACK（误切换）",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "llm_raw_output",
+        "repair_attempts",
+        "zod_validation_result",
+        "llm_error_code",
+        "http_status"
+      ],
+      "notes": "覆盖 Failure 必覆盖项「Schema mismatch」。错误码字典是 Bad Case 分层的依据，保持稳定。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-034",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "语音转写失败（无 Key / 超时 / 上游 5xx），前端应可回退文字输入，且错误结构化可诊断。",
+      "precondition": "行 1：未配置 Whisper Key；行 2：注入上游 5xx。",
+      "user_input": "上传有效 audio blob → `POST /api/speaking/transcribe`。",
+      "expected_behavior": "行 1 → 503 CONFIG_ERROR；行 2 → 502（或 fallback 文案），错误响应结构化；前端提示\"语音不可用，可改用文字输入\"且不阻塞口语流程。",
+      "must_not_happen": "500 未分类；错误导致已录音频丢失且无重试/回退引导；把 STT 错误冒充口语分析错误。",
+      "pass_criteria": [
+        "http_status/app_error_code 符合上表；",
+        "前端存在文字输入回退路径（可达）；",
+        "错误日志含 trace_id 与 audio_metadata 摘要。"
+      ],
+      "failure_criteria": "错误未分类或用户无回退路径。",
+      "failure_layer": "FALLBACK（建议新增 STT 层，见 §3.1）",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "audio_metadata",
+        "llm_error_code",
+        "http_status",
+        "ui_fallback_offered"
+      ],
+      "notes": "覆盖 Failure 必覆盖项「STT failure」。Whisper 未走统一管线，是已知架构缺口（审计 §5.2 调用点 7）。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-035",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "词存在但检索因规范化缺陷漏检（大小写/连字符/词形），链路应降级为\"无知识注入\"而**不**静默注入无关对象或崩溃。",
+      "precondition": "知识库含 \"well-being\" 类带连字符对象；用户输入 \"wellbeing\"（或大小写变体）。",
+      "user_input": "学习该变体 term。",
+      "expected_behavior": "检索 0 命中（漏检可复现）→ 词卡仍生成、injected_count=0、knowledge_miss 标记；无错误、无无关注入。",
+      "must_not_happen": "崩溃/5xx；把 \"wellbeing\" 注入到 \"health\" 对象（近似但错配）；生成卡与既有 \"well-being\" 卡在 learning_items 造成语义重复却无归一（canonical 冲突）。",
+      "pass_criteria": [
+        "HTTP 2xx、schema 通过、无污染注入；",
+        "generationMeta 记录 miss；",
+        "notes 输出归一化建议（供 M1/P0-4 修复）。"
+      ],
+      "failure_criteria": "崩溃或无关注入。",
+      "failure_layer": "RETRIEVAL",
+      "severity": "S3",
+      "required_trace_fields": [
+        "trace_id",
+        "retrieval_query(normalized)",
+        "knowledge_object_ids=[]",
+        "canonical_form",
+        "knowledge_miss_flag"
+      ],
+      "notes": "覆盖 Failure 必覆盖项「Retrieval miss」。与 022/024 的区别在于**应当命中但因工程缺陷未命中**——这正是规范化（normalizeTerm）与语义检索升级（P0-4，技术待定）要消灭的类别。AUDIT: V2_FACT / CURRENT=PASS / TARGET=PASS。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-036",
+      "category": "FALLBACK_FAILURE",
+      "scenario": "判题 LLM 全部失败（主+修复+无 fallback provider），走 fallbackJudge 确定性匹配，结果须与确定性规则一致并标记降级。",
+      "precondition": "判题 provider 注入全失败；词带 answerKeywords。",
+      "user_input": "（2 行）: 行 1 答案包含关键词（真义）；行 2 答案不包含关键词且字面不匹配。",
+      "expected_behavior": "fallbackJudge 按 精确匹配 → 关键词全匹配 顺序判定：行 1 判对（降级但正确）；行 2 判错；响应 2xx 带降级标记。",
+      "must_not_happen": "LLM 失败导致 5xx（判题必须永远有兜底）；关键词误判（行 2 因单个弱关键词判对）；无降级标记。",
+      "pass_criteria": [
+        "fallback 链触发且结果=确定性 gold；",
+        "degradation_flag=true；",
+        "与 006 的 LLM 判定在同一词上结果一致（行 1）。"
+      ],
+      "failure_criteria": "结果与规则不符或无兜底。",
+      "failure_layer": "FALLBACK",
+      "severity": "S2",
+      "required_trace_fields": [
+        "trace_id",
+        "llm_error_code",
+        "fallback_chain",
+        "degradation_flag",
+        "correctness_judged",
+        "answer_keywords"
+      ],
+      "notes": "覆盖\"判题必须有确定性兜底\"的鲁棒性目标；当前 `lib/review/answer-judge.ts`（纯确定性）与 `judgeAnswerWithLlm` 并存、复习链路未用前者的审计缺口（P1-6）是本 Case 的隐性风险点。\n---",
+      "audit_source": "V2_FACT",
+      "current_expected": "UNVERIFIED",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-037",
+      "category": "CROSS_MODULE_STATE",
+      "scenario": "网络抖动导致同一提交以相同 clientEventId 重放/连点两次，事件、状态、调度、UI 反馈都必须只生效一次。",
+      "precondition": "到期复习词 W；首次提交 clientEventId=`rev-w-dup-1`（独立正确）；第二次提交完全同 body（模拟重试）。",
+      "user_input": "相同 payload 提交两次（间隔 200ms）。",
+      "expected_behavior": "learning_events 仅 1 条；nextReviewAt 仅按一次 +72h 推进（不双推）；第二次响应返回已有结果（幂等语义：返回既有 eventId/结果）；前端不重复展示反馈。",
+      "must_not_happen": "事件重复（unique(user_id,client_event_id) 冲突或绕过）；调度双推（+72h×2）；recall_level+2；UI 双弹反馈。",
+      "pass_criteria": [
+        "events 计数=1、state 终态=单次推进的 gold；",
+        "第二次响应与首次结果一致（幂等返回）；",
+        "无 5xx（唯一约束冲突被吞并处理为幂等命中）。"
+      ],
+      "failure_criteria": "任一重复副作用。",
+      "failure_layer": "STATE_WRITE（建议 IDEMPOTENCY 层，§3.1）",
+      "severity": "S1（[FIX-04] 幂等失效造成重复推进/重复计分，命中 §4 S1 类 3）",
+      "required_trace_fields": [
+        "trace_id×2",
+        "client_event_id",
+        "event_count",
+        "state_before/after",
+        "next_review_at_before/after",
+        "response_body×2"
+      ],
+      "notes": "同时覆盖 Learning 必覆盖项「重复提交」与 Failure 必覆盖项「重复 clientEventId」——二者是同一行为的两个视角，故只立一条 Case。本地 mock 与 Supabase 两仓库实现都要跑（MemoryLearningRepository 与 SupabaseLearningRepository）。AUDIT: V2_FACT / CURRENT=PASS / TARGET=PASS。",
+      "audit_source": "V2_FACT",
+      "current_expected": "PASS",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-038",
+      "category": "CROSS_MODULE_STATE",
+      "scenario": "同一学习/复习提交后，**服务端权威状态（Server Repository / authoritative backend state）**必须与 API 响应、后续复习行为、报告聚合、用户最终可见结果一致；(过渡期)客户端本地读写**最多是可收敛的展示缓存**，不是长期存在的第三份 Gold State。",
+      "precondition": "M1 前后通用断言：断言基座 = 服务端 repo（若某流程只有本地写路径，则该流程本身即为 P0-1 待迁移项，不属于本 Case 的可通过路径）；客户端本地（如存在）仅作缓存。",
+      "user_input": "学习 1 词答错 → 复习到期答对 → 查看 7d 报告（同一账号）。",
+      "expected_behavior": "提交后 `user_item_states`（服务端）变化与 API 响应语义一致；DUE 队列与复习行为由服务端状态驱动；报告聚合读服务端（或服务端投影）；用户可见结果经刷新/缓存失效后**收敛至服务端态**；local 缓存清空后不出现状态倒退（倒退即说明曾有本地写路径被当权威）。",
+      "must_not_happen": "报告/队列/用户可见结果与服务端 repo 不一致（P0-1 双路径分裂的复现）；清缓存/刷新后用户可见状态倒退；服务端与本地两条写路径长期分叉且无收敛机制。",
+      "pass_criteria": [
+        "`server_state`（提交后）与 `api_result` 映射出的状态一致（字段级/checksum 级）；",
+        "`report_aggregate` == 服务端状态的投影（checksum 相等）；",
+        "DUE 队列与复习后状态均基于服务端态（无旧缓存/本地假数据混入）；",
+        "（过渡期）local 快照存在时：`local == server` 且连续两次读稳定、刷新无回跳；清空 local 后状态不变（收敛至 server）；",
+        "（M1 后）localStorage 若被移除，本 Case 断言集 1–3 依旧成立——**不依赖 localStorage 的存在性**。"
+      ],
+      "failure_criteria": "任一端点漂移（server vs 队列 vs 报告 vs 用户可见）或清缓存后可见状态回退。",
+      "failure_layer": "STATE_WRITE / STATE_READ（双路径同步）",
+      "severity": "S1（[FIX-04] 保留 S1：清缓存/双路径漂移导致**用户可见历史回退 = 不可恢复数据丢失**（本地曾被当权威且服务端无完整记录），命中 §4 S1 类 1；M1 收敛后该类失败应消失）",
+      "required_trace_fields": [
+        "trace_id",
+        "state_after",
+        "report_aggregate_checksum",
+        "local_snapshot",
+        "refresh_stability",
+        "server_state_checksum"
+      ],
+      "notes": "**[FIX-07]** V1.0 把 localStorage 视作长期第三份 Gold State 且要求\"三处完全一致\"，与 SSOT 决策矛盾。V1.1 重定义 Gold：**权威态 = Server Repository**，localStorage 最多是可收敛缓存（若 M1 删除业务 localStorage，Case 依旧有效）；断言对象改为\"服务端权威态与 API 响应、复习行为、报告聚合、用户可见结果一致\"。迁移前（双路径未收敛）预期**失败**，M1 完成后必须转绿——属 M1 验收回归项；仅凭\"迁移前失败\"不得升级其它 Case 或当作新 regression。AUDIT: PRODUCT_CONTRACT（SSOT 决策）/ CURRENT=FAIL（迁移前双路径未收敛）/ TARGET=PASS。",
+      "audit_source": "PRODUCT_CONTRACT",
+      "current_expected": "FAIL",
+      "target_expected": "PASS"
+    },
+    {
+      "case_id": "ELS-EVAL-039",
+      "category": "CROSS_MODULE_STATE",
+      "scenario": "同一口语弱项第二次出现 → observation 从 SINGLE 升迁 REPEATED_PATTERN；后续口语分析注入的 abilityContext 反映该模式且 ≤150 字。断言分两层：**M1 Gate**（ability observation 持久化 + evidenceStatus 正确 + abilityContext 读取一致）与 **M2 Observability Gate**（memory write ↔ trace_id 关联、可从 trace 回溯 source analysis）。**M2 未落地不得导致 M1 判定失败。**",
+      "precondition": "用户已有 1 条 dimension=fluency 的 SINGLE observation（M1 后存于服务端能力/记忆存储）；totalSessions 将从 1 → 2（满足注入条件）；T0 冻结。",
+      "user_input": "新会话回答再次暴露 fluency 弱项（构造同维度问题）；完成分析。",
+      "expected_behavior": "  - **M1 语义**：新 observation 落库（服务端可查询、可重建）后该维度 evidenceStatus=REPEATED_PATTERN（由持久化 observation 推导，非仅本地临时值）；随后 analyze 请求的 prompt 注入 abilityContext 基于**服务端 observation 读取**，含该维度（最弱维度）、≤150 字、结构合法；\n  - **M2 语义**：observation 写入与 trace_id 关联；可从 trace 回溯到源分析会话（source analysis → trace → observation）。",
+      "must_not_happen": "状态机错（SINGLE→DISPUTED 误升等）；注入上下文与观察不符（如注入已解决/非最弱维度）；超长截断破坏结构；在 M1 判定中把\"缺 trace 关联\"（M2 范围）计为失败。",
+      "pass_criteria": [
+        "M1 Gate（M1 交付时必须全过）",
+        "`evidence_status_before=SINGLE` → `after=REPEATED_PATTERN`，且该 observation 可从服务端持久化存储读回（非仅内存/localStorage）；",
+        "`ability_context_injected` 基于服务端 observation 读取：含正确维度、≤150 字、结构合法；",
+        "（过渡期）本地缓存若存在，刷新/失效后 abilityContext 收敛至服务端值、不漂移。 - **M2 Observability Gate（`[M2_TARGET]`，M2 交付时全过；当前不参与 M1 判定）**:",
+        "observation 写入 ↔ `trace_id` 关联（memory write 可经 trace 查询）；",
+        "可从 trace_id 回溯到源分析会话（source_id/session_id）。"
+      ],
+      "failure_criteria": "状态机错、注入错、或各自 Gate 内断言未达（M2 断言不达标不得判 M1 Gate 失败）。",
+      "failure_layer": "STATE_WRITE 或 PROMPT（上下文注入）",
+      "severity": "S2（[FIX-04] observation 升迁/注入错属可恢复的状态与注入错误；不因 M1/M2 未落地而升 S1）",
+      "required_trace_fields": [
+        "trace_id",
+        "session_id",
+        "dimension",
+        "evidence_status_before/after",
+        "ability_context_injected",
+        "observation_persisted_flag",
+        "source_id"
+      ],
+      "notes": "**[FIX-08]** V1.0 把 M2 Observability（memory write ↔ trace_id、source 回溯）与 M1（observation 持久化、evidenceStatus、abilityContext 读取）混在同一断言集，导致 M2 缺口污染 M1 判定。V1.1 拆为 **M1 Gate（行 1–3）** 与 **M2 Target（行 4–5）**：M2 未落地只跑 1–3。迁移前 memory 层仅 localStorage（P0-2）→ M1 Gate 当前预期失败；trace 关联缺口（P1-4）→ M2 Target 当前未达标；二者在 §15 分别登记为 milestone 缺口，不当作\"当前产品 bug 的 S1 regression\"。AUDIT: FUTURE_TARGET（M1 行 + M2 行）/ CURRENT=FAIL（M1 行：observation 未服务端持久化；M2 行未达标）/ TARGET=PASS。\n---",
+      "audit_source": "FUTURE_TARGET",
+      "current_expected": "FAIL",
+      "target_expected": "PASS"
+    }
+  ],
+  "gold_audit": {
+    "definitions": {
+      "AUDIT_SOURCE": [
+        "V2_FACT",
+        "PRODUCT_CONTRACT",
+        "FUTURE_TARGET",
+        "MANUAL_GOLD"
+      ],
+      "CURRENT_EXPECTED": [
+        "PASS",
+        "FAIL",
+        "UNVERIFIED"
+      ],
+      "TARGET_EXPECTED": [
+        "PASS"
+      ]
+    },
+    "matrix": {
+      "ELS-EVAL-001": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-002": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-003": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-004": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-005": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-006": {
+        "audit_source": "MANUAL_GOLD",
+        "current_expected": "UNVERIFIED",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-007": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-008": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-009": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-010": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-011": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-012": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-013": {
+        "audit_source": "FUTURE_TARGET",
+        "current_expected": "FAIL",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-014": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-015": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-016": {
+        "audit_source": "MANUAL_GOLD",
+        "current_expected": "UNVERIFIED",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-017": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-018": {
+        "audit_source": "MANUAL_GOLD",
+        "current_expected": "UNVERIFIED",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-019": {
+        "audit_source": "MANUAL_GOLD",
+        "current_expected": "UNVERIFIED",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-020": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-021": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-022": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-023": {
+        "audit_source": "FUTURE_TARGET",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-024": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-025": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-026": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-027": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-028": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-029": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-030": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-031": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-032": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-033": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-034": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-035": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-036": {
+        "audit_source": "V2_FACT",
+        "current_expected": "UNVERIFIED",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-037": {
+        "audit_source": "V2_FACT",
+        "current_expected": "PASS",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-038": {
+        "audit_source": "PRODUCT_CONTRACT",
+        "current_expected": "FAIL",
+        "target_expected": "PASS"
+      },
+      "ELS-EVAL-039": {
+        "audit_source": "FUTURE_TARGET",
+        "current_expected": "FAIL",
+        "target_expected": "PASS"
+      }
+    }
+  }
+}

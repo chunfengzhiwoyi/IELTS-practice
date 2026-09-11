@@ -1,0 +1,1812 @@
+{
+  "manifest": {
+    "run_id": "phase0-20260909-115825",
+    "spec": "ELS_EVALUATION_V1_1",
+    "spec_version": "1.1",
+    "case_set_version": "ELS-EVAL-V1.1",
+    "spec_case_count": 39,
+    "subset_case_ids": [
+      "ELS-EVAL-008",
+      "ELS-EVAL-009",
+      "ELS-EVAL-010",
+      "ELS-EVAL-011",
+      "ELS-EVAL-012",
+      "ELS-EVAL-022",
+      "ELS-EVAL-032",
+      "ELS-EVAL-035",
+      "ELS-EVAL-037",
+      "ELS-EVAL-038"
+    ],
+    "git": {
+      "commit": "2a9e3834b1b5a1b797515f7c86a771000276b172",
+      "branch": "eval/m2-run-02",
+      "worktree_path": "D:\\Codex\\IELTS-eval-m2-run-02",
+      "dirty": true
+    },
+    "environment": {
+      "node": "v22.23.2",
+      "vitest": "2.1.9",
+      "data_provider": "memory",
+      "auth_mode": "demo",
+      "llm_provider": "mock",
+      "os": "win32 x64"
+    },
+    "started_at": "2026-09-09T11:58:26.155Z"
+  },
+  "metrics": {
+    "case_level": {
+      "executed": 6,
+      "passed": 6,
+      "failed": 0,
+      "manual_review": 2,
+      "unverified": 2,
+      "blocked": 0,
+      "skipped": 0,
+      "pass_rate_pct": 100
+    },
+    "row_level": {
+      "executed": 40,
+      "passed": 40,
+      "failed": 0,
+      "pass_rate_pct": 100,
+      "bad_case_rate_pct": 0,
+      "critical_failure_rate_pct": 0,
+      "release_blocking_failure_rate_pct": 0,
+      "blocking_s2_registry_size": 0
+    }
+  },
+  "cases": [
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-008",
+      "category": "ANSWER_JUDGEMENT",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S3",
+      "failure_layer": "BUSINESS_RULE",
+      "expected": "全部确定性判错（不进入 judgeAnswerWithLlm）；学习 → FAIL；复习 → INCORRECT（空答案规则），调度按错误档推进。",
+      "actual": "8 行全通过：\"\" / \"   \" / \"\n\" / \".\" 四条变体在 learn 与 review 两条链路均确定性短路（llm_calls=0，eventCount=1，调度按错误档推进）。",
+      "latency_ms": 30.38,
+      "rows": [
+        {
+          "row_id": "learn-empty",
+          "description": "learn/submit answer=\"\" → FAIL / EXPOSED / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"\"",
+            "userId": "demo-user-001",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "correctness": "FAIL",
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "learning_branch_map",
+                  "inputs": {
+                    "correctness": "FAIL",
+                    "usedHint": false,
+                    "shortCircuited": true
+                  },
+                  "outputs": {
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-5mpfny"
+                  },
+                  "event_id": "evt-1788256800000-5mpfny",
+                  "client_event_id": "els-eval-008-learn-empty",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "NEW",
+                    "correctness": "FAIL",
+                    "taskType": "MEANING_RECALL"
+                  },
+                  "canonical_state_hash": "780ab02e874b1444"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T12:00:00.000Z"
+                  },
+                  "canonical_state_hash": "b9996884bedd161c",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T12:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "review-empty",
+          "description": "review/submit answer=\"\" → INCORRECT / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"\"",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "skipped": false,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "result": "INCORRECT",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "review_interval_table",
+                  "inputs": {
+                    "result": "INCORRECT",
+                    "usedHint": false,
+                    "skipped": false,
+                    "previous_recall_level": 0
+                  },
+                  "outputs": {
+                    "next_review_at": "2026-09-01T14:00:00.000Z",
+                    "recall_level_delta": "0",
+                    "interval_hours": 4
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-ojep30"
+                  },
+                  "event_id": "evt-1788256800000-ojep30",
+                  "client_event_id": "els-eval-008-review-empty",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "FAIL",
+                    "reviewResult": "INCORRECT"
+                  },
+                  "canonical_state_hash": "19f9d9bac7f3ee9e"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T14:00:00.000Z"
+                  },
+                  "canonical_state_hash": "073b56d0e127163e",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T14:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "learn-spaces",
+          "description": "learn/submit answer=\"   \" → FAIL / EXPOSED / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"   \"",
+            "userId": "demo-user-001",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "correctness": "FAIL",
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "learning_branch_map",
+                  "inputs": {
+                    "correctness": "FAIL",
+                    "usedHint": false,
+                    "shortCircuited": true
+                  },
+                  "outputs": {
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-kxuoq2"
+                  },
+                  "event_id": "evt-1788256800000-kxuoq2",
+                  "client_event_id": "els-eval-008-learn-spaces",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "NEW",
+                    "correctness": "FAIL",
+                    "taskType": "MEANING_RECALL"
+                  },
+                  "canonical_state_hash": "780ab02e874b1444"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T12:00:00.000Z"
+                  },
+                  "canonical_state_hash": "b9996884bedd161c",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T12:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "review-spaces",
+          "description": "review/submit answer=\"   \" → INCORRECT / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"   \"",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "skipped": false,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "result": "INCORRECT",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "review_interval_table",
+                  "inputs": {
+                    "result": "INCORRECT",
+                    "usedHint": false,
+                    "skipped": false,
+                    "previous_recall_level": 0
+                  },
+                  "outputs": {
+                    "next_review_at": "2026-09-01T14:00:00.000Z",
+                    "recall_level_delta": "0",
+                    "interval_hours": 4
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-26ycnn"
+                  },
+                  "event_id": "evt-1788256800000-26ycnn",
+                  "client_event_id": "els-eval-008-review-spaces",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "FAIL",
+                    "reviewResult": "INCORRECT"
+                  },
+                  "canonical_state_hash": "19f9d9bac7f3ee9e"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T14:00:00.000Z"
+                  },
+                  "canonical_state_hash": "073b56d0e127163e",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T14:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "learn-punct",
+          "description": "learn/submit answer=\".\" → FAIL / EXPOSED / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\".\"",
+            "userId": "demo-user-001",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "correctness": "FAIL",
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "learning_branch_map",
+                  "inputs": {
+                    "correctness": "FAIL",
+                    "usedHint": false,
+                    "shortCircuited": true
+                  },
+                  "outputs": {
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-jni97p"
+                  },
+                  "event_id": "evt-1788256800000-jni97p",
+                  "client_event_id": "els-eval-008-learn-punct",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "NEW",
+                    "correctness": "FAIL",
+                    "taskType": "MEANING_RECALL"
+                  },
+                  "canonical_state_hash": "780ab02e874b1444"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T12:00:00.000Z"
+                  },
+                  "canonical_state_hash": "b9996884bedd161c",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T12:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "review-punct",
+          "description": "review/submit answer=\".\" → INCORRECT / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\".\"",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "skipped": false,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "result": "INCORRECT",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "review_interval_table",
+                  "inputs": {
+                    "result": "INCORRECT",
+                    "usedHint": false,
+                    "skipped": false,
+                    "previous_recall_level": 0
+                  },
+                  "outputs": {
+                    "next_review_at": "2026-09-01T14:00:00.000Z",
+                    "recall_level_delta": "0",
+                    "interval_hours": 4
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-29t61f"
+                  },
+                  "event_id": "evt-1788256800000-29t61f",
+                  "client_event_id": "els-eval-008-review-punct",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "FAIL",
+                    "reviewResult": "INCORRECT"
+                  },
+                  "canonical_state_hash": "19f9d9bac7f3ee9e"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T14:00:00.000Z"
+                  },
+                  "canonical_state_hash": "073b56d0e127163e",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T14:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "learn-newline",
+          "description": "learn/submit answer=\"\\n\" → FAIL / EXPOSED / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "correctness": "FAIL",
+            "status": "EXPOSED",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"\\n\"",
+            "userId": "demo-user-001",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "correctness": "FAIL",
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "learning_branch_map",
+                  "inputs": {
+                    "correctness": "FAIL",
+                    "usedHint": false,
+                    "shortCircuited": true
+                  },
+                  "outputs": {
+                    "status": "EXPOSED",
+                    "scheduleQuality": "FAIL",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-mlziuq"
+                  },
+                  "event_id": "evt-1788256800000-mlziuq",
+                  "client_event_id": "els-eval-008-learn-newline",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "NEW",
+                    "correctness": "FAIL",
+                    "taskType": "MEANING_RECALL"
+                  },
+                  "canonical_state_hash": "780ab02e874b1444"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T12:00:00.000Z"
+                  },
+                  "canonical_state_hash": "b9996884bedd161c",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T12:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        },
+        {
+          "row_id": "review-newline",
+          "description": "review/submit answer=\"\\n\" → INCORRECT / llm_calls=0",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "llmCalls": 0,
+            "eventCount": 1,
+            "eventCorrectness": "FAIL",
+            "nextReviewAt": "2026-09-01T14:00:00.000Z"
+          },
+          "severity": "S3",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "answer": "\"\\n\"",
+            "trace": {
+              "ruleApplied": [
+                {
+                  "rule_key": "empty_answer_short_circuit",
+                  "inputs": {
+                    "answer_empty": true,
+                    "content_empty": true,
+                    "skipped": false,
+                    "itemId": "seed-001"
+                  },
+                  "outputs": {
+                    "result": "INCORRECT",
+                    "llm_call_count": 0
+                  },
+                  "llm_call_count": 0
+                },
+                {
+                  "rule_key": "review_interval_table",
+                  "inputs": {
+                    "result": "INCORRECT",
+                    "usedHint": false,
+                    "skipped": false,
+                    "previous_recall_level": 0
+                  },
+                  "outputs": {
+                    "next_review_at": "2026-09-01T14:00:00.000Z",
+                    "recall_level_delta": "0",
+                    "interval_hours": 4
+                  },
+                  "llm_call_count": 0
+                }
+              ],
+              "stateWriteOutcomes": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-zlwccf"
+                  },
+                  "event_id": "evt-1788256800000-zlwccf",
+                  "client_event_id": "els-eval-008-review-newline",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "FAIL",
+                    "reviewResult": "INCORRECT"
+                  },
+                  "canonical_state_hash": "19f9d9bac7f3ee9e"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "status": "EXPOSED",
+                    "recallLevel": 0,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T14:00:00.000Z"
+                  },
+                  "canonical_state_hash": "073b56d0e127163e",
+                  "next_review_at_before": null,
+                  "next_review_at_after": "2026-09-01T14:00:00.000Z"
+                }
+              ],
+              "eventCount": 7
+            }
+          }
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "PASS",
+      "notes": "BC-008 修复后：empty_answer_short_circuit 覆盖 trim-empty 与纯标点边界；M2 Trace rule.applied(empty_answer_short_circuit) 随行记录（evidence.trace.ruleApplied）。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-009",
+      "category": "REVIEW_SCHEDULING",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S2",
+      "failure_layer": "STATE_READ",
+      "expected": "返回 tasks=[A, D, B]（按 nextReviewAt 升序：-3h→-2h→-1h）；totalDue=3；C 不在列。",
+      "actual": "DUE 出队按 nextReviewAt 升序 [A,D,B]，totalDue=3，未到期词 C 排除。与 gold 一致。",
+      "latency_ms": 17.15,
+      "rows": [
+        {
+          "row_id": "r1-task-order",
+          "description": "tasks 顺序 = [A(seed-001), D(seed-002), B(seed-003)]（nextReviewAt 升序）",
+          "status": "PASS",
+          "expected": {
+            "order": [
+              "seed-001",
+              "seed-002",
+              "seed-003"
+            ]
+          },
+          "actual": {
+            "order": [
+              "seed-001",
+              "seed-002",
+              "seed-003"
+            ]
+          },
+          "severity": "S2",
+          "failure_layer": "STATE_READ",
+          "evidence": {
+            "rawTasks": [
+              "seed-001",
+              "seed-002",
+              "seed-003"
+            ]
+          }
+        },
+        {
+          "row_id": "r2-total-due",
+          "description": "totalDue = 3（C 未到期不计数）",
+          "status": "PASS",
+          "expected": {
+            "totalDue": 3,
+            "tasksInResponse": 3,
+            "cExcluded": true
+          },
+          "actual": {
+            "totalDue": 3,
+            "tasksInResponse": 3,
+            "cExcluded": true
+          },
+          "severity": "S2",
+          "failure_layer": "STATE_READ"
+        },
+        {
+          "row_id": "r3-task-payload",
+          "description": "每个 task 含 itemId + term + prompt（词条完整内容可作答）",
+          "status": "PASS",
+          "expected": {
+            "payloadComplete": true,
+            "taskCount": 3
+          },
+          "actual": {
+            "payloadComplete": true,
+            "taskCount": 3
+          },
+          "severity": "S2",
+          "failure_layer": "BUSINESS_RULE"
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "PASS"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-010",
+      "category": "REVIEW_SCHEDULING",
+      "status": "MANUAL_REVIEW",
+      "coverage": "partial",
+      "severity": "S2",
+      "failure_layer": "STATE_READ",
+      "expected": "`tasks=[]`、`totalDue=0`；前端展示\"暂无到期\"空态并可引导新词学习。",
+      "actual": "tasks=[]、totalDue=0、HTTP 200，未到期词无混入（deterministic API 逻辑自动确认）；空态引导文案语义需人工金标复核。",
+      "latency_ms": 3.11,
+      "rows": [
+        {
+          "row_id": "r1-empty-queue",
+          "description": "tasks=[] 且 totalDue=0（无未到期词混入）",
+          "status": "PASS",
+          "expected": {
+            "tasks": [],
+            "totalDue": 0,
+            "httpStatus": 200
+          },
+          "actual": {
+            "tasks": [],
+            "totalDue": 0,
+            "httpStatus": 200
+          },
+          "severity": "S2",
+          "failure_layer": "STATE_READ"
+        }
+      ],
+      "uncovered_assertions": [
+        "空态引导文案语义正确（「暂无到期」并引导新词学习）——需 UI 层自动化（Phase 1+）"
+      ],
+      "spec_current_expected": "PASS",
+      "notes": "MANUAL_REVIEW：结构断言（DUE 队列空、totalDue=0）已自动通过；空态 UI copy 语义属人工复核项，不笼统标 UNVERIFIED。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-011",
+      "category": "REVIEW_SCHEDULING",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+      "failure_layer": "BUSINESS_RULE",
+      "expected": "按 §2 间隔表精确映射：W1 → nextReviewAt≈提交时刻+72h 且 recall_level+1；W2 → +24h 且 recall_level 不变；W3 → +4h；W4 → +2h（SKIPPED 事件）。",
+      "actual": "四行间隔/状态/事件映射全部与 gold 一致（72h/24h/4h/2h，recall 与 consecutiveCorrect 行为正确）。",
+      "latency_ms": 6.08,
+      "rows": [
+        {
+          "row_id": "w1-independent",
+          "description": "CORRECT_INDEPENDENT → +72h / recall=1 / interval=3",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "CORRECT_INDEPENDENT",
+            "status": "RECALLED_INDEPENDENTLY",
+            "recallLevel": 1,
+            "consecutiveCorrect": 1,
+            "currentIntervalDays": 3,
+            "nextReviewAt": "2026-09-04T10:00:00.000Z",
+            "eventCorrectness": "INDEPENDENT",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "CORRECT_INDEPENDENT",
+            "status": "RECALLED_INDEPENDENTLY",
+            "recallLevel": 1,
+            "consecutiveCorrect": 1,
+            "currentIntervalDays": 3,
+            "nextReviewAt": "2026-09-04T10:00:00.000Z",
+            "eventCorrectness": "INDEPENDENT",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "submitAt": "2026-09-01T10:00:00.000Z"
+          }
+        },
+        {
+          "row_id": "w2-hint",
+          "description": "CORRECT_WITH_HINT → +24h / recall=0 / interval=1",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "CORRECT_WITH_HINT",
+            "status": "RECALLED_WITH_HELP",
+            "recallLevel": 0,
+            "consecutiveCorrect": 1,
+            "currentIntervalDays": 1,
+            "nextReviewAt": "2026-09-02T11:00:00.000Z",
+            "eventCorrectness": "HINTED",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "CORRECT_WITH_HINT",
+            "status": "RECALLED_WITH_HELP",
+            "recallLevel": 0,
+            "consecutiveCorrect": 1,
+            "currentIntervalDays": 1,
+            "nextReviewAt": "2026-09-02T11:00:00.000Z",
+            "eventCorrectness": "HINTED",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "submitAt": "2026-09-01T11:00:00.000Z"
+          }
+        },
+        {
+          "row_id": "w3-incorrect",
+          "description": "INCORRECT → +4h / recall=0 / interval=0.16666666666666666",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "status": "EXPOSED",
+            "recallLevel": 0,
+            "consecutiveCorrect": 0,
+            "currentIntervalDays": 0.16666666666666666,
+            "nextReviewAt": "2026-09-01T16:00:00.000Z",
+            "eventCorrectness": "FAIL",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "INCORRECT",
+            "status": "EXPOSED",
+            "recallLevel": 0,
+            "consecutiveCorrect": 0,
+            "currentIntervalDays": 0.16666666666666666,
+            "nextReviewAt": "2026-09-01T16:00:00.000Z",
+            "eventCorrectness": "FAIL",
+            "eventCount": 1,
+            "llmCalls": 1
+          },
+          "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "submitAt": "2026-09-01T12:00:00.000Z"
+          }
+        },
+        {
+          "row_id": "w4-skipped",
+          "description": "SKIPPED → +2h / recall=0 / interval=0.08333333333333333",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "result": "SKIPPED",
+            "status": "EXPOSED",
+            "recallLevel": 0,
+            "consecutiveCorrect": 0,
+            "currentIntervalDays": 0.08333333333333333,
+            "nextReviewAt": "2026-09-01T15:00:00.000Z",
+            "eventCorrectness": "SKIPPED",
+            "eventCount": 1,
+            "llmCalls": 0
+          },
+          "actual": {
+            "httpStatus": 200,
+            "result": "SKIPPED",
+            "status": "EXPOSED",
+            "recallLevel": 0,
+            "consecutiveCorrect": 0,
+            "currentIntervalDays": 0.08333333333333333,
+            "nextReviewAt": "2026-09-01T15:00:00.000Z",
+            "eventCorrectness": "SKIPPED",
+            "eventCount": 1,
+            "llmCalls": 0
+          },
+          "severity": "S2（间隔/状态错误可经事件流重建恢复，不构成 §4 S1「不可恢复」）",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "submitAt": "2026-09-01T13:00:00.000Z"
+          }
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "PASS"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-012",
+      "category": "REVIEW_SCHEDULING",
+      "status": "UNVERIFIED",
+      "coverage": "partial",
+      "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+      "failure_layer": "BUSINESS_RULE",
+      "expected": "每轮 nextReviewAt 都 ≥ 该轮提交时刻；第三轮结果 = 第二轮提交时刻 + 4h + 72h 的正确链式计算；状态事件总数 = 3。",
+      "actual": "三轮 nextReviewAt 链式计算全部正确（T0+72h / T1+4h / T2+72h），错误后正确降档，事件数=3，终态 recall=2；replay 一致性断言未覆盖。",
+      "latency_ms": 3.64,
+      "rows": [
+        {
+          "row_id": "r1-next-review-at-chain",
+          "description": "三轮 nextReviewAt = 各轮提交时刻 + 对应档位（72h / 4h / 72h）",
+          "status": "PASS",
+          "expected": {
+            "seq": [
+              "2026-09-04T10:00:00.000Z",
+              "2026-09-01T15:00:00.000Z",
+              "2026-09-04T12:00:00.000Z"
+            ],
+            "eachAtOrAfterSubmitTime": true
+          },
+          "actual": {
+            "seq": [
+              "2026-09-04T10:00:00.000Z",
+              "2026-09-01T15:00:00.000Z",
+              "2026-09-04T12:00:00.000Z"
+            ],
+            "eachAtOrAfterSubmitTime": true
+          },
+          "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+          "failure_layer": "BUSINESS_RULE",
+          "evidence": {
+            "submitTimes": [
+              "2026-09-01T10:00:00.000Z",
+              "2026-09-01T11:00:00.000Z",
+              "2026-09-01T12:00:00.000Z"
+            ]
+          }
+        },
+        {
+          "row_id": "r2-degrade-after-fail",
+          "description": "轮2（答错）后降档为 +4h，而非沿用 72h",
+          "status": "PASS",
+          "expected": {
+            "round2OffsetH": 4
+          },
+          "actual": {
+            "round2OffsetH": 4
+          },
+          "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+          "failure_layer": "BUSINESS_RULE"
+        },
+        {
+          "row_id": "r3-event-count",
+          "description": "事件总数 = 3（NEW/REVIEW 序列完整落库）",
+          "status": "PASS",
+          "expected": {
+            "eventCount": 3
+          },
+          "actual": {
+            "eventCount": 3
+          },
+          "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+          "failure_layer": "STATE_WRITE"
+        },
+        {
+          "row_id": "r4-final-state",
+          "description": "终态 recallLevel=2（对→错→对），status=RECALLED_INDEPENDENTLY",
+          "status": "PASS",
+          "expected": {
+            "recallLevel": 2,
+            "status": "RECALLED_INDEPENDENTLY"
+          },
+          "actual": {
+            "recallLevel": 2,
+            "status": "RECALLED_INDEPENDENTLY"
+          },
+          "severity": "S2（多轮调度/间隔公式错误可经事件流重建恢复，不构成 §4 S1「不可恢复」；同一 clientEventId 重放导致的二次推进/重复计分属 037 的 S1 范畴，不在本 Case 定级）",
+          "failure_layer": "STATE_WRITE"
+        }
+      ],
+      "uncovered_assertions": [
+        "状态快照与事件重放一致（replay==snapshot）：capability_missing —— Eval Runner 侧无事件重放重建能力（产品已提供 events + state，但 runner 未实现 replay 重建），不属于产品缺陷。",
+        "同一 clientEventId 重放不产生二次推进 —— 由 ELS-EVAL-037（S1）单独承接"
+      ],
+      "spec_current_expected": "PASS",
+      "notes": "UNVERIFIED：剩余断言依赖事件重放重建能力（capability_missing，runner 侧缺失，非产品缺陷）；重放幂等由 ELS-EVAL-037（S1）单独承接。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-022",
+      "category": "RETRIEVAL_KNOWLEDGE",
+      "status": "MANUAL_REVIEW",
+      "coverage": "partial",
+      "severity": "S2",
+      "failure_layer": "RETRIEVAL",
+      "expected": "retrieveKnowledge 返回 ≤5 个对象，含该 taxonomy 对象及关联 lexical_guidance；generationMeta.knowledgeObjectIds 记录命中；词卡内容与命中对象一致。",
+      "actual": "mitigate 命中 pt-topic-environment + lg-collocation-guidance（Rule 1+3），注入数 2 ≤5，prompt 注入成功，词卡生成可用；内容一致性需真实 LLM 评审。",
+      "latency_ms": 4.71,
+      "rows": [
+        {
+          "row_id": "r1-taxonomy-hit",
+          "description": "knowledge_object_ids 含 \"pt-topic-environment\"（term 精确命中 associatedTerms）",
+          "status": "PASS",
+          "expected": {
+            "knowledgeObjectIds": [
+              "pt-topic-environment",
+              "lg-collocation-guidance"
+            ]
+          },
+          "actual": {
+            "knowledgeObjectIds": [
+              "pt-topic-environment",
+              "lg-collocation-guidance"
+            ]
+          },
+          "severity": "S2",
+          "failure_layer": "RETRIEVAL",
+          "evidence": {
+            "injectedIds": [
+              "pt-topic-environment",
+              "lg-collocation-guidance"
+            ]
+          }
+        },
+        {
+          "row_id": "r2-injected-count",
+          "description": "knowledge_injected_count ≤ 5 且 > 0",
+          "status": "PASS",
+          "expected": {
+            "injectedCount": 2
+          },
+          "actual": {
+            "injectedCount": 2
+          },
+          "severity": "S2",
+          "failure_layer": "RETRIEVAL"
+        },
+        {
+          "row_id": "r3-prompt-injection",
+          "description": "词卡生成 system prompt 注入了知识上下文（含 environment 话题归属）",
+          "status": "PASS",
+          "expected": {
+            "knowledgeInjected": true,
+            "mentionsEnvironment": true,
+            "promptVersion": "v1.1-knowledge-layer"
+          },
+          "actual": {
+            "knowledgeInjected": true,
+            "mentionsEnvironment": true,
+            "promptVersion": "v1.1-knowledge-layer"
+          },
+          "severity": "S2",
+          "failure_layer": "RETRIEVAL",
+          "evidence": {
+            "systemPromptExcerpt": "ding/listening）\n- contexts: 适用语境（speaking-part1/part2/part3, writing-task1/task2）\n- topics: 所属话题分类\n- register: 语域（formal/neutral/informal）\n- descriptorFocus: 关联评分标准（lexical-resource/grammatical-range/coherence-cohesion 等）\n\n只输出 JSON，不要任何其他内容。\n\n--- IELTS 教学知识（生成本词卡时请参考） ---\n话题归属（项目内部分类）：environment\n[搭配生成指导] 生成 collocations 时应选择在学术写作和口语讨论中真实常见的搭配。每个词卡提供 3-5 个搭配，覆盖动词+名词、形容词+名词、副词+动词等多种模式。\n--- 知识结束 ---"
+          }
+        },
+        {
+          "row_id": "r4-card-generated",
+          "description": "词卡成功生成（HTTP 200、item 落库、alreadyLearned=false）",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "hasItem": true,
+            "alreadyLearned": false
+          },
+          "actual": {
+            "httpStatus": 200,
+            "hasItem": true,
+            "alreadyLearned": false
+          },
+          "severity": "S2",
+          "failure_layer": "BUSINESS_RULE"
+        }
+      ],
+      "uncovered_assertions": [
+        "词卡释义内容与命中知识对象一致（需真实 LLM 内容质量评审 / 人工金标）"
+      ],
+      "spec_current_expected": "PASS",
+      "notes": "MANUAL_REVIEW：structural retrieval 断言（命中/注入数/prompt 注入/词卡生成）自动通过；词卡释义与命中知识对象的内容一致性（语义质量）需人工金标复核。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-032",
+      "category": "FALLBACK_FAILURE",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S3",
+      "failure_layer": "FALLBACK",
+      "expected": "`JSON.parse` 失败 → `repair_attempts=1` 修复成功 → 返回正确结果；无用户可见错误。",
+      "actual": "非法 JSON → 1 次 fast-tier(temp=0) 修复成功，共 2 次调用，结果通过 Zod，无错误抛出。",
+      "latency_ms": 3.9,
+      "rows": [
+        {
+          "row_id": "r1-repair-once-success",
+          "description": "非法 JSON 触发恰好 1 次修复并成功（无用户可见错误）",
+          "status": "PASS",
+          "expected": {
+            "succeeded": true,
+            "repairUsed": true,
+            "thrown": null
+          },
+          "actual": {
+            "succeeded": true,
+            "repairUsed": true,
+            "thrown": null
+          },
+          "severity": "S3",
+          "failure_layer": "FALLBACK"
+        },
+        {
+          "row_id": "r2-call-count",
+          "description": "LLM 总调用数 = 2（首次 + 单次修复，无多余循环）",
+          "status": "PASS",
+          "expected": {
+            "llmCallCount": 2
+          },
+          "actual": {
+            "llmCallCount": 2
+          },
+          "severity": "S3",
+          "failure_layer": "FALLBACK",
+          "evidence": {
+            "tiers": [
+              "main",
+              "fast"
+            ]
+          }
+        },
+        {
+          "row_id": "r3-repair-tier-temp",
+          "description": "修复调用 tier=fast 且 temperature=0",
+          "status": "PASS",
+          "expected": {
+            "tier": "fast",
+            "temperature": 0
+          },
+          "actual": {
+            "tier": "fast",
+            "temperature": 0
+          },
+          "severity": "S3",
+          "failure_layer": "FALLBACK",
+          "evidence": {
+            "repairRequestJsonMode": true
+          }
+        },
+        {
+          "row_id": "r4-zod-valid",
+          "description": "修复后解析结果通过 Zod schema",
+          "status": "PASS",
+          "expected": {
+            "value": "repaired"
+          },
+          "actual": {
+            "value": "repaired"
+          },
+          "severity": "S3",
+          "failure_layer": "OUTPUT_VALIDATION"
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "PASS",
+      "notes": "required_trace_fields 中 llm_raw_output/repair_attempts 的 trace 断言依赖 M2 Trace；本 Case 以 meta.repairUsed + calls 计数等效覆盖。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-035",
+      "category": "FALLBACK_FAILURE",
+      "status": "UNVERIFIED",
+      "coverage": "partial",
+      "severity": "S3",
+      "failure_layer": "RETRIEVAL",
+      "expected": "检索 0 命中（漏检可复现）→ 词卡仍生成、injected_count=0、knowledge_miss 标记；无错误、无无关注入。",
+      "actual": "r1 漏检可复现 PASS（well-being → knowledge ids=[]、trace knowledge_miss_flag=true、词卡生成无崩溃）；对照行 wellbeing 在 knowledge 层命中 pt-topic-health + lg-collocation-guidance；r4 去重生效（itemAId===itemBId=item-yi9ukg，canonicalKey 连字符不敏感）；r3 generationMeta.knowledge_miss 仍 BLOCKED（响应契约层缺能力；trace 层已如实记录）。",
+      "latency_ms": 3.77,
+      "rows": [
+        {
+          "row_id": "r1-miss-reproducible",
+          "description": "\"well-being\" 检索 0 命中且不崩溃（HTTP 2xx、无知识注入、trace 标记 miss）",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "knowledgeObjectIds": [],
+            "traceMissFlag": true
+          },
+          "actual": {
+            "httpStatus": 200,
+            "knowledgeObjectIds": [],
+            "traceMissFlag": true
+          },
+          "severity": "S3",
+          "failure_layer": "RETRIEVAL",
+          "evidence": {
+            "llmCalls": 2,
+            "trace": {
+              "query_raw": "well-being",
+              "query_normalized": "well-being",
+              "knowledge_object_ids": [],
+              "knowledge_injected_count": 0,
+              "knowledge_miss_flag": true,
+              "conflict_detected": false,
+              "conflict_resolution": "capability_missing"
+            },
+            "note": "query_raw/query_normalized 来自 M2 retrieval.executed；knowledgeObjectIds 来自响应 generationMeta（LLM 生成路径）"
+          }
+        },
+        {
+          "row_id": "r2-control-hit",
+          "description": "\"wellbeing\" 无连字符在 knowledge 层命中 pt-topic-health（对照行，证明漏检由连字符规范化缺陷导致）",
+          "status": "PASS",
+          "expected": {
+            "httpStatus": 200,
+            "knowledgeObjectIds": [
+              "pt-topic-health",
+              "lg-collocation-guidance"
+            ]
+          },
+          "actual": {
+            "httpStatus": 200,
+            "knowledgeObjectIds": [
+              "pt-topic-health",
+              "lg-collocation-guidance"
+            ]
+          },
+          "severity": "S3",
+          "failure_layer": "RETRIEVAL",
+          "evidence": {
+            "routeTrace": {
+              "query_raw": "wellbeing",
+              "query_normalized": "wellbeing",
+              "knowledge_object_ids": [],
+              "knowledge_injected_count": 0,
+              "knowledge_miss_flag": true,
+              "conflict_detected": false,
+              "conflict_resolution": "capability_missing"
+            },
+            "routeResponseItemId": "item-yi9ukg",
+            "routeResponseCanonical": "well-being",
+            "routeResponseIds": [],
+            "note": "BC-035 去重生效：B 请求复用 A 的 item（first-write-wins），响应 generationMeta 来自复用 item；对照命中以 retrieveKnowledge 直调为准"
+          }
+        },
+        {
+          "row_id": "r3-knowledge-miss-flag",
+          "description": "generationMeta 记录 knowledge_miss 标记（CURRENT GenerationMeta 无该字段；trace 层 retrieval.executed.knowledge_miss_flag 存在）",
+          "status": "BLOCKED",
+          "expected": {
+            "knowledgeMiss": true
+          },
+          "actual": {},
+          "severity": "S3",
+          "failure_layer": "RETRIEVAL",
+          "error": "BLOCKED_BY_CAPABILITY",
+          "evidence": {
+            "traceHasKnowledgeMissFlag": true,
+            "responseHasKnowledgeMissField": null,
+            "conflictDetection": false,
+            "conflictResolution": "capability_missing",
+            "capabilityNote": "conflict detection: 系统按冻结能力边界记录 conflict_detected=false / conflict_resolution=capability_missing（M2 trace 如实上报，非产品已实现能力）"
+          }
+        },
+        {
+          "row_id": "r4-canonical-dedup",
+          "description": "\"well-being\" 与 \"wellbeing\" 归一为同一 learning item（canonical 冲突去重）",
+          "status": "PASS",
+          "expected": {
+            "deduplicated": true
+          },
+          "actual": {
+            "deduplicated": true
+          },
+          "severity": "S3",
+          "failure_layer": "RETRIEVAL",
+          "evidence": {
+            "itemAId": "item-yi9ukg",
+            "itemBId": "item-yi9ukg",
+            "canonicalA": "well-being",
+            "canonicalB": "well-being",
+            "note": "BC-035 修复后：canonicalKey 连字符不敏感 → 同一 canonical identity → 同一 itemId；display form 保留首次创建书写形式"
+          }
+        }
+      ],
+      "uncovered_assertions": [
+        "notes 输出归一化建议（供 M1/P0-4 修复）——产品无该输出能力"
+      ],
+      "spec_current_expected": "PASS",
+      "notes": "BC-035 code-only 已合入：canonical identity 归一 + item 去重生效。generationMeta.knowledge_miss 属响应契约层能力边界（BLOCKED，不伪造 PASS）；知识库检索路径的连字符规范化（well-being → 命中 pt-topic-health）属 P0-4 检索升级，不在本轮修复范围。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-037",
+      "category": "CROSS_MODULE_STATE",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S1（[FIX-04] 幂等失效造成重复推进/重复计分，命中 §4 S1 类 3）",
+      "failure_layer": "STATE_WRITE",
+      "expected": "learning_events 仅 1 条；nextReviewAt 仅按一次 +72h 推进（不双推）；第二次响应返回已有结果（幂等语义：返回既有 eventId/结果）；前端不重复展示反馈。",
+      "actual": "事件去重生效（repo 层 clientEventId 唯一）；M1 route 幂等跳过生效：第二次提交不更新 state、响应返回既有 eventId/result（x-idempotent-replay），调度单推、recallLevel 1→2、nextReviewAt 仅 +72h 一次。",
+      "latency_ms": 2.84,
+      "rows": [
+        {
+          "row_id": "r1-event-count",
+          "description": "learning_events 仅 1 条（clientEventId 唯一约束生效）",
+          "status": "PASS",
+          "expected": {
+            "eventCount": 1
+          },
+          "actual": {
+            "eventCount": 1
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE",
+          "evidence": {
+            "clientEventIds": [
+              "rev-w-dup-1"
+            ]
+          }
+        },
+        {
+          "row_id": "r2-recall-level",
+          "description": "recallLevel 仅按一次提交推进（1 → 2）",
+          "status": "PASS",
+          "expected": {
+            "recallLevel": 2
+          },
+          "actual": {
+            "recallLevel": 2
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE",
+          "evidence": {
+            "consecutiveCorrect": 1
+          }
+        },
+        {
+          "row_id": "r3-next-review-at",
+          "description": "nextReviewAt 仅按一次提交推进（T0 + 72h）",
+          "status": "PASS",
+          "expected": {
+            "nextReviewAt": "2026-09-04T10:00:00.000Z"
+          },
+          "actual": {
+            "nextReviewAt": "2026-09-04T10:00:00.000Z"
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE"
+        },
+        {
+          "row_id": "r4-idempotent-response",
+          "description": "第二次响应与首次结果一致（返回既有 eventId 与调度结果）",
+          "status": "PASS",
+          "expected": {
+            "eventId": "evt-1788256800000-fo9oxs",
+            "result": "CORRECT_INDEPENDENT",
+            "nextReviewAt": "2026-09-04T10:00:00.000Z"
+          },
+          "actual": {
+            "eventId": "evt-1788256800000-fo9oxs",
+            "result": "CORRECT_INDEPENDENT",
+            "nextReviewAt": "2026-09-04T10:00:00.000Z"
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE",
+          "evidence": {
+            "response1": {
+              "eventId": "evt-1788256800000-fo9oxs",
+              "result": "CORRECT_INDEPENDENT",
+              "feedback": "完美！无提示独立回忆「sustainable」= 可持续的；能维持的",
+              "status": "RECALLED_INDEPENDENTLY",
+              "nextReviewAt": "2026-09-04T10:00:00.000Z",
+              "remaining": 0
+            },
+            "response2": {
+              "eventId": "evt-1788256800000-fo9oxs",
+              "result": "CORRECT_INDEPENDENT",
+              "feedback": "完美！无提示独立回忆「sustainable」= 可持续的；能维持的",
+              "status": "RECALLED_INDEPENDENTLY",
+              "nextReviewAt": "2026-09-04T10:00:00.000Z",
+              "remaining": 0
+            },
+            "trace": {
+              "trace1StateWrites": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-fo9oxs"
+                  },
+                  "event_id": "evt-1788256800000-fo9oxs",
+                  "client_event_id": "rev-w-dup-1",
+                  "idempotency_outcome": "inserted",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "INDEPENDENT",
+                    "reviewResult": "CORRECT_INDEPENDENT"
+                  },
+                  "canonical_state_hash": "b3ce605d76972572"
+                },
+                {
+                  "entity": "user_item_state",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001"
+                  },
+                  "idempotency_outcome": "inserted",
+                  "state_before": {
+                    "status": "RECALLED_WITH_HELP",
+                    "recallLevel": 1,
+                    "consecutiveCorrect": 0,
+                    "nextReviewAt": "2026-09-01T09:00:00.000Z"
+                  },
+                  "state_after": {
+                    "status": "RECALLED_INDEPENDENTLY",
+                    "recallLevel": 2,
+                    "consecutiveCorrect": 1,
+                    "nextReviewAt": "2026-09-04T10:00:00.000Z"
+                  },
+                  "canonical_state_hash": "4805167d8cc8bba6",
+                  "next_review_at_before": "2026-09-01T09:00:00.000Z",
+                  "next_review_at_after": "2026-09-04T10:00:00.000Z"
+                }
+              ],
+              "trace2StateWrites": [
+                {
+                  "entity": "learning_event",
+                  "keys": {
+                    "userId": "demo-user-001",
+                    "itemId": "seed-001",
+                    "eventId": "evt-1788256800000-fo9oxs"
+                  },
+                  "event_id": "evt-1788256800000-fo9oxs",
+                  "client_event_id": "rev-w-dup-1",
+                  "idempotency_outcome": "duplicate_ignored",
+                  "state_before": null,
+                  "state_after": {
+                    "eventType": "REVIEW",
+                    "correctness": "INDEPENDENT",
+                    "reviewResult": "CORRECT_INDEPENDENT"
+                  },
+                  "canonical_state_hash": "b3ce605d76972572"
+                }
+              ],
+              "note": "第二次请求 state.write.idempotency_outcome 应为 duplicate_ignored（M1 幂等跳过）；Trace 仅解释，Gold 判定 PASS/FAIL"
+            }
+          }
+        },
+        {
+          "row_id": "r5-no-5xx",
+          "description": "两次提交均非 5xx（唯一约束冲突被处理为幂等命中）",
+          "status": "PASS",
+          "expected": {
+            "res1Status": 200,
+            "res2Status": 200
+          },
+          "actual": {
+            "res1Status": 200,
+            "res2Status": 200
+          },
+          "severity": "S1（[FIX-04] 幂等失效造成重复推进/重复计分，命中 §4 S1 类 3）",
+          "failure_layer": "STATE_WRITE"
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "PASS",
+      "notes": "CURRENT=实际运行结果（非 M1 文档推断）。M2 Trace 第二次请求 state.write.idempotency_outcome 应为 duplicate_ignored（见 evidence.trace）。SupabaseLearningRepository 路径未在 Phase 0（memory provider）覆盖。"
+    },
+    {
+      "run_id": "phase0-20260909-115825",
+      "case_id": "ELS-EVAL-038",
+      "category": "CROSS_MODULE_STATE",
+      "status": "PASS",
+      "coverage": "full",
+      "severity": "S1（[FIX-04] 保留 S1：清缓存/双路径漂移导致**用户可见历史回退 = 不可恢复数据丢失**（本地曾被当权威且服务端无完整记录），命中 §4 S1 类 1；M1 收敛后该类失败应消失）",
+      "failure_layer": "STATE_WRITE",
+      "expected": "提交后 `user_item_states`（服务端）变化与 API 响应语义一致；DUE 队列与复习行为由服务端状态驱动；报告聚合读服务端（或服务端投影）；用户可见结果经刷新/缓存失效后**收敛至服务端态**；local 缓存清空后不出现状态倒退（倒退即说明曾有本地写路径被当权威）。",
+      "actual": "服务端链路（learn→DUE→review→report）四点字段级一致：学习答错 EXPOSED/+2h；3h 后 DUE 入队（服务端驱动）；复习答对 recall 0→1/+72h；报告聚合与 repo 直读投影一致、llmSummary 非空。",
+      "latency_ms": 4.96,
+      "rows": [
+        {
+          "row_id": "r1-learn-server-consistency",
+          "description": "learn/submit 后 api_result 与 server_state 映射一致（EXPOSED / FAIL / +2h / recall=0）",
+          "status": "PASS",
+          "expected": {
+            "apiCorrectness": "FAIL",
+            "apiStatus": "EXPOSED",
+            "apiNextReviewAt": "2026-09-01T12:00:00.000Z",
+            "serverStatus": "EXPOSED",
+            "serverRecallLevel": 0,
+            "serverNextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "actual": {
+            "apiCorrectness": "FAIL",
+            "apiStatus": "EXPOSED",
+            "apiNextReviewAt": "2026-09-01T12:00:00.000Z",
+            "serverStatus": "EXPOSED",
+            "serverRecallLevel": 0,
+            "serverNextReviewAt": "2026-09-01T12:00:00.000Z"
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE"
+        },
+        {
+          "row_id": "r2-due-server-driven",
+          "description": "DUE 队列由服务端状态驱动（到期词入队，totalDue=1）",
+          "status": "PASS",
+          "expected": {
+            "containsItem": true,
+            "totalDue": 1
+          },
+          "actual": {
+            "containsItem": true,
+            "totalDue": 1
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_READ"
+        },
+        {
+          "row_id": "r3-review-state-advance",
+          "description": "复习答对后 API 与 server state 一致推进（INDEPENDENT / recall=1 / +72h）",
+          "status": "PASS",
+          "expected": {
+            "apiResult": "CORRECT_INDEPENDENT",
+            "apiStatus": "RECALLED_INDEPENDENTLY",
+            "apiNextReviewAt": "2026-09-04T13:00:00.000Z",
+            "serverRecallLevel": 1,
+            "serverNextReviewAt": "2026-09-04T13:00:00.000Z"
+          },
+          "actual": {
+            "apiResult": "CORRECT_INDEPENDENT",
+            "apiStatus": "RECALLED_INDEPENDENTLY",
+            "apiNextReviewAt": "2026-09-04T13:00:00.000Z",
+            "serverRecallLevel": 1,
+            "serverNextReviewAt": "2026-09-04T13:00:00.000Z"
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_WRITE"
+        },
+        {
+          "row_id": "r4-report-server-projection",
+          "description": "报告聚合 == 服务端状态投影（totalItems/reviewed/totalReviews/correctIndependent/llmSummary）",
+          "status": "PASS",
+          "expected": {
+            "totalItems": 1,
+            "reviewedCount": 1,
+            "totalReviews": 1,
+            "correctIndependent": 1,
+            "insufficientData": false,
+            "llmSummaryNotNull": true
+          },
+          "actual": {
+            "totalItems": 1,
+            "reviewedCount": 1,
+            "totalReviews": 1,
+            "correctIndependent": 1,
+            "insufficientData": false,
+            "llmSummaryNotNull": true
+          },
+          "severity": "S1",
+          "failure_layer": "STATE_READ",
+          "evidence": {
+            "eventCount": 2
+          }
+        }
+      ],
+      "uncovered_assertions": [],
+      "spec_current_expected": "FAIL",
+      "notes": "M1 后 localStorage 已非必须 Gold leg：断言集 1–3 不依赖 localStorage 存在性（V1.1 FIX-07），不因此标 UNVERIFIED。Phase 0 = memory provider（DATA_PROVIDER=memory），Supabase 服务端路径未覆盖。"
+    }
+  ]
+}

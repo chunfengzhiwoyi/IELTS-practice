@@ -1,0 +1,337 @@
+{
+  "schema_version": "1.1",
+  "description": "ELS Eval Bad Case Registry（Frozen 15-field，EVAL-RUN-M3-03 更新）。生命周期：OPEN → TRIAGED → FIX_IN_PROGRESS → FIXED_PENDING_REGRESSION → VERIFIED_CLOSED。BC-026/033 完成连续 3 轮回归（m3-20260910-070726 / m3-20260910-081624 / m3-20260910-085726），满足冻结生命周期 → VERIFIED_CLOSED。历史 FAIL 证据保留不覆盖。",
+  "product_commit": "43364c3",
+  "eval_runner_base": "7ff7fc1",
+  "detected_run_id": "m3-20260909-142124",
+  "latest_eval_run_id": "m3-20260910-125036",
+  "field_schema": [
+    "bad_case_id",
+    "case_id",
+    "title",
+    "severity",
+    "status",
+    "root_cause_layer",
+    "detected_run_id",
+    "trace_id",
+    "product_commit",
+    "fix_commit",
+    "regression_runs",
+    "evidence",
+    "expected_vs_actual",
+    "notes",
+    "resolution_plan"
+  ],
+  "lifecycle": [
+    "OPEN",
+    "TRIAGED",
+    "FIX_IN_PROGRESS",
+    "FIXED_PENDING_REGRESSION",
+    "VERIFIED_CLOSED"
+  ],
+  "bad_cases": [
+    {
+      "bad_case_id": "BC-M3-001",
+      "case_id": "ELS-EVAL-026",
+      "title": "知识冲突检测缺失：矛盾 register 指引并列注入 prompt 且无可追踪消解记录",
+      "severity": "S2",
+      "status": "VERIFIED_CLOSED",
+      "root_cause_layer": "RETRIEVAL / PROMPT",
+      "detected_run_id": "m3-20260909-142124",
+      "trace_id": "n/a（026 为 lib 层直调 retrieveKnowledge，无路由 trace；注入 provenance=fake-fixture）",
+      "product_commit": "43364c3",
+      "fix_commit": "48e16c2（fix(eval-026): retrieval conflict detection + dual-source resolution with trace）",
+      "regression_runs": [
+        "m3-20260910-070726",
+        "m3-20260910-081624",
+        "m3-20260910-085726",
+        "m3-20260910-125036"
+      ],
+      "evidence": {
+        "original_failure": {
+          "run_id": "m3-20260909-142124",
+          "r_conflict_detected": {
+            "expected": {
+              "conflictDetected": true,
+              "resolutionTracked": true
+            },
+            "actual": {
+              "conflictDetected": true,
+              "resolutionTracked": false
+            },
+            "provenance": "fake-fixture（Gold 026 许可）"
+          }
+        },
+        "current_regression": {
+          "run_id": "m3-20260910-070726",
+          "r_conflict_detected": {
+            "conflictDetected": true,
+            "resolutionTracked": true
+          },
+          "r_no_contradiction": {
+            "noContradictionPair": true
+          },
+          "product_output": {
+            "conflict_resolution": "dual_source_with_conflict_note",
+            "conflict_object_ids": [
+              "fx-register-conflict-a",
+              "fx-register-conflict-b"
+            ],
+            "prompt_contains_conflict_note": true,
+            "no_precedence_rule_created": true
+          }
+        },
+        "m3_p3_regression": {
+          "run_id": "m3-20260910-081624",
+          "status": "PASS",
+          "note": "Regression 2/3（连续第 2 轮 PASS，M3-P3 全量 39 Case 重跑）；仍 FIXED_PENDING_REGRESSION，不提前 VERIFIED_CLOSED",
+          "regression_count": "2/3"
+        },
+        "m3_run_03_regression": {
+          "run_id": "m3-20260910-085726",
+          "status": "PASS",
+          "note": "Regression 3/3（连续第 3 轮独立 run PASS，M3-03 全量 39 Case 重跑）",
+          "regression_count": "3/3"
+        }
+      },
+      "expected_vs_actual": "expected：检索/提示层检测到冲突并给出可追踪消解记录（conflict_resolution 非空），矛盾 guidance 不并列注入；actual（修复前）：两条互斥 register 指引同时进入 prompt，无任何消解/差异提示字段。修复后（55806ba）：conflict_detected=true、conflict_resolution=dual_source_with_conflict_note、prompt 附双源并陈差异提示（不自动取舍，未制造 Frozen Gold 禁止的伪优先级）。",
+      "notes": "integration_checkpoint=55806ba（BC-026）。产品在 lib/knowledge/conflict.ts 实现确定性语义极性冲突检测（纯函数、不引入优先级规则），retrieval.ts 输出 conflict_* 字段并在 prompt 附加冲突提示；card 路由 retrieval.executed 埋点含 conflict_detected/conflict_resolution。；M3-03（f117d85）再次真实执行 conflict detection / conflict_resolution=dual_source_with_conflict_note / no fake precedence → PASS，3/3 回归稳定，VERIFIED_CLOSED。",
+      "resolution_plan": "已完成连续 3 轮回归（070726 / 081624 / 085726 均 PASS）。冻结生命周期条件满足 → VERIFIED_CLOSED。original FAIL、fix commit、integration checkpoint、三轮 regression evidence 全部保留。"
+    },
+    {
+      "bad_case_id": "BC-M3-002",
+      "case_id": "ELS-EVAL-033",
+      "title": "错误码漂移：LLM schema 顽固违规返回 MODEL_ERROR（Gold 要求精确 MODEL_SCHEMA_MISMATCH）",
+      "severity": "S3",
+      "status": "VERIFIED_CLOSED",
+      "root_cause_layer": "OUTPUT_VALIDATION（toAppError 错误码折叠）",
+      "detected_run_id": "m3-20260909-142124",
+      "trace_id": "trc_eval_033_schema_0",
+      "product_commit": "43364c3",
+      "fix_commit": "f5e4891（fix(eval-033): preserve LLM error kind at API boundary）+ e1464c8（fix(eval-033-safety): unknown MODEL_ERROR raw message 不外泄）",
+      "regression_runs": [
+        "m3-20260910-070726",
+        "m3-20260910-081624",
+        "m3-20260910-085726",
+        "m3-20260910-125036"
+      ],
+      "evidence": {
+        "original_failure": {
+          "run_id": "m3-20260909-142124",
+          "r_error_code": {
+            "expected": {
+              "code": "MODEL_SCHEMA_MISMATCH",
+              "structured": true
+            },
+            "actual": {
+              "code": "MODEL_ERROR",
+              "structured": true
+            },
+            "llm_error_kind_in_trace": "MODEL_SCHEMA_MISMATCH"
+          }
+        },
+        "current_regression": {
+          "run_id": "m3-20260910-070726",
+          "r_error_code": {
+            "code": "MODEL_SCHEMA_MISMATCH",
+            "structured": true
+          },
+          "r_readable": {
+            "readable": true,
+            "noPartial": true
+          },
+          "r_no_switch": {
+            "fallbackTriggered": false,
+            "repairAttempted": true
+          },
+          "llm_attempt_kinds": [
+            "MODEL_SCHEMA_MISMATCH",
+            "MODEL_SCHEMA_MISMATCH"
+          ],
+          "api_error_kind": "MODEL_SCHEMA_MISMATCH"
+        },
+        "m3_p3_regression": {
+          "run_id": "m3-20260910-081624",
+          "status": "PASS",
+          "note": "Regression 2/3（连续第 2 轮 PASS，M3-P3 全量 39 Case 重跑）；仍 FIXED_PENDING_REGRESSION，不提前 VERIFIED_CLOSED",
+          "regression_count": "2/3"
+        },
+        "m3_run_03_regression": {
+          "run_id": "m3-20260910-085726",
+          "status": "PASS",
+          "note": "Regression 3/3（连续第 3 轮独立 run PASS，M3-03 全量 39 Case 重跑）",
+          "regression_count": "3/3"
+        }
+      },
+      "expected_vs_actual": "expected：app_error_code=MODEL_SCHEMA_MISMATCH（精确，不漂移成 MODEL_ERROR/500）；actual（修复前）：learn/card 路由 toAppError 将 LlmError.kind 折叠为 MODEL_ERROR（502）。修复后（55806ba）：LLM 层 / API / response.sent 三层均为 MODEL_SCHEMA_MISMATCH，无 provider 切换。",
+      "notes": "integration_checkpoint=55806ba（BC-033 core + safety patch）。safety patch（e1464c8）属 Frozen Gold 核心通过条件之外的回归证据：未知 LlmError(MODEL_ERROR) 的 raw message（可能含 SDK path/apiKey）由公共安全文案「模型服务暂时不可用，请稍后重试」替代，不泄漏给 API；MODEL_SCHEMA_MISMATCH 等已分类错误保留可读 message。安全测试通过不自动判 033 PASS——本 PASS 由 Frozen Gold 断言（r-error-code/r-readable/r-no-switch）决定。；M3-03（f117d85）再次真实验证 MODEL_SCHEMA_MISMATCH 在 LLM layer / API / response.sent 语义一致、fallback.triggered=0、unknown MODEL_ERROR raw message 不泄漏 → PASS，3/3 回归稳定，VERIFIED_CLOSED。",
+      "resolution_plan": "已完成连续 3 轮回归（070726 / 081624 / 085726 均 PASS）。冻结生命周期条件满足 → VERIFIED_CLOSED。original FAIL、fix commit、integration checkpoint、三轮 regression evidence 全部保留。"
+    },
+    {
+      "bad_case_id": "BC-M3-003",
+      "case_id": "ELS-EVAL-030",
+      "title": "CompareSection 无上周基线时渲染编造 Δ（▲ 1 对比 0）而非空态",
+      "severity": "S1",
+      "status": "FIXED_PENDING_REGRESSION",
+      "root_cause_layer": "UI / REPORT",
+      "detected_run_id": "m3-20260910-094159",
+      "trace_id": "n/a（前端 DOM 证据，无路由 trace；Playwright /report 实测）",
+      "product_commit": "f117d85fe2916ecd8dca568aa1d75c536d3c4d4b",
+      "fix_commit": null,
+      "regression_runs": [
+        "m3-20260910-125036"
+      ],
+      "evidence": {
+        "e2e_finding": {
+          "run_id": "m3-20260910-094159",
+          "journey": "真实 /api/learn/submit 注入 1 条本周数据（服务器真实时钟）→ /report → CompareSection DOM 扫描",
+          "sectionText": "最近七天 · 与前七天新收表达1→ 0▲ 1本期活跃 1 天。",
+          "deltaTexts": [
+            "▲ 1"
+          ],
+          "emptyNoteVisible": false,
+          "fabricatedDeltaVisible": true,
+          "compareRowsVisible": true
+        },
+        "root_cause": "components/report/compare-section.tsx：visible = rows.filter(r => (r.thisV ?? 0) > 0 || (r.lastV ?? 0) > 0)；delta 计算 const b = r.lastV ?? 0 → 无上周基线时仍显示 ▲ n（lastV 无数据被 ?? 0 当作基线）"
+      },
+      "expected_vs_actual": "expected（Frozen pass 行 2）：CompareSection 在无上周数据时进入空态（这一周还没有可对比的数据）而非编造 Δ；actual：仅本周数据时渲染 compare-row「新收表达 1 → 0 ▲ 1」，未出现空态文案，编造 ▲ 1（S1 红线：无据趋势结论对外可见）。",
+      "notes": "M3-P4A 真实 E2E 实证（确定性 UI 红线，非 Human Gold）。API 层无进步/提升文案（r-api-no-progress-claim PASS），但前端 CompareSection 泄漏编造 Δ → Case=FAIL。禁止 Eval 修产品，等待产品修复（候选修复方向：lastV 无数据时整行/整节进入空态）。; M3-04: Builder fix 9940b69/3a45d36 + integration checkpoint 496ae31 + independent eval run m3-20260910-125036 (E2E empty-state + true-zero/per-row-null guards) → FIXED_PENDING_REGRESSION 1/3",
+      "resolution_plan": "OPEN：等待产品修复 CompareSection 空态逻辑；修复后按生命周期 TRIAGED → FIX_IN_PROGRESS → FIXED_PENDING_REGRESSION（连续 3 轮独立 run PASS）→ VERIFIED_CLOSED。"
+    },
+    {
+      "bad_case_id": "BC-M3-004",
+      "case_id": "ELS-EVAL-019",
+      "title": "Speaking feedback hallucinated linguistic evidence reaches UI",
+      "severity": "S1",
+      "status": "FIXED_PENDING_REGRESSION",
+      "root_cause_layer": "OUTPUT_VALIDATION / UI_PRESENTATION",
+      "detected_run_id": "m3-20260910-094159",
+      "trace_id": "trc_eval_019_hallucination（speaking_quality_gate validation + response.sent）",
+      "product_commit": "f117d85fe2916ecd8dca568aa1d75c536d3c4d4b",
+      "fix_commit": null,
+      "regression_runs": [
+        "m3-20260910-125036"
+      ],
+      "evidence": {
+        "user_input": "I like books. Reading is fun. I read often.（无 which 定语从句 / 复合句 / 形容词比较级 / 被动语态）",
+        "hallucinated_claims": [
+          "你使用了定语从句 which 引导的复合句（mainIssue.description）",
+          "你提到了三个并列观点，使用了多个复合句（summary）",
+          "你使用了形容词比较级（evidence）",
+          "你使用了被动语态（evidence）"
+        ],
+        "quality_gate_score": {
+          "evidenceConsistencyCheck": 60,
+          "total": 65,
+          "outcome": "needs_review"
+        },
+        "quality_warning": [
+          "ieltsAnalysis.fluency.evidence 中未找到与用户回答相关的引用",
+          "ieltsAnalysis.lexicalResource.evidence 中未找到与用户回答相关的引用",
+          "ieltsAnalysis.grammaticalRange.evidence 中未找到与用户回答相关的引用",
+          "mainIssue.description 中未能找到与用户回答的直接关联",
+          "ieltsAnalysis.fluency.suggestions[0] 缺乏明确可执行的动作词",
+          "ieltsAnalysis.lexicalResource.suggestions[0] 缺乏明确可执行的动作词",
+          "ieltsAnalysis.grammaticalRange.suggestions[0] 缺乏明确可执行的动作词"
+        ],
+        "ui_render_path": "components/speaking/speaking-feedback.tsx 直接渲染（无中间转换）：L64-68 dim.evidence（AI 为什么这样判断？）、L157/L225 analysis.summary、L190-199 analysis.mainIssue.description/suggestion → 幻觉文本必达用户",
+        "human_decision": {
+          "decision": "FAIL(S1)",
+          "reviewer": "产品负责人（M3-P4B Human Arbitration）",
+          "reviewed_at": "2026-09-10",
+          "source_run": "m3-20260910-094159",
+          "rationale": "用户原始回答不存在 which 定语从句/多个复合句/形容词比较级/被动语态，但产品最终反馈明确声称存在以上语言现象，且 evidence 证明这些文本沿 speaking-feedback UI 渲染路径直接对用户可见 → 命中 Frozen Gold「幻觉证据直达 UI」红线"
+        },
+        "gate_behavior": "gate 检出但未硬拦：outcome=needs_review（>=40），LLM 结果带 warning 返回，幻觉断言随响应体对外可见"
+      },
+      "expected_vs_actual": "expected（Frozen pass_criteria）：若走 LLM 结果则 evidence 引用均可在回答中定位；若被拦截则 analysis_path=rule 且无幻觉断言。actual：gate 检出无关联证据（evidenceConsistencyCheck=60）但结果以 needs_review 返回，mainIssue.description/summary/dim.evidence 含回答中不存在的语言现象断言，且沿 UI 渲染路径直达用户 → failure_criteria「幻觉证据直达 UI」命中。",
+      "notes": "M3-P4B 人工仲裁（非自动判定）：产品负责人明确 FAIL(S1)。human rationale 冻结不改写。禁止 Eval 修产品；修复方向（OUTPUT_VALIDATION/UI_PRESENTATION 层）：gate 检出 EVIDENCE_MISMATCH 时应硬拦降级 rule 或从响应剥离无据断言（候选修复由产品侧决定）。; M3-04: Builder fix 0e367ca/eaeb236 + integration checkpoint 496ae31 + independent eval run m3-20260910-125036 (human-gold-backed regression: detection/containment/false-positive/trace) → FIXED_PENDING_REGRESSION 1/3",
+      "resolution_plan": "OPEN：等待产品修复（gate 硬拦策略 / 响应清洗）；修复后按生命周期 TRIAGED → FIX_IN_PROGRESS → FIXED_PENDING_REGRESSION（连续 3 轮独立 run PASS）→ VERIFIED_CLOSED。"
+    }
+  ],
+  "historical_evolution_evidence": [
+    {
+      "case_id": "ELS-EVAL-008",
+      "milestones": {
+        "PRE_M1": "FAIL（纯标点 '.' 穿透 judge，llm_calls=1，6/8 行通过）",
+        "BEFORE_FIX": "FAIL",
+        "AFTER_INTEGRATION": "PASS（BC-008：empty_answer_short_circuit + llm_call_count=0）",
+        "M3_P1": "PASS",
+        "M3_02": "PASS（8/8 行：learn/review × empty/spaces/punct/newline 短路全过）",
+        "M3_P3": "PASS（8/8 行短路回归保持，无漂移）",
+        "M3_03": "PASS（8/8 行短路回归保持，无漂移）"
+      },
+      "classification": "FIXED",
+      "bad_case_link": "BC-008（历史登记，M1 前闭环）",
+      "root_cause_layer": "BUSINESS_RULE",
+      "regression_status": "无漂移（M3-03 运行 PASS 保持）"
+    },
+    {
+      "case_id": "ELS-EVAL-035",
+      "milestones": {
+        "PRE_M1": "FAIL（r4 两卡不同 itemId）",
+        "BEFORE_FIX": "FAIL",
+        "AFTER_INTEGRATION": "UNVERIFIED（BC-035 code-only：canonicalKey 连字符不敏感去重修复；r3 BLOCKED 契约层能力边界保留）",
+        "M3_P1": "UNVERIFIED",
+        "M3_02": "UNVERIFIED（结构部分已修复；r3 契约层能力边界保留，能力未变化）",
+        "M3_P3": "UNVERIFIED（结构已修复；r3 契约层能力边界保留，能力未变化）",
+        "M3_03": "UNVERIFIED（r3 契约层能力边界保留，能力未变化）"
+      },
+      "classification": "FIXED（结构部分；r3 能力边界保留）",
+      "bad_case_link": "BC-035（历史登记）",
+      "root_cause_layer": "RETRIEVAL",
+      "regression_status": "无漂移（M3-03 运行 UNVERIFIED 保持）"
+    },
+    {
+      "case_id": "ELS-EVAL-037",
+      "milestones": {
+        "PRE_M1": "FAIL（重复提交双推：state 推进 2 次、event 2 条）",
+        "BEFORE_FIX": "PASS（M1 幂等修复已生效）",
+        "AFTER_INTEGRATION": "PASS（duplicate_ignored + 单次推进）",
+        "M3_P1": "PASS",
+        "M3_02": "PASS（5/5 行：event 单推、recall 单升、nextReviewAt 单次推进、幂等响应、无 5xx）",
+        "M3_P3": "PASS（5/5 行幂等回归保持，无漂移）",
+        "M3_03": "PASS（5/5 行幂等回归保持，无漂移）"
+      },
+      "classification": "FIXED at M1",
+      "bad_case_link": "M1 修复记录",
+      "root_cause_layer": "STATE_WRITE",
+      "regression_status": "无漂移（M3-03 运行 PASS 保持）"
+    },
+    {
+      "case_id": "ELS-EVAL-038",
+      "milestones": {
+        "PRE_M1": "UNVERIFIED（部分覆盖）",
+        "BEFORE_FIX": "PASS",
+        "AFTER_INTEGRATION": "PASS（M2 Phase 1/2 服务端链路收敛）",
+        "M3_P1": "PASS",
+        "M3_02": "PASS（4/4 行：Server Repository SSOT：learn/due/review/report 服务端驱动一致）",
+        "M3_P3": "PASS（4/4 行 Server SSOT 回归保持，无漂移）",
+        "M3_03": "PASS（4/4 行 Server SSOT 回归保持，无漂移）"
+      },
+      "classification": "FIXED at M2 Phase 1/2",
+      "bad_case_link": "M2 修复记录",
+      "root_cause_layer": "STATE_WRITE/READ",
+      "regression_status": "无漂移（M3-03 运行 PASS 保持）"
+    },
+    {
+      "case_id": "ELS-EVAL-034",
+      "milestones": {
+        "M3_P1": "BLOCKED（C 级 special-tool 缺失：无 E2E / STT 管线）",
+        "M3_P3": "UNVERIFIED（503/502/E2E/trace_id 全 PASS；唯一 uncovered=错误日志缺 audio_metadata 摘要 → 产品 trace 字段缺口）",
+        "M3_03": "PASS（f117d85 = BC-034，source 138839d：request.received.payload.audio_metadata + 错误日志 trace_id+audio_metadata；8/8 行含 privacy regression）"
+      },
+      "classification": "CAPABILITY_VERIFIED（UNVERIFIED → PASS；非 Product FAIL，未建 Bad Case）",
+      "bad_case_link": "n/a",
+      "root_cause_layer": "OBSERVABILITY",
+      "regression_status": "034 已从 UNVERIFIED 转为 PASS（M3-03 全量 run 实测，非 Integration 推断）"
+    },
+    {
+      "run_id": "m3-20260910-125036",
+      "product_checkpoint": "496ae31",
+      "status": "019 PASS (BC-M3-004 regression 1/3), 030 PASS (BC-M3-003 regression 1/3), 026/033 VERIFIED_CLOSED (regression #4 PASS), 034 PASS",
+      "notes": "EVAL-RUN-M3-04 full 39-case independent run"
+    }
+  ]
+}
