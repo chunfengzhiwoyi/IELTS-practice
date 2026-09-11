@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { computeStreak } from "@/lib/client/progress";
+import { useLearningStats } from "@/lib/client/use-learning-stats";
 import { createSupabaseBrowserClient } from "@/lib/db/browser";
 import { useAuth } from "@/components/auth/useAuth";
 import { Logo } from "@/components/layout/logo";
@@ -15,7 +15,9 @@ export function Masthead() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { status: llmStatus } = useLlmStatus();
-  const [streak, setStreak] = useState<number | null>(null);
+  // 连续天数来自服务端 /api/learning/stats（SSOT），不再读 localStorage events。
+  const learningStats = useLearningStats();
+  const streak = learningStats?.streak ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -24,10 +26,6 @@ export function Masthead() {
   // 登录/找回密码页不显示账户控制，避免与页面表单重复
   const isAuthPage = pathname === "/login" || pathname.startsWith("/reset-password");
   const isDashboard = pathname.startsWith("/dashboard");
-
-  useEffect(() => {
-    setStreak(computeStreak());
-  }, []);
 
   // 路由变化时收起菜单
   useEffect(() => {

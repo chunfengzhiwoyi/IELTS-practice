@@ -122,11 +122,23 @@ export function SpeakingPage() {
     setState({ kind: "SECOND_ANSWER", session: s.session, questionData: s.questionData });
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const analysis =
       state.kind === "FEEDBACK" || state.kind === "MICRO_DRILL"
         ? state.analysis
         : null;
+    // PRODUCT-LOOP-02A: 显式完成点 → 服务端将 session 置 COMPLETED（幂等；不阻塞 UI）。
+    if (state.kind === "FEEDBACK" || state.kind === "MICRO_DRILL") {
+      try {
+        await fetch("/api/speaking/complete", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sessionId: state.session.id }),
+        });
+      } catch {
+        // 网络失败不阻断完成页；重答路径 updateSecondAnswer 仍可置 COMPLETED
+      }
+    }
     setState({ kind: "COMPLETED", collected, lastAnalysis: analysis });
   };
 

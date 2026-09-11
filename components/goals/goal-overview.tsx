@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { getGoalProfile, getStudyHistory } from "@/lib/goal";
+import { getGoalProfile } from "@/lib/goal";
 import { generateStudyPlan, type StudyPlan } from "@/lib/goal/plan";
+import { useLearningStats } from "@/lib/client/use-learning-stats";
 
 const FEAS_LABEL: Record<StudyPlan["feasibility"], string> = {
   comfortable: "从容",
@@ -13,21 +14,31 @@ const FEAS_LABEL: Record<StudyPlan["feasibility"], string> = {
 /**
  * 报告页顶部的「备考目标」概览卡：有考试日期时展示倒计时 + 阶段进度 + 可行性，
  * 否则引导去 /goals 设定。整卡可点，进入目标页。
+ * 学习概况（已学/掌握/连续天数）来自服务端 /api/learning/stats（SSOT），不再读 localStorage。
  */
 export function GoalOverview() {
   const p = getGoalProfile();
   const hasGoal = !!p.examDate;
+  const stats = useLearningStats();
 
-  const plan = hasGoal
-    ? generateStudyPlan({
-        examDate: p.examDate,
-        targetBand: p.targetBand,
-        currentBand: p.currentBand,
-        dailyMinutes: p.dailyMinutes,
-        history: getStudyHistory(4),
-      })
+  const plan =
+    hasGoal && stats
+      ? generateStudyPlan({
+          examDate: p.examDate,
+          targetBand: p.targetBand,
+          currentBand: p.currentBand,
+          dailyMinutes: p.dailyMinutes,
+          history: {
+            avgWeeklyStudySeconds: 0,
+            learnedWords: stats.learnedCount,
+            masteredCount: stats.masteredCount,
+            streak: stats.streak,
+          },
+        })
+      : null;
+  const weeksUntil = plan ? plan.weeksRemaining : hasGoal && p.examDate
+    ? Math.max(1, Math.ceil((new Date(p.examDate + "T00:00:00").getTime() - Date.now()) / (7 * 86400000)))
     : null;
-  const weeksUntil = plan ? plan.weeksRemaining : null;
 
   let curPhase = 0;
   let elapsedWeeks = 0;
@@ -55,7 +66,7 @@ export function GoalOverview() {
     }
   }
 
-  if (!hasGoal || !plan) {
+  if (!hasGoal) {
     return (
       <Link href="/goals" className="goal-overview goal-overview--empty">
         <span className="goal-overview__kicker">备考目标</span>
@@ -76,19 +87,23 @@ export function GoalOverview() {
       {p.setAt && elapsedWeeks > 0 && (
         <p className="goal-overview__sub">已坚持 {elapsedWeeks} 周</p>
       )}
-      <span className={"goal-overview__pct goal-overview__pct--" + plan.feasibility}>
-        {FEAS_LABEL[plan.feasibility]}
-      </span>
-      <div className="goal-overview__phases">
-        {plan.phases.map((ph, i) => (
-          <span
-            key={ph.name}
-            className={"goal-overview__phase" + (i === curPhase ? " goal-overview__phase--on" : "")}
-          >
-            {ph.name}
-          </span>
-        ))}
-      </div>
+      {plan && (
+        <span className={"goal-overview__pct goal-overview__pct--" + plan.feasibility}>
+          {FEAS_LABEL[plan.feasibility]}
+        </span>
+      )}
+      {plan && (
+        <div className="goal-overview__phases">
+          {plan.phases.map((ph, i) => (
+            <span
+              key={ph.name}
+              className={"goal-overview__phase" + (i === curPhase ? " goal-overview__phase--on" : "")}
+            >
+              {ph.name}
+            </span>
+          ))}
+        </div>
+      )}
     </Link>
   );
 }

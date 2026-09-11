@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     const allStates = await learningRepo.getAllUserItemStates(user.id);
     const learnedCount = allStates.length;
     const dueCount = allStates.filter((s) => s.nextReviewAt <= nowIso).length;
+    const masteredCount = allStates.filter((s) => s.status === "RECALLED_INDEPENDENTLY").length;
 
     const recentEvents = await learningRepo.getUserEventsInRange(user.id, weekAgo, nowIso);
     const reviewEvents = recentEvents.filter((e) => e.eventType === "REVIEW");
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(
-      { learnedCount, dueCount, weeklyAccuracy, streak, speakingIdleDays },
+      { learnedCount, dueCount, masteredCount, weeklyAccuracy, streak, speakingIdleDays },
       { status: 200, headers: { "x-trace-id": traceId } },
     );
   } catch (err) {

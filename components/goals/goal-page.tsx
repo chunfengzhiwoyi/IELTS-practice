@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   getGoalProfile,
   saveGoalProfile,
-  getStudyHistory,
   type GoalProfile,
 } from "@/lib/goal";
 import {
   generateStudyPlan,
   type StudyPlan,
 } from "@/lib/goal/plan";
+import { useLearningStats } from "@/lib/client/use-learning-stats";
 
 const BAND_PRESETS = [6.0, 6.5, 7.0, 7.5];
 const MIN_PRESETS: { min: number; note: string }[] = [
@@ -35,7 +35,8 @@ export function GoalPage() {
   const [dailyMinutes, setDailyMinutes] = useState<number>(30);
   const [target, setTarget] = useState<number>(200);
   const [plan, setPlan] = useState<StudyPlan | null>(null);
-  const [hist, setHist] = useState({ avgWeeklyStudySeconds: 0, learnedWords: 0, masteredCount: 0, streak: 0 });
+  // 当前学习概况来自服务端 /api/learning/stats（SSOT），不再读 localStorage。
+  const stats = useLearningStats();
 
   useEffect(() => {
     const p: GoalProfile = getGoalProfile();
@@ -44,11 +45,16 @@ export function GoalPage() {
     setCurrentBand(p.currentBand);
     setDailyMinutes(p.dailyMinutes);
     setTarget(p.weeklyWordTarget);
-    setHist(getStudyHistory(4));
   }, []);
 
-  const learned = hist.learnedWords;
-  const masteryPct = learned > 0 ? Math.round((hist.masteredCount / learned) * 100) : 0;
+  // 服务端统计（stats 未就绪时为 null → UI 显示占位）
+  const learned = stats?.learnedCount ?? null;
+  const masteredCount = stats?.masteredCount ?? null;
+  const streak = stats?.streak ?? null;
+  const masteryPct =
+    learned !== null && masteredCount !== null && learned > 0
+      ? Math.round((masteredCount / learned) * 100)
+      : null;
   const weeksUntil = examDate
     ? Math.max(1, Math.ceil((new Date(examDate + "T00:00:00").getTime() - Date.now()) / (7 * 86400000)))
     : null;
@@ -56,13 +62,19 @@ export function GoalPage() {
   const customFeasible = target <= weeklyCap;
 
   const generate = () => {
+    // 服务器暂不提供可靠的学习时长统计（events 无 duration），avgWeeklyStudySeconds 传 0（无数据）。
     setPlan(
       generateStudyPlan({
         examDate,
         targetBand,
         currentBand,
         dailyMinutes,
-        history: hist,
+        history: {
+          avgWeeklyStudySeconds: 0,
+          learnedWords: stats?.learnedCount ?? 0,
+          masteredCount: stats?.masteredCount ?? 0,
+          streak: stats?.streak ?? 0,
+        },
       }),
     );
   };
@@ -156,20 +168,20 @@ export function GoalPage() {
         </div>
       </section>
 
-      {/* 2. 当前情况 */}
+      {/* 2. 当前情况（服务端 stats） */}
       <section className="panel">
         <h2 className="panel__title">当前情况</h2>
         <div className="goal-stats">
           <div className="goal-stat">
-            <span className="goal-stat__n">{learned}</span>
+            <span className="goal-stat__n">{learned ?? "—"}</span>
             <span className="goal-stat__l">已学词数</span>
           </div>
           <div className="goal-stat">
-            <span className="goal-stat__n">{masteryPct}%</span>
+            <span className="goal-stat__n">{masteryPct ?? "—"}%</span>
             <span className="goal-stat__l">掌握率</span>
           </div>
           <div className="goal-stat">
-            <span className="goal-stat__n">{hist.streak}</span>
+            <span className="goal-stat__n">{streak ?? "—"}</span>
             <span className="goal-stat__l">连续学习(天)</span>
           </div>
         </div>
