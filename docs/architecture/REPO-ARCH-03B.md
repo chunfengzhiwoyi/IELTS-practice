@@ -68,3 +68,6 @@
 
 - 前后：HEAD f0ac513 不变 / branch integration/m3-p1 不变 / tracked modified 4 不变 / untracked 63 不变。
 - 全程未读 secret 内容；未移动/删除任何 canonical 文件；未修改 496ae31 已验证产品行为。
+
+## Accounting clarification (added in REPO-ARCH-03C)
+Copied source assets = 46 (39 dashboard + 4 web UI + 3 handoff docs). Manifest migrated = 45 (source-canonical assets only). Difference of 1: REPO-ARCH-03B.md itself is a NEW architecture artifact, not a source-canonical migration asset. External (monorepo) migrations are tracked in external-source-migration-manifest.json, not canonical-asset-manifest.json.
