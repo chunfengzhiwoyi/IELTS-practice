@@ -85,9 +85,9 @@
 
 **Seed 关系精确核验（发现 manifest 头部表述不精确，记录为文档准确性提示）：**
 - `apps/miniapp/core/src/seed/*.json` == `packages/core/src/seed/*.json`（**hash-identical，迁移精确**）
-- 但 compat seed ≠ `data/seed/*.json`（canonical SEED_SSOT 为演进后的内容）
-- manifest 头部 "hash-identical to canonical data/seed" 与实际不符（实际与**源 core seed** 一致）；"unreferenced by app runtime bundle" 亦不精确 —— `apps/miniapp/core/src/mini-service.ts` L5/L6 直接 import seed JSON，且 `config/index.ts` alias 使 Taro 构建会拉入 compat core。
-- 影响：compat 快照相对 SSOT 可能陈旧（数据新鲜度问题），**非资产丢失**。compat seed 与源 1:1 一致 ⇒ 不算唯一资产。
+- git-blob 核验（03F-INTEGRATE 阶段，git hash-object）：compat seed == `data/seed/*.json`（**git-normalized/blob content 一致**；byte-level working-tree SHA256 差异由 CRLF/LF 行尾引起，非内容差异）
+- manifest 头部 "hash-identical to canonical data/seed" 在 git-blob 层成立；"unreferenced by app runtime bundle" 不精确 —— `apps/miniapp/core/src/mini-service.ts` L5/L6 直接 import seed JSON，且 `config/index.ts` alias 使 Taro 构建会拉入 compat core。
+- 影响：compat 快照与 canonical SEED_SSOT 内容一致（git-blob 层），不存在数据新鲜度分叉；compat seed 与源 1:1 一致 ⇒ 不算唯一资产。
 
 **CORE_UNMIGRATED_UNIQUE_COUNT = 0**
 
@@ -249,7 +249,7 @@
 
 ## 14. Control Plane Notes（非阻塞）
 
-1. **manifest/REPO-MAP 文档准确性**：`external-source-migration-manifest.json` 头部与 `CURRENT-REPO-MAP.md` 关于 compat seed "hash-identical to canonical data/seed / unreferenced" 的表述不精确 —— 实际 compat seed == 源 core seed ≠ canonical data/seed，且被 `mini-service.ts` 引用。建议后续文档修订（CROSS-CLIENT-CONTRACT-RECONCILIATION 或 seed 同步时处理），**不影响源目录退休判定**。
+1. **manifest/REPO-MAP 文档准确性**：`external-source-migration-manifest.json` 头部与 `CURRENT-REPO-MAP.md` 关于 compat seed 的表述已修订（03F-INTEGRATE / DOC-ABSORB-01）—— git-blob 核验显示 compat seed == canonical `data/seed`（内容一致；字节 SHA256 差异仅由 CRLF/LF 行尾引起），且被 `mini-service.ts` 直接引用（"unreferenced" 表述不精确）。修订不影响源目录退休判定。
 2. **legacy miniapp API key 轮换**：SECRET-HYGIENE-01 已保留快照并建议轮换；轮换属 provider 侧动作，未执行。
 
 ---
