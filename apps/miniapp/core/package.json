@@ -1,0 +1,26 @@
+{
+  "name": "@ielts/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "框架无关的 IELTS 业务核心：复习排程/学习/口语逻辑 + 存储适配 + 种子数据。供 Web 与小程序复用。",
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./mini": "./src/storage/mini.ts",
+    "./server": "./src/server.ts",
+    "./seed/*": "./src/seed/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@tarojs/taro": "*"
+  },
+  "peerDependenciesMeta": {
+    "@tarojs/taro": { "optional": true }
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
