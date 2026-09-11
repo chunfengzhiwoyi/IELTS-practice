@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import type { SpeakingAnalysisResult, SpeakingPart, SpeakingSession, SpeakingQuestion } from "@/lib/speaking/types";
+import type { SpeakingAnalysisResult, SpeakingPart, SpeakingSession, SpeakingQuestion, SuggestedExpression } from "@/lib/speaking/types";
 import type { AudioMetadata } from "@/lib/speaking/audio-types";
 import { TopicSelector } from "@/components/speaking/topic-selector";
 import { AnswerInput } from "@/components/speaking/answer-input";
@@ -11,22 +11,26 @@ import { SpeakingFeedback } from "@/components/speaking/speaking-feedback";
 import { MicroDrillCard } from "@/components/speaking/micro-drill-card";
 import { PartStepper } from "@/components/speaking/part-stepper";
 import { SpeakingPrep } from "@/components/speaking/speaking-prep";
+import { SuggestedExpressions } from "@/components/speaking/suggested-expressions";
 
 /**
  * M1: Single Source of Truth
  * 口语训练通过服务端 API 流转。能力观察和效果评估由服务端统一写入 Repository。
  * 前端不再调用 localStorage 的 ability/evaluation 写入。
+ *
+ * PRODUCT-LOOP-02C（V1）：会话响应携带 suggestedExpressions（OPTIONAL）。
+ * 非空时显示轻量提示；为空时 UI 保持现有体验。
  */
 
 type PageState =
   | { kind: "TOPIC_SELECT" }
   | { kind: "LOADING_SESSION" }
-  | { kind: "PREP"; session: SpeakingSession; questionData: SpeakingQuestion }
-  | { kind: "FIRST_ANSWER"; session: SpeakingSession; questionData: SpeakingQuestion }
+  | { kind: "PREP"; session: SpeakingSession; questionData: SpeakingQuestion; suggestedExpressions: SuggestedExpression[] }
+  | { kind: "FIRST_ANSWER"; session: SpeakingSession; questionData: SpeakingQuestion; suggestedExpressions: SuggestedExpression[] }
   | { kind: "ANALYZING" }
-  | { kind: "FEEDBACK"; session: SpeakingSession; questionData: SpeakingQuestion; analysis: SpeakingAnalysisResult; isSecond: boolean }
-  | { kind: "MICRO_DRILL"; session: SpeakingSession; questionData: SpeakingQuestion; analysis: SpeakingAnalysisResult }
-  | { kind: "SECOND_ANSWER"; session: SpeakingSession; questionData: SpeakingQuestion }
+  | { kind: "FEEDBACK"; session: SpeakingSession; questionData: SpeakingQuestion; analysis: SpeakingAnalysisResult; isSecond: boolean; suggestedExpressions: SuggestedExpression[] }
+  | { kind: "MICRO_DRILL"; session: SpeakingSession; questionData: SpeakingQuestion; analysis: SpeakingAnalysisResult; suggestedExpressions: SuggestedExpression[] }
+  | { kind: "SECOND_ANSWER"; session: SpeakingSession; questionData: SpeakingQuestion; suggestedExpressions: SuggestedExpression[] }
   | { kind: "COMPLETED"; collected: Array<{ part: SpeakingPart; analysis: SpeakingAnalysisResult }>; lastAnalysis: SpeakingAnalysisResult | null }
   | { kind: "ERROR"; message: string };
 
@@ -66,11 +70,15 @@ export function SpeakingPage() {
         setState({ kind: "ERROR", message: json?.error?.message ?? `创建失败 (${res.status})` });
         return;
       }
+      // PRODUCT-LOOP-02C: 会话响应携带 suggestedExpressions（可能为空数组）
+      const suggestedExpressions: SuggestedExpression[] = Array.isArray(json.suggestedExpressions)
+        ? json.suggestedExpressions
+        : [];
       // P2 是 long-turn：先进准备阶段（构思要点），P1/P3 直接作答
       if (part === "P2") {
-        setState({ kind: "PREP", session: json.session, questionData: json.questionData });
+        setState({ kind: "PREP", session: json.session, questionData: json.questionData, suggestedExpressions });
       } else {
-        setState({ kind: "FIRST_ANSWER", session: json.session, questionData: json.questionData });
+        setState({ kind: "FIRST_ANSWER", session: json.session, questionData: json.questionData, suggestedExpressions });
       }
     } catch (err) {
       setState({ kind: "ERROR", message: err instanceof Error ? err.message : "创建失败" });
@@ -105,7 +113,7 @@ export function SpeakingPage() {
       });
 
       // M1: 能力观察和效果评估由服务端统一写入 Repository（analyze route 内处理）
-      setState({ kind: "FEEDBACK", session: json.session, questionData, analysis: json.analysis, isSecond });
+      setState({ kind: "FEEDBACK", session: json.session, questionData, analysis: json.analysis, isSecond, suggestedExpressions: state.suggestedExpressions });
     } catch (err) {
       setState({ kind: "ERROR", message: err instanceof Error ? err.message : "网络错误" });
     }
@@ -113,13 +121,12 @@ export function SpeakingPage() {
 
   const handleViewDrill = () => {
     if (state.kind !== "FEEDBACK") return;
-    setState({ kind: "MICRO_DRILL", session: state.session, questionData: state.questionData, analysis: state.analysis });
+    setState({ kind: "MICRO_DRILL", session: state.session, questionData: state.questionData, analysis: state.analysis, suggestedExpressions: state.suggestedExpressions });
   };
 
   const handleTryAgain = () => {
     if (state.kind !== "MICRO_DRILL" && state.kind !== "FEEDBACK") return;
-    const s = state as { session: SpeakingSession; questionData: SpeakingQuestion };
-    setState({ kind: "SECOND_ANSWER", session: s.session, questionData: s.questionData });
+    setState({ kind: "SECOND_ANSWER", session: state.session, questionData: state.questionData, suggestedExpressions: state.suggestedExpressions });
   };
 
   const handleFinish = async () => {
@@ -200,34 +207,43 @@ export function SpeakingPage() {
 
       {/* ─── P2 构思准备 ─── */}
       {state.kind === "PREP" && (
-        <SpeakingPrep
-          question={state.questionData}
-          onStart={() => setState({ kind: "FIRST_ANSWER", session: state.session, questionData: state.questionData })}
-        />
+        <div className="space-y-4">
+          <SuggestedExpressions expressions={state.suggestedExpressions} />
+          <SpeakingPrep
+            question={state.questionData}
+            onStart={() => setState({ kind: "FIRST_ANSWER", session: state.session, questionData: state.questionData, suggestedExpressions: state.suggestedExpressions })}
+          />
+        </div>
       )}
 
       {/* ─── 首答 ─── */}
       {state.kind === "FIRST_ANSWER" && (
-        <AnswerInput
-          question={state.questionData.question}
-          questionZh={state.questionData.questionZh}
-          part={state.questionData.part}
-          topic={state.questionData.topic}
-          onSubmit={(a, meta) => handleSubmitAnswer(a, false, meta)}
-          label="Your Answer"
-        />
+        <div className="space-y-4">
+          <SuggestedExpressions expressions={state.suggestedExpressions} />
+          <AnswerInput
+            question={state.questionData.question}
+            questionZh={state.questionData.questionZh}
+            part={state.questionData.part}
+            topic={state.questionData.topic}
+            onSubmit={(a, meta) => handleSubmitAnswer(a, false, meta)}
+            label="Your Answer"
+          />
+        </div>
       )}
 
       {/* ─── 重答 ─── */}
       {state.kind === "SECOND_ANSWER" && (
-        <AnswerInput
-          question={state.questionData.question}
-          questionZh={state.questionData.questionZh}
-          part={state.questionData.part}
-          topic={state.questionData.topic}
-          onSubmit={(a, meta) => handleSubmitAnswer(a, true, meta)}
-          label="Try Again — 尝试改善主要问题"
-        />
+        <div className="space-y-4">
+          <SuggestedExpressions expressions={state.suggestedExpressions} />
+          <AnswerInput
+            question={state.questionData.question}
+            questionZh={state.questionData.questionZh}
+            part={state.questionData.part}
+            topic={state.questionData.topic}
+            onSubmit={(a, meta) => handleSubmitAnswer(a, true, meta)}
+            label="Try Again — 尝试改善主要问题"
+          />
+        </div>
       )}
 
       {/* ─── AI 反馈 ─── */}

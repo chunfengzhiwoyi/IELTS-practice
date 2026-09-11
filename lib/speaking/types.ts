@@ -99,6 +99,21 @@ export interface DimensionAnalysis {
 /** 口语会话状态 */
 export type SpeakingSessionStatus = "IN_PROGRESS" | "COMPLETED";
 
+/**
+ * PRODUCT-LOOP-02C — 建议表达（V1）
+ * 会话响应级上下文（response-level，V1 不持久化到 session schema，避免 DB migration）。
+ * OPTIONAL 提示：用户可自由忽略，不影响评分。
+ */
+export interface SuggestedExpression {
+  itemId: string;
+  canonicalForm: string;
+  meaning: string;
+  /** 选择理由（用户可见，简短） */
+  reason?: string;
+  /** 自然适配的话题（question.topic） */
+  matchedTopic?: string;
+}
+
 /** 口语会话（一次完整的题目回答） */
 export interface SpeakingSession {
   id: string;
@@ -127,6 +142,8 @@ export interface CreateSpeakingSessionRequest {
 export interface CreateSpeakingSessionResponse {
   session: SpeakingSession;
   questionData: SpeakingQuestion;
+  /** PRODUCT-LOOP-02C: OPTIONAL 建议表达（无匹配时为空数组） */
+  suggestedExpressions: SuggestedExpression[];
 }
 
 /** API: 分析请求 */
