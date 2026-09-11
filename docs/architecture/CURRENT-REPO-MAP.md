@@ -16,7 +16,7 @@
 | Asset | Location | Semantics |
 |---|---|---|
 | Supabase | supabase/ (migrations 0001–0008) | REPO_ROOT; 0009 NOT absorbed (ENV-SUPABASE-01 BLOCKED) |
-| Data / Knowledge | data/seed + data/knowledge | data/seed = SEED_SSOT; miniapp core seed = COMPATIBILITY_SNAPSHOT (hash-identical, NOT_SSOT) |
+| Data / Knowledge | data/seed + data/knowledge | data/seed = SEED_SSOT; miniapp core seed = COMPATIBILITY_SNAPSHOT (git-blob identical to data/seed; byte-level CRLF diff only; directly imported by core/src/mini-service.ts — source-level runtime-required) |
 | Eval System | tests/eval/ + scripts/eval/ + docs/eval/ | REPO_LEVEL_QUALITY_SYSTEM (absorbed from eval/m3-run-04@8080e1e, 107 files; 100% content match) |
 
 ## Quality System

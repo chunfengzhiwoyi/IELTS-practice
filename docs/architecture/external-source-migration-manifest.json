@@ -2,7 +2,7 @@
     "manifest":  "external-source-migration",
     "generated":  "2026-09-11",
     "miniapp_core_target_semantics":  "MINIAPP_COMPATIBILITY_CORE (NOT business-rule SSOT; canonical lib/ remains authority)",
-    "seed_decision":  "seed JSON copied as COMPATIBILITY_SNAPSHOT (hash-identical to canonical data/seed; unreferenced by app runtime bundle; canonical data/seed = SEED_SSOT)",
+    "seed_decision":  "seed JSON copied as COMPATIBILITY_SNAPSHOT (git-blob identical to canonical data/seed, verified; byte-level CRLF diff vs canonical only; directly imported by core/src/mini-service.ts — source-level runtime-required, not 'unreferenced'; canonical data/seed = SEED_SSOT)",
     "secret_or_local_excluded":  [
                                      "project.config.json real AppID -\u003e templated YOUR_WECHAT_APPID",
                                      "tests/run-e2e.ts hardcoded API key -\u003e sanitized YOUR_API_KEY",

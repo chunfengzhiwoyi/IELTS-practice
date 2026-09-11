@@ -34,7 +34,7 @@ Path/config adaptations only. No business behavior changed. Source monorepo NOT 
 | auth/wechat-bridge-client, storage/{adapter,mini}, mini-service, client/* | MINIAPP_SPECIFIC |
 | review/{answer-judge,initial-schedule,review-schedule}, learning/types, speaking/types | DUPLICATED_DIVERGED_RULE (legacy compat; canonical lib is authority) |
 | config, llm-catalog, plan, server | OTHER_COMPAT |
-| seed/*.json (2) | IDENTICAL_DUPLICATE → COMPATIBILITY_SNAPSHOT (hash-identical to canonical data/seed) |
+| seed/*.json (2) | IDENTICAL_DUPLICATE → COMPATIBILITY_SNAPSHOT (git-blob identical to canonical data/seed; byte-level CRLF diff only) |
 
 ## Config Changes (6 expected diffs)
 1. `config/index.ts` — webpack alias + babel include: `../../../packages/core` → `../core` (3 lines).
@@ -47,8 +47,8 @@ Root adaptations (build hygiene, not external source): root `tsconfig.json` excl
 
 ## Seed Decision
 - `core/src/mini-service.ts` imports `./seed/ielts-learning-items.json` + `./seed/speaking-questions.json` → seeds ARE runtime-required at source level (typecheck), so copied as COMPATIBILITY_SNAPSHOT.
-- Both seeds hash-IDENTICAL to canonical `data/seed` (verified).
-- Not reachable by the app bundle (mini-service not imported by any page) → not present in dist.
+- Both seeds git-blob IDENTICAL to canonical `data/seed` (verified via git hash-object; byte-level SHA256 differs from canonical only by CRLF line endings — no content difference).
+- mini-service is NOT imported by any page; it is referenced by core internals (auth/wechat-bridge-client.ts, storage/adapter.ts, core/src/index.ts) → seeds reachable via core module graph at source level.
 - canonical `data/seed` remains SEED_SSOT; the miniapp copy is NOT a second editable authority.
 
 ## Secret / Local Exclusions
