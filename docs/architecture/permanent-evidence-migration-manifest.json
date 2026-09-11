@@ -1,0 +1,277 @@
+﻿{
+    "manifest":  "permanent-evidence-migration-manifest",
+    "task":  "DOC-ABSORB-01",
+    "migrated_date":  "2026-09-11",
+    "source_root":  "D:\\Codex\\IELTS-practice",
+    "target_root":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01",
+    "evidence_entries":  27,
+    "audit_entries":  2,
+    "note":  "evidence entries count = 27 (permanent set); audit docs listed separately",
+    "evidence":  [
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_1_EMIT_POINT_AUDIT.md",
+                         "source_sha256":  "121E06334CDCFCA1F89F917F8046666DDF52A7444B7959C42889A4B26C01BACE",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_1_EMIT_POINT_AUDIT.md",
+                         "target_sha256":  "121E06334CDCFCA1F89F917F8046666DDF52A7444B7959C42889A4B26C01BACE",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_1_PRIVACY_AUDIT.md",
+                         "source_sha256":  "FF1BD817E19691CE582D458B3EABBE8277D14E3211B208382C80EA48D86D8632",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_1_PRIVACY_AUDIT.md",
+                         "target_sha256":  "FF1BD817E19691CE582D458B3EABBE8277D14E3211B208382C80EA48D86D8632",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_1_RUNTIME_SOURCE_AUDIT.md",
+                         "source_sha256":  "10FB987AEB9900DC99F01A56B0A9AE8AAA41D86BEC5B0AC800D8D68F2EEE0506",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_1_RUNTIME_SOURCE_AUDIT.md",
+                         "target_sha256":  "10FB987AEB9900DC99F01A56B0A9AE8AAA41D86BEC5B0AC800D8D68F2EEE0506",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_1_WIRING_REPORT.md",
+                         "source_sha256":  "AEAEDC1874EAB9936C9057A7FF9CFC18B856A6C9B00F22DC43F30F77B384B676",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_1_WIRING_REPORT.md",
+                         "target_sha256":  "AEAEDC1874EAB9936C9057A7FF9CFC18B856A6C9B00F22DC43F30F77B384B676",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_CONTENT_REUSE_REPORT.md",
+                         "source_sha256":  "97819088439E5BC1363E1829F34D5120A70EEA432756CA41D2B78C897C3EE4C8",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_CONTENT_REUSE_REPORT.md",
+                         "target_sha256":  "97819088439E5BC1363E1829F34D5120A70EEA432756CA41D2B78C897C3EE4C8",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_INSTRUMENTATION_REPORT.md",
+                         "source_sha256":  "0BDB46D08508B31D13A9844ADF149ED96C9CEFA0AD88C219174599B5AF56FA1B",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_INSTRUMENTATION_REPORT.md",
+                         "target_sha256":  "0BDB46D08508B31D13A9844ADF149ED96C9CEFA0AD88C219174599B5AF56FA1B",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_MIGRATION_AUDIT.md",
+                         "source_sha256":  "BA9134A80376C74915A9961C9AE20B0052C2E0A71DA37765F253588EE6D7A0FA",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_MIGRATION_AUDIT.md",
+                         "target_sha256":  "BA9134A80376C74915A9961C9AE20B0052C2E0A71DA37765F253588EE6D7A0FA",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_REPORT_REENTRY_REPORT.md",
+                         "source_sha256":  "8C2CD607184D4E7C40B400378946E90BD2D156B73EB25A09316EEF1622419864",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_REPORT_REENTRY_REPORT.md",
+                         "target_sha256":  "8C2CD607184D4E7C40B400378946E90BD2D156B73EB25A09316EEF1622419864",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P6_TRACE_DURABILITY_REPORT.md",
+                         "source_sha256":  "0F79F4ED0C69C930915768FBC2F8815775A6349FAC96FBDA292BCA2BB5409DC2",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p6\\P6_TRACE_DURABILITY_REPORT.md",
+                         "target_sha256":  "0F79F4ED0C69C930915768FBC2F8815775A6349FAC96FBDA292BCA2BB5409DC2",
+                         "category":  "P6_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_API_QA.md",
+                         "source_sha256":  "4F01958E714E3CAB51EBD5B6474897363D375E07911113672057BCF99E0816C6",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_API_QA.md",
+                         "target_sha256":  "4F01958E714E3CAB51EBD5B6474897363D375E07911113672057BCF99E0816C6",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_FINAL_ACCEPTANCE_MATRIX.md",
+                         "source_sha256":  "F29670EC6404139FBBBAFDD77A2AC6EF6DA9D9E4BC0EB1B9F6E2363E33BEA679",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_FINAL_ACCEPTANCE_MATRIX.md",
+                         "target_sha256":  "F29670EC6404139FBBBAFDD77A2AC6EF6DA9D9E4BC0EB1B9F6E2363E33BEA679",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_INSTRUMENTATION_E2E.md",
+                         "source_sha256":  "BDB2AA7E9A521CE418774CC5A375E4F2982C3F5073AE851BD2F48220741EAEBF",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_INSTRUMENTATION_E2E.md",
+                         "target_sha256":  "BDB2AA7E9A521CE418774CC5A375E4F2982C3F5073AE851BD2F48220741EAEBF",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_INTEGRATION_QA_REPORT.md",
+                         "source_sha256":  "C6ABF0A8D46AED496994B15083C7B0368A6DF673A8CA2C8F5AE4C06A5F61BB2F",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_INTEGRATION_QA_REPORT.md",
+                         "target_sha256":  "C6ABF0A8D46AED496994B15083C7B0368A6DF673A8CA2C8F5AE4C06A5F61BB2F",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_INTERACTION_QA.md",
+                         "source_sha256":  "39D9B13C84C0A7270E19D20D02415728E978094E53F572A345F95E434F6E772A",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_INTERACTION_QA.md",
+                         "target_sha256":  "39D9B13C84C0A7270E19D20D02415728E978094E53F572A345F95E434F6E772A",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_SECURITY_AND_DEPLOYMENT_GATES.md",
+                         "source_sha256":  "5C2DE454C8DC35375B737C992A999880165441E51A4A8B8B007420F898F7DE8C",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_SECURITY_AND_DEPLOYMENT_GATES.md",
+                         "target_sha256":  "5C2DE454C8DC35375B737C992A999880165441E51A4A8B8B007420F898F7DE8C",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_VISUAL_QA.md",
+                         "source_sha256":  "B71C955E8DF7690F6EF454CA51BD6ED15CF8AB0AAFC2952CBD3D90B8B7789AB5",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7\\P7_VISUAL_QA.md",
+                         "target_sha256":  "B71C955E8DF7690F6EF454CA51BD6ED15CF8AB0AAFC2952CBD3D90B8B7789AB5",
+                         "category":  "P7_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_5_AUTHORIZATION_AUDIT.md",
+                         "source_sha256":  "8E1D578544448C1A5032638FB638C39C10C00CDD83C558AAB64D592C271D44FA",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7-5\\P7_5_AUTHORIZATION_AUDIT.md",
+                         "target_sha256":  "8E1D578544448C1A5032638FB638C39C10C00CDD83C558AAB64D592C271D44FA",
+                         "category":  "P7_5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_5_DEPLOYMENT_GATE_MATRIX.md",
+                         "source_sha256":  "08345C6573FC96182186A99C3AA3EC8BC98EA1AA78EB1038F64597467289C457",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7-5\\P7_5_DEPLOYMENT_GATE_MATRIX.md",
+                         "target_sha256":  "08345C6573FC96182186A99C3AA3EC8BC98EA1AA78EB1038F64597467289C457",
+                         "category":  "P7_5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P7_5_EVAL_PACKAGING_AUDIT.md",
+                         "source_sha256":  "EE388575C36547EA9FAD422B6D574C68FBA4153F7246265C6AB389E26A288535",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p7-5\\P7_5_EVAL_PACKAGING_AUDIT.md",
+                         "target_sha256":  "EE388575C36547EA9FAD422B6D574C68FBA4153F7246265C6AB389E26A288535",
+                         "category":  "P7_5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P4_METRIC_FORMULA_AUDIT.md",
+                         "source_sha256":  "16B55C6AB7DF3B70A843D0339C686895B1BDBFF0E5B51ED8C5D6C338D794B0FF",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p4\\P4_METRIC_FORMULA_AUDIT.md",
+                         "target_sha256":  "16B55C6AB7DF3B70A843D0339C686895B1BDBFF0E5B51ED8C5D6C338D794B0FF",
+                         "category":  "P4_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P4_REAL_REPOSITORY_REPORT_V2.md",
+                         "source_sha256":  "AC186FE14A608FB30A0A20DF4ACAC5901697F294B32AE735C721613CFE53037D",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p4\\P4_REAL_REPOSITORY_REPORT_V2.md",
+                         "target_sha256":  "AC186FE14A608FB30A0A20DF4ACAC5901697F294B32AE735C721613CFE53037D",
+                         "category":  "P4_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P5_CORRECTNESS_REPORT_V2.md",
+                         "source_sha256":  "AE865D13D40B3FA8A04B5E82C373447A67D0A58B8FF9E4F65F6D1B5453A9F15F",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p5\\P5_CORRECTNESS_REPORT_V2.md",
+                         "target_sha256":  "AE865D13D40B3FA8A04B5E82C373447A67D0A58B8FF9E4F65F6D1B5453A9F15F",
+                         "category":  "P5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P5_EXIT_GATE_AUDIT.md",
+                         "source_sha256":  "ECB209233732CF6BFBAEAC26807F0379354BFE21FF413FAFBBA1FB3943BE1DB6",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p5\\P5_EXIT_GATE_AUDIT.md",
+                         "target_sha256":  "ECB209233732CF6BFBAEAC26807F0379354BFE21FF413FAFBBA1FB3943BE1DB6",
+                         "category":  "P5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P5_FIXTURE_MATRIX_V2.md",
+                         "source_sha256":  "3E450FC72A51D0A53A7BBB3199421A63604156C1511EC2DE164F740DF7E5B5EF",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p5\\P5_FIXTURE_MATRIX_V2.md",
+                         "target_sha256":  "3E450FC72A51D0A53A7BBB3199421A63604156C1511EC2DE164F740DF7E5B5EF",
+                         "category":  "P5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\P5_MUTATION_GUARDS.md",
+                         "source_sha256":  "0EB349C2FBE41B6ED2CE115F1F2E661906C42AC4F21769C66DA4D97B2AF9FE29",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\p5\\P5_MUTATION_GUARDS.md",
+                         "target_sha256":  "0EB349C2FBE41B6ED2CE115F1F2E661906C42AC4F21769C66DA4D97B2AF9FE29",
+                         "category":  "P5_EVIDENCE",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\REAL_EVENT_MAPPING_FINAL.csv",
+                         "source_sha256":  "C7C1EC7B114F6C66B9DB9CB405C4A684C167822A51280CF609978715080A94B2",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\system\\REAL_EVENT_MAPPING_FINAL.csv",
+                         "target_sha256":  "C7C1EC7B114F6C66B9DB9CB405C4A684C167822A51280CF609978715080A94B2",
+                         "category":  "SYSTEM_DATA",
+                         "migrated":  true,
+                         "verified":  true
+                     },
+                     {
+                         "source_path":  "D:\\Codex\\IELTS-practice\\docs\\v2-system-audit.md",
+                         "source_sha256":  "C5E24B8A6BE257943B4743F0C229A8759602E771E1E7D5D42814DCBE84F4C814",
+                         "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\evidence\\dashboard-v2\\system\\v2-system-audit.md",
+                         "target_sha256":  "C5E24B8A6BE257943B4743F0C229A8759602E771E1E7D5D42814DCBE84F4C814",
+                         "category":  "SYSTEM_DATA",
+                         "migrated":  true,
+                         "verified":  true
+                     }
+                 ],
+    "audit_docs":  [
+                       {
+                           "source_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\REPO-ARCH-03F-AUDIT\\docs\\architecture\\REPO-ARCH-03F-AUDIT.md",
+                           "source_commit":  "b7e0ca4881a962557f6cba172cc6b6889d53dad9",
+                           "source_sha256":  "05974CD811B2290E1C2A7FABE4400FD123BE6D313E6C8A7CDFECD2DF83875417",
+                           "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\architecture\\REPO-ARCH-03F-AUDIT.md",
+                           "target_sha256":  "05974CD811B2290E1C2A7FABE4400FD123BE6D313E6C8A7CDFECD2DF83875417",
+                           "category":  "ARCH_AUDIT_DOC",
+                           "migrated":  true,
+                           "verified":  true
+                       },
+                       {
+                           "source_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\REPO-ARCH-03G-PRECHECK\\docs\\architecture\\REPO-ARCH-03G-PRECHECK.md",
+                           "source_commit":  "4b1f9b2ea92192c951fbfbb7cbd24753d416e044",
+                           "source_sha256":  "E0FD1CBB0E515A7F2CC833B94B1198D5422A716FD5415E21894079E6D3A42629",
+                           "target_path":  "D:\\Codex\\_worktrees\\IELTS-practice\\DOC-ABSORB-01\\docs\\architecture\\REPO-ARCH-03G-PRECHECK.md",
+                           "target_sha256":  "E0FD1CBB0E515A7F2CC833B94B1198D5422A716FD5415E21894079E6D3A42629",
+                           "category":  "ARCH_AUDIT_DOC",
+                           "migrated":  true,
+                           "verified":  true
+                       }
+                   ]
+}
