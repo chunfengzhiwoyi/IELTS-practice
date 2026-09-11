@@ -440,20 +440,21 @@ describe("BC-019: analyzeSpeakingWithLlm — Hallucination Containment", () => {
     expect(result.summary).toBeTruthy();
   });
 
-  it("E. Band leakage (ELS-EVAL-020) — 019 修复不导致 band guard 回归", async () => {
+  it("E. Band leakage (ELS-EVAL-020) — 020 修复后 band 泄漏强制安全回退，不回归 019", async () => {
     __setProviderForTests("mock", makeBandLeakProvider());
     const question = getTestQuestion();
     const answer = "I like books. Reading is fun. I read often.";
 
     const result = await analyzeSpeakingWithLlm(answer, question, "trc_019_band");
 
-    // Band 泄漏应被 ieltsAlignmentCheck 检测到 → score 降低 → 可能 NEEDS_REVIEW 或 FAIL
-    // 关键：019 的 evidence sanitization 不应阻止 band 检测
+    // PRODUCT-LOOP-02D：任何 BAND_SCORE_LEAK → 强制规则引擎回退（S1 红线）。
+    // makeBandLeakProvider 含 2 条 band 泄漏（修复前 score=70 → PASS 且 band 直达 UI），
+    // 修复后必须 band-free：无 qualityWarning、无 LLM ieltsAnalysis、全字段无 band 文本。
+    expect(result.qualityWarning).toBeUndefined();
+    expect(result.ieltsAnalysis).toBeUndefined();
     const allText = JSON.stringify(result);
-    // 如果走了 rule fallback，band 自然不存在
-    // 如果 NEEDS_REVIEW，band 可能仍在（这是 020 的问题，不是 019 的范围）
-    // 本测试只验证 019 修复不破坏 band 检测的存在
-    expect(result.qualityWarning?.issues?.some((i) => i.includes("Band") || i.includes("band"))).toBeTruthy();
+    expect(/band\s*\d/i.test(allText)).toBe(false);
+    expect(/[5-9](\.\d)?\s*分/.test(allText)).toBe(false);
   });
 
   it("F. Short-answer path — 正常分析不被 019 修复破坏", async () => {

@@ -184,6 +184,13 @@ export async function analyzeSpeakingWithLlm(
     // ─── Feedback Quality Gate ───────────────────────────────
     const qualityCheck = validateFeedbackQuality(llmResult, answer);
 
+    // ---- ELS-EVAL-020 S1 REDLINE: BAND_SCORE_LEAK forces safe fallback ----
+    // Band score / equivalent capability judgement must never reach user-visible
+    // feedback without formal assessment basis. Any BAND_SCORE_LEAK (1 or more)
+    // deterministically routes to the rule engine safe path (no LLM band text).
+    const bandLeakIssues = qualityCheck.issues.filter((i) => i.type === "BAND_SCORE_LEAK");
+    const bandRedline = bandLeakIssues.length > 0;
+
     // ─── BC-M3-004: Evidence Sanitization ────────────────────
     // Quality Gate 检测到 EVIDENCE_MISMATCH 后，移除未在用户回答中获得支持的具体断言。
     const { analysis: sanitizedResult, report: sanitizationReport } = sanitizeUngroundedAnalysis(
@@ -213,6 +220,9 @@ export async function analyzeSpeakingWithLlm(
         error_message: null,
         payload: {
           validator: "speaking_quality_gate",
+          band_leakage_flag: bandRedline,
+          analysis_path: bandRedline ? "rule_based_analysis" : "llm_analysis",
+          final_response_redacted: bandRedline,
           outcome: qualityCheck.status.toLowerCase(),
           repair_attempts: 0,
           quality_gate_scores: {
@@ -236,7 +246,7 @@ export async function analyzeSpeakingWithLlm(
       traceStore.appendEvent(valEvent);
     }
 
-    if (qualityCheck.status === "FAIL") {
+    if (qualityCheck.status === "FAIL" || bandRedline) {
       logger.warn("llm.speaking.quality.fail", {
         trace_id: traceId,
         score: qualityCheck.score,
@@ -253,7 +263,7 @@ export async function analyzeSpeakingWithLlm(
           layer: EVENT_TYPE_TO_LAYER["fallback.triggered"],
           status: "degraded",
           duration_ms: null,
-          error_code: "QUALITY_GATE_FAIL",
+          error_code: bandRedline ? "BAND_SCORE_LEAK_REDLINE" : "QUALITY_GATE_FAIL",
           error_message: `score=${qualityCheck.score}`,
           payload: {
             trigger_error_code: "QUALITY_GATE_FAIL",

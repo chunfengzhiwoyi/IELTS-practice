@@ -284,7 +284,7 @@ function actionabilityCheck(analysis: SpeakingAnalysisResult, issues: FeedbackQu
 /** Band 分数泄漏模式 */
 const BAND_SCORE_PATTERNS = [
   /band\s*\d/i,
-  /\d\.?\d?\s*分/,
+  /\d\.?\d?\s*分(?!钟)/,
   /得分.*\d/,
   /score.*\d/i,
   /级别.*\d/,
