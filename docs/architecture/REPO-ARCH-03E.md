@@ -2,6 +2,7 @@
 
 ## Result
 **STATUS: BLOCKED_PENDING_EVAL_ASSET_RECONCILIATION** — all product/structure gates PASS; one blocking gap: the Eval System (tests/eval, scripts/eval, docs/eval) is NOT part of the consolidation branch. See EVAL section.
+**RESOLVED: EVAL_ASSET_RECONCILIATION = RESOLVED_BY_REPO_ARCH_03E_1** (2026-09-11) — eval assets absorbed from eval/m3-run-04@8080e1e. See REPO-ARCH-03E.1.md. NOTE: repo is NOT SOURCE_RETIREMENT_READY (ANDROID_EXTERNAL_JDK + assistant-margin review + unique-asset audit + secret hygiene remain).
 
 ## Structure Acceptance — PASS
 - app/, components/, lib/, apps/miniapp/ (+core), apps/android/ (:app+:core), data/, supabase/, docs/, scripts/, tests/ all present at frozen locations.
@@ -47,6 +48,15 @@
 - EVAL_ASSET_RECONCILIATION_REQUIRED: YES — NOT cherry-picked in this phase; Control Plane to decide REPO-ARCH-03E.1.
 - Product-side eval integration (lib/evaluation/*, scripts/eval-context-aware.ts, tests/unit/badcase-*.*) IS present; the Eval Runner system is what is missing.
 
+### REPO-ARCH-03E.1 Resolution (2026-09-11)
+- EVAL_ASSET_RECONCILIATION: RESOLVED_BY_REPO_ARCH_03E_1 — tests/eval (56), scripts/eval (1), docs/eval (50) absorbed from eval/m3-run-04@8080e1e (107 files, commit-level selective extraction, git restore --source=8080e1e).
+- SOURCE_TARGET_HASH_MATCH: 100% (107/107 git content hash match; worktree CRLF from autocrlf=true, normalized-identical to source blobs).
+- PRODUCT_PATH_DIFF: 0 (app/components/lib/data/supabase/apps/miniapp/apps/android unchanged).
+- WEB_TYPECHECK: PASS (tsc --noEmit exit 0, eval system resolves in consolidation).
+- EVAL_RUNTIME_EXTERNAL_SOURCE_REFERENCES: 0 (tests/scripts); docs/eval references are historical run provenance only.
+- NEW_EVAL_RUN_CREATED: NO. BAD_CASE_LIFECYCLE_CHANGED: NO. M3 remains PAUSED.
+- Details: docs/architecture/REPO-ARCH-03E.1.md + docs/architecture/eval-asset-manifest.json.
+
 ## Supabase Acceptance — PASS
 - migrations 0001–0008 present and intact.
 - SUPABASE_0009_STATUS: NOT_ABSORBED (0009_p6_instrumentation.sql absent) — BLOCKED_ENV_SUPABASE_01 maintained.
@@ -72,15 +82,15 @@
 ## Known Debt (this phase, NOT fixed)
 - TD-MINI-01: 4 pre-existing Miniapp TS errors (profile-edit ×3, report ×1).
 - ANDROID_EXTERNAL_JDK: BLOCKED_ENVIRONMENT — no source-external JDK 17; source-retirement blocker.
-- EVAL_ASSET_RECONCILIATION_REQUIRED: BLOCKING — consolidation lacks tests/eval+scripts/eval+docs/eval (latest known 8080e1e).
+- EVAL_ASSET_RECONCILIATION_REQUIRED: ~~BLOCKING — consolidation lacks tests/eval+scripts/eval+docs/eval (latest known 8080e1e)~~ **RESOLVED by REPO-ARCH-03E.1 (2026-09-11)**.
 - assistant-margin.tsx final review pending (ARCH-03F gate).
 - M3 PAUSED: 020/023/025/035 remain UNVERIFIED — not addressed here.
 - docs/tools/*.py hardcode old canonical absolute path (provenance only, not runtime).
 
 ## Source Retirement Readiness
-- MONOREPO_SOURCE_RETIREMENT_READY: NO (eval assets not reconciled; assistant-margin review pending).
+- MONOREPO_SOURCE_RETIREMENT_READY: NO (eval assets reconciled by 03E.1, but assistant-margin review pending).
 - ANDROID_SOURCE_RETIREMENT_READY: NO (external JDK blocker).
-- CANONICAL_SWITCH_READY: NO (eval gap + canonical dirty tree not yet fully switched; retained assets absorbed = 45/109 manifest, remainder is evidence/secret/pending).
+- CANONICAL_SWITCH_READY: NO (canonical dirty tree not yet fully switched; retained assets absorbed = 45/109 manifest, remainder is evidence/secret/pending).
 
 ## Source Protection — PASS
 - Canonical D:\Codex\IELTS-practice: HEAD f0ac513 / branch integration/m3-p1 / 67 dirty entries — unchanged.

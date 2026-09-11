@@ -17,7 +17,18 @@
 |---|---|---|
 | Supabase | supabase/ (migrations 0001–0008) | REPO_ROOT; 0009 NOT absorbed (ENV-SUPABASE-01 BLOCKED) |
 | Data / Knowledge | data/seed + data/knowledge | data/seed = SEED_SSOT; miniapp core seed = COMPATIBILITY_SNAPSHOT (hash-identical, NOT_SSOT) |
-| Eval System | NOT YET IN CONSOLIDATION — lives on eval/m3-run-04@8080e1e (107 files) | EVAL_ASSET_RECONCILIATION_REQUIRED |
+| Eval System | tests/eval/ + scripts/eval/ + docs/eval/ | REPO_LEVEL_QUALITY_SYSTEM (absorbed from eval/m3-run-04@8080e1e, 107 files; 100% content match) |
+
+## Quality System
+```
+Quality System (REPO_LEVEL_QUALITY_SYSTEM — NOT apps/eval)
+├─ tests/eval/    # cases (ELS-EVAL-001..039), runner, tools, vitest.config
+├─ scripts/eval/  # generate-baseline.ts
+└─ docs/eval/     # spec, bad-case-registry, runs, manual-review, special-tool, summaries, baselines
+```
+- M3: PAUSED — DO NOT resume unless Control Plane explicitly requires.
+- Last verified: product checkpoint `496ae31`; eval run `m3-20260910-125036` (35 PASS / 0 FAIL / 4 UNVERIFIED: 020/023/025/035).
+- History belongs to 496ae31; run provenance (worktree paths in docs/eval) preserved verbatim.
 
 ## Rule Authority
 - canonical lib/ = CURRENT WEB BUSINESS RULE SSOT
