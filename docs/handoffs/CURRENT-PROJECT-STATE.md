@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_04D_COMPLETE** — 04D Evidence→Learner State mapping design（`b6c7c52`→cherry-pick `048659a`）已集成：applicationLevel 语义 0/1/2 操作化（DERIVED_FROM_EVIDENCE_HISTORY）、20 场景验证、假阳性韧性证明、M45 Gold v2 建议修正。**04E 已获授权（含 Supabase evidence migration，仅限 Application Evidence History 持久化）**；写回仍须 04E 实现后才发生。
+**PRODUCT_LOOP_04_COMPLETE** — Speaking→Vocabulary V1.1 整链完成：04A 证据契约审计 → 04B Evidence Pipeline → 04C 真实 LLM 质量验证 → 04D 状态映射设计 → 04E Evidence History + applicationLevel 写回 → 04F Speaking 跨语境内容覆盖修复（Level 2 真实路径可达）→ 04-FINAL E2E PASS。**04F 已集成**（`99d4e5f`）：题库 12→13、PHRASE/CHUNK 跨语境覆盖率 1/8→8/8（100%）、Level 2 real content path REACHABLE。`PRODUCT_LOOP_04_COMPLETE` ≠ `PRODUCTION_PERSISTENCE_COMPLETE`：REMOTE_SUPABASE_DEPLOYMENT_VERIFIED 仍为 NO。下一 Gate 为远程 Supabase evidence 持久化验证。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**PRODUCT-LOOP-04E**（IMPLEMENT-EVIDENCE-HISTORY-AND-DERIVED-APPLICATION-LEVEL）：实现 Application Evidence History 持久化（Supabase migration **AUTHORIZED**，仅限 Application Evidence persistence）+ `deriveApplicationLevel` 纯函数 + 幂等落库钩子；target-selection 无需改；Planner/记忆调度零改动；写回 applicationLevel 自此启用。
+**PRODUCTION-PERSISTENCE-01-REMOTE-SUPABASE-EVIDENCE** — 部署 `supabase/migrations/0010_application_evidence.sql` 到真实远程 Supabase，并验证：insert / upsert / select / unique(user_id,item_id,session_id) / RLS user isolation / derived applicationLevel flow。当前 REMOTE_SUPABASE_DEPLOYMENT_VERIFIED=NO、REMOTE_SUPABASE_EVIDENCE_WRITE_READ=NOT_TESTED（production persistence 未宣称 complete）。
 
 ## PRODUCT_LOOP_04A (SPEAKING→VOCAB EVIDENCE AUDIT)
 - **04A_PRODUCT_DECISION**: EVIDENCE_PIPELINE_NEEDS_TARGETED_FIX
@@ -142,6 +142,24 @@
 - **REMOTE_SUPABASE_DEPLOYMENT_VERIFIED**: **NO**；**REMOTE_SUPABASE_EVIDENCE_WRITE_READ**: **NOT_TESTED**（production persistence 未宣称 complete）
 - 回归：04E/04B/02C/02D/02-E2E/Planner/badcase-026 全 PASS；04C deterministic harness PASS（未重跑 159 次真实调用）；full unit **631/632 PASS**（**KNOWN_DEBT**: llm-safety.test.ts pre-existing——ModelSettingsPanel.tsx client import @/lib/llm/catalog，494eb69 即存在，未修改）；`tsc --noEmit` PASS；`next build` PASS
 - **M3**: PAUSED；**NEXT_GATE**: **PRODUCT-LOOP-04F-SPEAKING-CONTEXT-COVERAGE**（独立题库覆盖修复任务；本任务不得趁机补题库）
+
+## PRODUCT_LOOP_04F (SPEAKING CROSS-CONTEXT COVERAGE)
+**COMPLETE — 已入 canonical（cherry-pick `373e122` → `99d4e5f`，0 冲突；报告 `docs/product/PRODUCT-LOOP-04F-SPEAKING-CONTEXT-COVERAGE.md`，集成记录 `docs/product/PRODUCT-LOOP-04F-INTEGRATION.md`）**
+- **SPEAKING_CONTEXT_COVERAGE**: **FIXED**（覆盖 04_FINAL 段的 STRUCTURALLY_UNREACHABLE 结论）
+- **QUESTION_BANK**: 13（新增 `sp-p1-005` Environmental Habits，questionId 唯一，OPTIONAL 契约保持）
+- **SPEAKING_ELIGIBLE_PHRASE_CHUNK**: 8（seed-003/006/007/008/013/015/016/018）
+- **ITEMS_WITH_2PLUS_CONTEXTS**: 8（BEFORE=1）；**CROSS_CONTEXT_COVERAGE_RATE**: 100%（BEFORE=12.5%）
+- **EXPRESSION_TAGS_CHANGED**: 7（seed-003/006/008/015/016/018/021）；**QUESTIONS_ADDED**: 1；**QUESTIONS_RETAGGED**: 0
+- **SEED_003_REAL_CONTEXTS**: 5（sp-p1-001/P1 Daily Routine、sp-p2-003/P2 A Person Who Influenced You、sp-p3-001/P3 Education and Technology、sp-p3-003/P3 Work-Life Balance、sp-p1-005/P1 Environmental Habits）；P1/P2/P3 三池真实 target-selection 均可达 ≥2 distinct contexts
+- **LEVEL_2_REAL_CONTENT_PATH**: **REACHABLE**（不依赖 CONTROLLED_EVIDENCE_FIXTURE 即可自然满足 distinctContexts>=2）
+- **CONTENT_EXCEPTIONS**: NONE；**OPTIONAL_SUGGESTION_CONTRACT**: PRESERVED（无匹配→targets=[]，Speaking 正常）
+- **TAG_NATURALITY_REVIEW**: PASS；**QUESTION_QUALITY_REVIEW**: PASS
+- **TEST_FIXTURE_ASSUMPTION_UPDATED**: YES（02C D1/D2、02-E2E E2E-08 原「seed-003 在 P3 无匹配」fallback fixture 过时 → 换真正无匹配场景；p3-speaking 题数 12→13、P1 4→5）；**PRODUCT_BEHAVIOR_EXPECTATION_CHANGED**: NO
+- **APPLICATION_LEVEL_RULE_CHANGED**: NO；**EVIDENCE_RULE_CHANGED**: NO；**PLANNER_CHANGED**: NO；**DATABASE_CHANGED**: NO（NEW_DATABASE_SCHEMA=NO、NEW_SUPABASE_MIGRATION=NO、0010 unchanged、0009 仍 deferred）
+- **回归（canonical 集成后）**: coverage 7/7、02C/02D/02-E2E(16)/04B/04E/Planner/p3-speaking 全 PASS（206/206）；`tsc --noEmit` PASS；`next build` PASS；full unit **637 PASS / 2 FAIL**（**KNOWN_DEBT**: llm-safety.test.ts pre-existing static；env.test ENVIRONMENT_DEPENDENT——canonical `.env.local` 含真实 Supabase URL 时按设计失败）
+- **PRODUCT_LOOP_04**: **COMPLETE**（理由：Evidence quality real-LLM verified + Evidence history/state writeback implemented + Level0→1 real path verified + Level2 mapping verified + Level2 real content path reachable + target-selection feedback verified）
+- **REMOTE_SUPABASE_DEPLOYMENT_VERIFIED**: **NO**（PRODUCT_LOOP_04_COMPLETE ≠ PRODUCTION_PERSISTENCE_COMPLETE）
+- **M3**: PAUSED；**NEXT_GATE**: **PRODUCTION-PERSISTENCE-01-REMOTE-SUPABASE-EVIDENCE**
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
