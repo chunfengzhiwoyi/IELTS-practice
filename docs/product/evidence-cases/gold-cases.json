@@ -1,0 +1,92 @@
+{
+  "_meta": {
+    "task": "PRODUCT-LOOP-04A",
+    "purpose": "Speaking→Vocabulary correct-usage evidence gold corpus（人工冻结，先于任何模型/规则结果）",
+    "frozenBy": "豆包c (human audit authority)",
+    "frozenAt": "2026-09-12",
+    "labels": ["CORRECT", "ISSUE", "UNCERTAIN", "NOT_USED"],
+    "note": "Gold 由审计人逐条判定并写 gold reason；不参考任何 extractor/LLM 输出。多目标 case 按 itemId 分别给标签。"
+  },
+  "cases": [
+    { "id": "A01", "category": "A", "answer": "I think people often forget about their health until something bad happens.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "无 take...for granted 结构或相关片段" }] },
+    { "id": "A02", "category": "A", "answer": "My parents have done a lot for me, I really appreciate them.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "表达未出现（for me 非 for granted）" }] },
+    { "id": "A03", "category": "A", "answer": "I am grateful for everything my teacher taught me.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "相似词 grateful/for everything，非目标表达" }] },
+    { "id": "A04", "category": "A", "answer": "We should value the small things in life.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "未使用" }] },
+    { "id": "A05", "category": "A", "answer": "Yes.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "极短回答，无目标表达" }] },
+    { "id": "A06", "category": "A", "answer": "Well, honestly, I've never thought about that before.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "未使用" }] },
+    { "id": "A07", "category": "A", "answer": "Taking a break once in a while is important.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "有 take 词族但无 for granted，非目标表达" }] },
+    { "id": "A08", "category": "A", "answer": "Some people take risks without thinking.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "take risks 是另一搭配，非目标表达" }] },
+
+    { "id": "B09", "category": "B", "answer": "I take my health for granted sometimes.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "精确标准结构：take + object(my health) + for granted" }] },
+    { "id": "B10", "category": "B", "answer": "People often take the things they have for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "object 为名词短语，语义正确" }] },
+    { "id": "B11", "category": "B", "answer": "I think we all take it for granted that the internet always works.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "take it for granted that 句型，标准用法" }] },
+    { "id": "B12", "category": "B", "answer": "Don't take your parents' support for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "祈使句，object 明确" }] },
+    { "id": "B13", "category": "B", "answer": "I shouldn't take my health for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "否定语境下搭配仍正确" }] },
+
+    { "id": "C14", "category": "C", "answer": "He took her kindness for granted for years.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "过去时 took，合法形态变化" }] },
+    { "id": "C15", "category": "C", "answer": "Taking your family for granted is a common mistake.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "动名词 taking 作主语，合法形态" }] },
+    { "id": "C16", "category": "C", "answer": "They have taken their opportunity for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "过去分词 taken，现在完成时，合法" }] },
+
+    { "id": "D17", "category": "D", "answer": "I take it for granted every single day.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "代词 it 替代对象，标准" }] },
+    { "id": "D18", "category": "D", "answer": "We tend to take them for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "代词 them，标准" }] },
+    { "id": "D19", "category": "D", "answer": "She takes her friends' help for granted, which is unfair.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "名词短语 + 关系从句，语义正确" }] },
+
+    { "id": "E20", "category": "E", "answer": "I take my exam for granted because it is very hard.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "语义误用：exam 并非被理所当然对待的对象，句意不自洽" }] },
+    { "id": "E21", "category": "E", "answer": "I take my teacher for granted to explain difficult lessons.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "语义误用：把 take for granted 当 rely on 用，句意错误" }] },
+    { "id": "E22", "category": "E", "answer": "The weather takes the umbrella for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "无生命主语+荒谬语义，搭配在语义层不成立" }] },
+    { "id": "E23", "category": "E", "answer": "I take English grammar for granted every morning to practice.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "语义误用：句意无法成立（为了练习把语法当理所当然？）" }] },
+
+    { "id": "F24", "category": "F", "answer": "I take my parents for grant.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "拼写/形态错误：for grant 缺 -ed" }] },
+    { "id": "F25", "category": "F", "answer": "I took for granted my friends.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "语序错误：object 后置导致搭配核心破坏" }] },
+    { "id": "F26", "category": "F", "answer": "I take for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "缺 object，结构不完整" }] },
+    { "id": "F27", "category": "F", "answer": "I make it for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "动词错误：make 而非 take" }] },
+
+    { "id": "G28", "category": "G", "answer": "Take something for granted.", "gold": [{ "itemId": "seed-003", "label": "UNCERTAIN", "reason": "仅照读提示短语，无完整句子，非应用证据" }] },
+    { "id": "G29", "category": "G", "answer": "take something for granted... yes, I think so.", "gold": [{ "itemId": "seed-003", "label": "UNCERTAIN", "reason": "照读提示 + 填充语，未形成语义使用" }] },
+    { "id": "G30", "category": "G", "answer": "I can say take something for granted in my answer.", "gold": [{ "itemId": "seed-003", "label": "UNCERTAIN", "reason": "元语言提及（谈论能否用），非实际使用" }] },
+    { "id": "G31", "category": "G", "answer": "Hmm, take something for granted means to not appreciate something, I guess.", "gold": [{ "itemId": "seed-003", "label": "UNCERTAIN", "reason": "定义式复述，未在自创句子中应用" }] },
+
+    { "id": "H32", "category": "H", "answer": "I take it for grant every day.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "部分表达：for grant 缺 -ed" }] },
+    { "id": "H33", "category": "H", "answer": "for granted, people should appreciate family", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "部分表达：仅有 for granted 片段，缺 take 结构，未构成有效使用" }] },
+    { "id": "H34", "category": "H", "answer": "I take my family... for granted? maybe", "gold": [{ "itemId": "seed-003", "label": "UNCERTAIN", "reason": "自我怀疑/悬而未决，使用意图不确定" }] },
+
+    { "id": "I35", "category": "I", "answer": "I take my parents for grant— sorry, I take their support for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "先错后自纠，以最终正确 span 为证据；reason 记录 earlier issue" }] },
+    { "id": "I36", "category": "I", "answer": "I took for granted... I mean, I take my friends for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "自纠为完整正确结构" }] },
+    { "id": "I37", "category": "I", "answer": "I take it for granted, no wait, I make it for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "自纠到错误形式结束（make），最终证据为错" }] },
+
+    { "id": "J38", "category": "J", "answer": "I make my health for granted, I mean take it for granted.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "错误在前，自纠后最终正确" }] },
+    { "id": "J39", "category": "J", "answer": "I take my health for granted, but actually I make it for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "正确在前但最终明确改错，聚合取最终错误" }] },
+
+    { "id": "K40", "category": "K", "answer": "People take things for granted every day. I take my time for granted too.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "两次均正确，无冲突" }] },
+    { "id": "K41", "category": "K", "answer": "I take it for granted, but I shouldn't make it for granted.", "gold": [{ "itemId": "seed-003", "label": "ISSUE", "reason": "先正确后错误，最终错误句压过；证据冲突且最终为错" }] },
+
+    { "id": "L42", "category": "L", "targets": ["seed-003", "seed-015"], "answer": "People often take their health for granted. I should remember to exercise.", "gold": [
+      { "itemId": "seed-003", "label": "CORRECT", "reason": "take their health for granted 正确" },
+      { "itemId": "seed-015", "label": "NOT_USED", "reason": "bear in mind 未出现" }
+    ] },
+    { "id": "L43", "category": "L", "targets": ["seed-016", "seed-008"], "answer": "There are pros and cons to everything, but I don't travel much.", "gold": [
+      { "itemId": "seed-016", "label": "CORRECT", "reason": "pros and cons 正确使用" },
+      { "itemId": "seed-008", "label": "NOT_USED", "reason": "broaden one's horizons 未出现" }
+    ] },
+
+    { "id": "M44", "category": "M", "targets": ["seed-003", "seed-015"], "answer": "I take it for granted every day, but I should bare in mind my health.", "gold": [
+      { "itemId": "seed-003", "label": "CORRECT", "reason": "take it for granted 正确" },
+      { "itemId": "seed-015", "label": "ISSUE", "reason": "bear in mind 拼写错误 bare in mind（同音误拼）" }
+    ] },
+    { "id": "M45", "category": "M", "targets": ["seed-003", "seed-016"], "answer": "I take my family for granted every day, and there is pros and cons to that.", "gold": [
+      { "itemId": "seed-003", "label": "CORRECT", "reason": "take my family for granted 正确" },
+      { "itemId": "seed-016", "label": "ISSUE", "reason": "pros and cons 搭配语法错误：单数 is 配复数" }
+    ] },
+
+    { "id": "N46", "category": "N", "answer": "I granted my friend's wish.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "granted 作动词授意，非 for granted 结构" }] },
+    { "id": "N47", "category": "N", "answer": "I take nothing for me.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "take...for me 非目标搭配" }] },
+    { "id": "N48", "category": "N", "answer": "Thanks for granting me this opportunity.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "granting me 为动词用法，非目标表达" }] },
+
+    { "id": "O49", "category": "O", "answer": "Yes.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "极短回答" }] },
+    { "id": "O50", "category": "O", "answer": "No, not really.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "极短回答" }] },
+
+    { "id": "P51", "category": "P", "answer": "Many people don't realize how much their parents sacrifice. Honestly, I take their love for granted sometimes. Anyway, back to the question, I think gratitude matters.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "长回答中 grounding 正确，一次正确使用成立" }] },
+    { "id": "P52", "category": "P", "answer": "I take it for granted, and uhh, I mean, people should, you know, appreciate more what they have.", "gold": [{ "itemId": "seed-003", "label": "CORRECT", "reason": "目标表达正确，虽有口误/填充，不影响目标本身" }] },
+    { "id": "P53", "category": "P", "answer": "I just feel grateful and thankful for all the support I receive from my family and friends.", "gold": [{ "itemId": "seed-003", "label": "NOT_USED", "reason": "长回答无目标表达" }] }
+  ]
+}
