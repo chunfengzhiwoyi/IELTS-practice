@@ -55,6 +55,12 @@ export interface SpeakingAnalysisResult {
   summary: string;
   /** Phase 3: IELTS 四维度深度分析（语音回答时填充，文字回答可能部分为 null） */
   ieltsAnalysis?: IeltsSpeakingAnalysis;
+  /**
+   * PRODUCT-LOOP-04B — 经过确定性 validator 固化的口语目标表达证据。
+   * 仅记录（evidence recording），绝不直接映射/写入长期 Vocabulary state。
+   * 不进入用户可见 UI（内部证据对象）。
+   */
+  targetExpressionEvidence?: ValidatedTargetExpressionEvidence[];
   /** Quality Gate: 质量警告（NEEDS_REVIEW 时附加） */
   qualityWarning?: {
     score: number;
@@ -114,6 +120,54 @@ export interface SuggestedExpression {
   matchedTopic?: string;
 }
 
+/** 目标表达使用证据：LLM 单次分析调用内输出的原始证据（raw contract） */
+export type TargetExpressionUsageAssessment = "CORRECT" | "ISSUE" | "UNCERTAIN" | "NOT_USED";
+
+/**
+ * 原始 LLM evidence（EnhancedAnalysisSchema.targetExpressionUsageEvidence 元素）。
+ * - 与 ieltsAnalysis 平级的可选子对象，同一 LLM 调用内输出（禁止第二次 LLM call）。
+ * - 每个 itemId 一条；per-item 独立判定。
+ * - NOT_USED = 未使用（OPTIONAL 契约，非失败、无惩罚）。
+ */
+export interface TargetExpressionUsageEvidence {
+  itemId: string;
+  attempted: boolean;
+  /** 用户 answer 的真实文本 span；CORRECT/ISSUE 必须非空且 grounding 到 answer；NOT_USED 必须为 null */
+  quote: string | null;
+  assessment: TargetExpressionUsageAssessment;
+  /** 判定理由（简短） */
+  reason: string;
+}
+
+/**
+ * 确定性 validator 固化后的证据（Validated Evidence）。
+ * 长期系统后续只能消费本类型；raw LLM 输出不得直接进入任何状态。
+ */
+export interface ValidatedTargetExpressionEvidence {
+  itemId: string;
+  attempted: boolean;
+  quote: string | null;
+  assessment: TargetExpressionUsageAssessment;
+  reason: string;
+  /** 仅 assessment === CORRECT（且通过全部校验）为 true；UNCERTAIN 永不为 true */
+  upgradeCandidate: boolean;
+  /** validator 施加的降级/修复说明（如 grounding 失败、duplicate 冲突、missing、echo 守卫） */
+  validatorNotes: string[];
+}
+
+/** evidence 管线可观测计数（trace payload 使用） */
+export interface TargetExpressionEvidenceSummary {
+  targetCount: number;
+  rawEvidenceCount: number;
+  validatedEvidenceCount: number;
+  correctCount: number;
+  issueCount: number;
+  uncertainCount: number;
+  notUsedCount: number;
+  groundingDowngradeCount: number;
+  droppedItemIds: string[];
+}
+
 /** 口语会话（一次完整的题目回答） */
 export interface SpeakingSession {
   id: string;
@@ -129,6 +183,14 @@ export interface SpeakingSession {
   status: SpeakingSessionStatus;
   createdAt: string;
   updatedAt: string;
+  /**
+   * PRODUCT-LOOP-04B — 服务端冻结的目标表达快照（server authority）。
+   * session 创建时由服务端确定并随 session 持久化；analyze 阶段按 sessionId
+   * 读回，禁止客户端注入、禁止 analyze 时重新 selectTargetExpressions。
+   * Memory 实现完整保存；Supabase 无对应列（不新增 migration）→ 读回恒为 []，
+   * 即 SUPABASE_EVIDENCE_PERSISTENCE = NOT_IMPLEMENTED（见 04B 文档）。
+   */
+  suggestedExpressions?: SuggestedExpression[];
 }
 
 /** API: 创建口语会话的请求 */
@@ -143,7 +205,7 @@ export interface CreateSpeakingSessionResponse {
   session: SpeakingSession;
   questionData: SpeakingQuestion;
   /** PRODUCT-LOOP-02C: OPTIONAL 建议表达（无匹配时为空数组） */
-  suggestedExpressions: SuggestedExpression[];
+  suggestedExpressions?: SuggestedExpression[];
 }
 
 /** API: 分析请求 */

@@ -6,7 +6,7 @@
  * speaking_sessions 表存储完整会话（含 first/second answer 和 analysis JSON）。
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SpeakingAnalysisResult, SpeakingSession, SpeakingSessionStatus } from "@/lib/speaking/types";
+import type { SpeakingAnalysisResult, SpeakingSession, SpeakingSessionStatus, SuggestedExpression } from "@/lib/speaking/types";
 import type { SpeakingRepository } from "@/lib/speaking/repository";
 
 export class SupabaseSpeakingRepository implements SpeakingRepository {
@@ -29,6 +29,9 @@ export class SupabaseSpeakingRepository implements SpeakingRepository {
       secondAnswer: row.second_answer,
       secondAnalysis: row.second_analysis,
       status: row.status as SpeakingSessionStatus,
+      // PRODUCT-LOOP-04B: speaking_sessions 无 suggested_expressions 列（不新增 migration）→ 读回恒为 []。
+      // 即 SUPABASE_EVIDENCE_PERSISTENCE = NOT_IMPLEMENTED（Memory 完整持久化；见 04B 文档）。
+      suggestedExpressions: (row.suggested_expressions as SuggestedExpression[] | null) ?? [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };

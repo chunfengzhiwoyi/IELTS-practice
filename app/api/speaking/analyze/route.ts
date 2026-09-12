@@ -128,7 +128,12 @@ export async function POST(request: Request) {
       traceId,
       audioMetadata ?? undefined,
       abilityContext ?? undefined,
-      { overrideProviders: await getUserOverrideProviders() ?? undefined },
+      {
+        overrideProviders: (await getUserOverrideProviders()) ?? undefined,
+        // PRODUCT-LOOP-04B — server authority：analyze 按 sessionId 读回创建时的 frozen
+        // suggestedExpressions（不信任客户端上传；绝不在此重新 selectTargetExpressions）。
+        suggestedExpressions: session.suggestedExpressions ?? [],
+      },
     );
 
     const fallbackUsed = analysis.ieltsAnalysis === undefined;

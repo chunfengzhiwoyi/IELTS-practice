@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-12（PRODUCT-LOOP-03B-DELTA-RECONCILE 完成后）。
+> 最后更新：2026-09-12（PRODUCT-LOOP-04B 实施完成后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_03_COMPLETE** — 03A Planner quality audit + 03B Planner targeted fixes 已入 canonical（03B cherry-pick `467bdf0` → `e4b2eee`，0 冲突）；PLANNER_V1_1 = STABLE_FOR_CURRENT_PRODUCT_STAGE；focused 50/50 + full unit 505/2 + typecheck + build PASS。下一 Gate：**SPEAKING-TO-VOCAB-V1.1**。
+**PRODUCT_LOOP_04B_IMPLEMENTED** — Speaking→Vocabulary evidence pipeline 已实现（04B worktree `feature/product-loop-04b-speaking-vocab-evidence`，base=0b7d773，未 merge canonical）：session frozen target snapshot + analyze 读回 + 单次 LLM 调用 schema 扩展 + 确定性 validator（grounding/白名单/枚举/missing-duplicate 降级）+ LONG_TERM_STATE_WRITEBACK=NO。04A audit（`audit/product-loop-04a-speaking-vocab-evidence`@`7761aa5`，docs-only）未集成 canonical（与任务卡假设不符，已如实记录）。验证：04B 48/48 + 回归 85/85 + 61/61 + full unit 563/1（llm-safety 静态债）+ typecheck + build PASS。下一 Gate：**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,18 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**SPEAKING-TO-VOCAB-V1.1**（Speaking→Vocabulary 反向写回；当前 NOT_IMPLEMENTED，V1.1 FUTURE）。
+**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**（用真实模型跑 04A gold corpus 53 cases，评估 validated evidence 的真实 precision；通过前禁止任何长期状态写回）。
+
+## PRODUCT_LOOP_04B (SPEAKING→VOCAB EVIDENCE PIPELINE)
+- **EVIDENCE_PIPELINE**: IMPLEMENTED（04B worktree，待 Control Plane 集成）
+- **EVIDENCE_RECORDING**: ENABLED
+- **EVIDENCE_QUALITY**: NOT_YET_PROVEN（证明属于 04C）
+- **LONG_TERM_STATE_WRITEBACK**: DISABLED（applicationLevel/recallLevel/status/nextReviewAt/currentIntervalDays/consecutiveCorrect 一律不动）
+- **SERVER_TARGET_AUTHORITY**: YES（session frozen snapshot；analyze 不重选、客户端不可注入）
+- **SECOND_LLM_CALL**: NO；**NEW_DATABASE_SCHEMA / NEW_SUPABASE_MIGRATION**: NO
+- **SUPABASE_EVIDENCE_PERSISTENCE**: NOT_IMPLEMENTED（toDomain 读回恒 []；EVIDENCE_DURABILITY=PARTIAL）
+- **04A INTEGRATION**: 未集成 canonical（audit branch `7761aa5` docs-only 保留；04B 以 0b7d773 为 base）
+- **SPEAKING→VOCAB V1.1**: evidence 记录已就绪；**反向写回仍 NOT_IMPLEMENTED（V1.1 FUTURE）**
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。

@@ -15,11 +15,23 @@ import { callLlmStructured, type CallStructuredOptions } from "@/lib/llm/structu
 import { analyzeSpeakingAnswer as ruleBasedAnalysis } from "@/lib/speaking/analysis";
 import { validateFeedbackQuality } from "@/lib/speaking/feedback-quality";
 import { sanitizeUngroundedAnalysis } from "@/lib/speaking/evidence-sanitizer";
+import {
+  conservativeEvidenceForTargets,
+  validateTargetExpressionEvidence,
+} from "@/lib/speaking/target-expression-evidence-validator";
 import { logger } from "@/lib/observability/logger";
 import { traceStore } from "@/lib/observability/trace-store";
 import { EVENT_TYPE_TO_LAYER, type TraceEvent } from "@/lib/observability/trace-contract";
 import { isTraceEnabled } from "@/lib/observability/trace-context";
-import type { SpeakingAnalysisResult, SpeakingQuestion, IeltsSpeakingAnalysis, DimensionAnalysis } from "@/lib/speaking/types";
+import type {
+  SpeakingAnalysisResult,
+  SpeakingQuestion,
+  IeltsSpeakingAnalysis,
+  DimensionAnalysis,
+  SuggestedExpression,
+  TargetExpressionUsageEvidence,
+  TargetExpressionEvidenceSummary,
+} from "@/lib/speaking/types";
 import type { AudioMetadata } from "@/lib/speaking/audio-types";
 import type { AbilityMemoryContext } from "@/lib/ability/memory-retriever";
 
@@ -33,6 +45,15 @@ const DimensionSchema = z.object({
   evidence: z.array(z.string()),
   issues: z.array(z.string()),
   suggestions: z.array(z.string()),
+});
+
+/** 04B: 目标表达使用证据（LLM 原始输出契约；与 ieltsAnalysis 平级的可选子对象） */
+const TargetExpressionUsageEvidenceSchema = z.object({
+  itemId: z.string(),
+  attempted: z.boolean(),
+  quote: z.string().nullable(),
+  assessment: z.enum(["CORRECT", "ISSUE", "UNCERTAIN", "NOT_USED"]),
+  reason: z.string(),
 });
 
 const EnhancedAnalysisSchema = z.object({
@@ -54,6 +75,8 @@ const EnhancedAnalysisSchema = z.object({
   grammaticalRange: DimensionSchema.nullable(),
   overallDiagnosis: z.string(),
   prioritizedSuggestions: z.array(z.string()),
+  // 04B: 可选目标表达使用证据（0..N 条，validator 会按 session frozen targets 白名单过滤/补齐）
+  targetExpressionUsageEvidence: z.array(TargetExpressionUsageEvidenceSchema).optional(),
 });
 
 const JSON_EXAMPLE = `{
@@ -91,7 +114,16 @@ const JSON_EXAMPLE = `{
     "suggestions": ["注意第三人称单数", "叙述过去事件统一用过去时"]
   },
   "overallDiagnosis": "当前最大瓶颈在流利度——频繁停顿导致表达不连贯。词汇和语法基础可以支撑更流畅的表达，建议优先练习连续输出。",
-  "prioritizedSuggestions": ["每天 5 分钟不间断自由口语练习", "使用过渡词连接观点", "跟读 native speaker 音频提升语速"]
+  "prioritizedSuggestions": ["每天 5 分钟不间断自由口语练习", "使用过渡词连接观点", "跟读 native speaker 音频提升语速"],
+  "targetExpressionUsageEvidence": [
+    {
+      "itemId": "seed-003",
+      "attempted": true,
+      "quote": "I take my health for granted",
+      "assessment": "CORRECT",
+      "reason": "在回答中自然使用 take...for granted 表达把健康视为理所当然，语义与搭配正确。"
+    }
+  ]
 }`;
 
 // =============================================================
@@ -100,6 +132,11 @@ const JSON_EXAMPLE = `{
 
 export interface AnalyzeSpeakingOptions {
   overrideProviders?: CallStructuredOptions["overrideProviders"];
+  /**
+   * PRODUCT-LOOP-04B — session frozen suggestedExpressions（server authority）。
+   * 由 analyze route 从 session 读回传入；analyze 阶段绝不重新 selectTargetExpressions。
+   */
+  suggestedExpressions?: SuggestedExpression[];
 }
 
 /**
@@ -109,7 +146,7 @@ export interface AnalyzeSpeakingOptions {
  * @param traceId - 追踪 ID
  * @param audioMetadata - 音频元数据（语音回答时提供，文字回答为 undefined）
  * @param abilityContext - 用户历史能力上下文（Phase 4.3）
- * @param opts - 可选配置
+ * @param opts - 可选配置（含 04B session frozen suggestedExpressions）
  */
 export async function analyzeSpeakingWithLlm(
   answer: string,
@@ -119,10 +156,16 @@ export async function analyzeSpeakingWithLlm(
   abilityContext?: AbilityMemoryContext,
   opts?: AnalyzeSpeakingOptions,
 ): Promise<SpeakingAnalysisResult> {
+  // 04B: session frozen targets（server authority；无则 []，不影响主分析）
+  const suggestedExpressions = opts?.suggestedExpressions ?? [];
+  const targetItemIds = suggestedExpressions.map((s) => s.itemId);
+  const canonicalOf = (itemId: string): string | null =>
+    suggestedExpressions.find((s) => s.itemId === itemId)?.canonicalForm ?? null;
   try {
+
     // 构造 prompt，根据是否有 audioMetadata 调整
-    const systemPrompt = buildSystemPrompt(!!audioMetadata);
-    const userPrompt = buildUserPrompt(answer, question, audioMetadata, abilityContext);
+    const systemPrompt = buildSystemPrompt(!!audioMetadata, suggestedExpressions);
+    const userPrompt = buildUserPrompt(answer, question, audioMetadata, abilityContext, suggestedExpressions);
 
     const result = await callLlmStructured({
       tier: "main",
@@ -180,6 +223,18 @@ export async function analyzeSpeakingWithLlm(
       summary: llmData.summary,
       ieltsAnalysis,
     };
+
+    // ─── PRODUCT-LOOP-04B: raw → validated evidence（确定性 validator）───
+    const rawEvidence: TargetExpressionUsageEvidence[] = llmData.targetExpressionUsageEvidence ?? [];
+    const { evidence: validatedEvidence, summary: evidenceSummary } = validateTargetExpressionEvidence({
+      raw: rawEvidence,
+      answer,
+      targetItemIds,
+      canonicalOf,
+    });
+    if (targetItemIds.length > 0) {
+      llmResult.targetExpressionEvidence = validatedEvidence;
+    }
 
     // ─── Feedback Quality Gate ───────────────────────────────
     const qualityCheck = validateFeedbackQuality(llmResult, answer);
@@ -241,6 +296,7 @@ export async function analyzeSpeakingWithLlm(
                 ungrounded_claims: sanitizationReport.ungroundedClaims.map((cl) => cl.label),
               }
             : null,
+          target_expression_evidence: summarizeTraceEvidence(evidenceSummary),
         },
       };
       traceStore.appendEvent(valEvent);
@@ -279,8 +335,8 @@ export async function analyzeSpeakingWithLlm(
         traceStore.appendEvent(fbEvent);
         traceStore.updateHeader(traceId, { degradation_flag: true });
       }
-      // 质量不合格 → fallback 到规则引擎
-      return ruleBasedAnalysis(answer, question);
+      // 质量不合格 → fallback 到规则引擎；04B: evidence 保守化（不伪造 CORRECT）
+      return attachConservativeEvidence(ruleBasedAnalysis(answer, question), targetItemIds);
     }
 
     if (qualityCheck.status === "NEEDS_REVIEW") {
@@ -306,16 +362,64 @@ export async function analyzeSpeakingWithLlm(
       trace_id: traceId,
       error: err instanceof Error ? err.message : "unknown",
     });
-    // 降级到规则引擎（无 ieltsAnalysis）
-    return ruleBasedAnalysis(answer, question);
+    // 降级到规则引擎（无 ieltsAnalysis）；04B: evidence 保守化
+    return attachConservativeEvidence(ruleBasedAnalysis(answer, question), targetItemIds);
   }
+}
+
+/** 04B: 主 LLM 分析被 fallback 接管时，全部 session targets → UNCERTAIN（不产生正向 CORRECT）。 */
+function attachConservativeEvidence(
+  result: SpeakingAnalysisResult,
+  targetItemIds: string[],
+): SpeakingAnalysisResult {
+  if (targetItemIds.length === 0) return result;
+  const { evidence } = conservativeEvidenceForTargets(targetItemIds);
+  return { ...result, targetExpressionEvidence: evidence };
+}
+
+function summarizeTraceEvidence(s: TargetExpressionEvidenceSummary): Record<string, unknown> {
+  return {
+    target_count: s.targetCount,
+    raw_evidence_count: s.rawEvidenceCount,
+    validated_evidence_count: s.validatedEvidenceCount,
+    correct_count: s.correctCount,
+    issue_count: s.issueCount,
+    uncertain_count: s.uncertainCount,
+    not_used_count: s.notUsedCount,
+    grounding_downgrade_count: s.groundingDowngradeCount,
+    dropped_item_ids: s.droppedItemIds,
+  };
 }
 
 // =============================================================
 // Prompt Construction
 // =============================================================
 
-function buildSystemPrompt(hasAudio: boolean): string {
+const EVIDENCE_RULES = `## 目标表达使用证据（targetExpressionUsageEvidence）
+
+本回答可能附带了系统给学生的「建议表达」（见问题下方）。它们只是 OPTIONAL 提示：
+- 学生**没有使用**某个建议表达 → NOT_USED。NOT_USED 不是错误、不影响口语质量评分、不代表词汇失败。
+- 只有当学生**真正在回答中使用了**目标表达时才输出证据条目；每个建议表达按 itemId 单独判定（禁止"用了一个 → 两个都算"）。
+
+判定 CORRECT 必须同时满足：
+1. 确为目标表达或其合法形态变化（如 take it for granted / took it for granted / taking things for granted 都是 take something for granted 的合法变体；不要求 canonical 逐字一致）。
+2. 语义适合当前句子（表达核心义，如"把…当作理所当然"；**语义角色错误、搭配对象错误、句意不成立 → ISSUE，即使短语完整出现**）。
+3. 核心搭配/结构正确。
+4. quote 必须逐字来自学生原始回答（grounding 的文本 span）。
+5. 不是单纯重复提示词。
+
+以下情况**不得**判 CORRECT：
+- **定义式/元语言回声**：学生只是在念出表达、解释"这个短语是什么意思"、讨论"我可以说 take something for granted"等 → 至少 UNCERTAIN（视语言而定）。
+- **自我怀疑**：如 "... for granted? maybe" → UNCERTAIN。
+- **先正确后改错**：如果最终表达意图改为错误说法，以最终错误为准 → ISSUE；无法可靠判断最终意图 → UNCERTAIN。
+
+自纠（先错后改，最终出现清晰、正确、grounded 的使用）→ 可以 CORRECT，quote 指向最终正确 span，reason 说明 self-corrected。
+
+当无法可靠判断（语义 fit 不明 / 是否属于目标表达不明 / 是否只是回声不明 / 最终修正意图不明）→ 必须输出 UNCERTAIN，不要强行二选一。本产品 precision-first。
+
+quote 规则：CORRECT/ISSUE 必须给出真实 quote；NOT_USED 的 quote 必须为 null；找不到可定位的 quote 就不要输出 CORRECT。`;
+
+function buildSystemPrompt(hasAudio: boolean, suggestedExpressions: SuggestedExpression[]): string {
   const base = `你是一位经验丰富的 IELTS Speaking 考官和教练。请根据 IELTS Speaking 评分标准分析学生的口语回答。
 
 你需要从三个维度评估（第四维度 Pronunciation 需要专用工具，本次不评估）：
@@ -346,6 +450,8 @@ function buildSystemPrompt(hasAudio: boolean): string {
 - overallDiagnosis 综合判断当前最大瓶颈
 - prioritizedSuggestions 给出 2-3 条按优先级排序的改善建议`;
 
+  const evidenceSection = suggestedExpressions.length > 0 ? EVIDENCE_RULES : "";
+
   if (hasAudio) {
     return base + `
 
@@ -354,6 +460,7 @@ function buildSystemPrompt(hasAudio: boolean): string {
 - 长停顿（>2秒）和频繁停顿是 fluency 问题的重要信号
 - 但注意：Part 2 的开头思考时间和自然换气停顿不算问题
 - 不要把数字直接当成分数公式，要结合整体表现综合判断
+` + evidenceSection + `
 
 只输出 JSON。`;
   }
@@ -361,16 +468,38 @@ function buildSystemPrompt(hasAudio: boolean): string {
   return base + `
 
 注意：本次为文字输入回答，没有音频数据。Fluency 分析基于文本结构（是否有逻辑连接、展开是否充分），不涉及语速和停顿。
+` + evidenceSection + `
 
 只输出 JSON。`;
 }
 
-function buildUserPrompt(answer: string, question: SpeakingQuestion, audioMetadata?: AudioMetadata, abilityContext?: AbilityMemoryContext): string {
+function buildUserPrompt(
+  answer: string,
+  question: SpeakingQuestion,
+  audioMetadata?: AudioMetadata,
+  abilityContext?: AbilityMemoryContext,
+  suggestedExpressions?: SuggestedExpression[],
+): string {
   let prompt = `题目类型：IELTS Speaking ${question.part}
 话题：${question.topic}
 问题：${question.question}
 学生回答：${answer}
 预期字数：${question.expectedLength.min}-${question.expectedLength.max}`;
+
+  // 04B: 系统建议表达（仅 OPTIONAL 提示上下文；itemId/canonicalForm/meaning 最小信息，
+  // 不暴露 recallLevel / review schedule / mastery state）
+  if (suggestedExpressions && suggestedExpressions.length > 0) {
+    const lines = suggestedExpressions
+      .map(
+        (s, i) =>
+          `${i + 1}. itemId: ${s.itemId} | 表达: ${s.canonicalForm} | 含义: ${s.meaning}`,
+      )
+      .join("\n");
+    prompt += `
+
+系统建议表达（OPTIONAL 提示，学生可自由使用或忽略）：
+${lines}`;
+  }
 
   if (audioMetadata) {
     prompt += `

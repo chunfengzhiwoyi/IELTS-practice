@@ -134,6 +134,9 @@ export async function POST(request: Request) {
       status: "IN_PROGRESS",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // PRODUCT-LOOP-04B — server authority：session 创建时冻结 targets snapshot，
+      // analyze 阶段按 sessionId 读回（禁止客户端注入 / 禁止 analyze 时重新 select）。
+      suggestedExpressions,
     };
 
     await repo.createSession(session);
