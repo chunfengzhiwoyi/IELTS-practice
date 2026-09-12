@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-12（PRODUCT-LOOP-03A-PLANNER-QUALITY-AUDIT 入 canonical 后）。
+> 最后更新：2026-09-12（PRODUCT-LOOP-03B-INTEGRATE 完成后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_02_COMPLETE** — 02B/02C/02D 已入 canonical；真实用户闭环 E2E **16/16 PASS**，判定 **CONTINUOUS_LEARNING_SYSTEM**（full loop truth table 11/11 PASS）。产品代码 0 修改（仅新增 E2E harness + 报告 + 本状态文件）。
+**PRODUCT_LOOP_03_COMPLETE** — 03A Planner quality audit + 03B Planner targeted fixes 已入 canonical（03B cherry-pick `467bdf0` → `e4b2eee`，0 冲突）；PLANNER_V1_1 = STABLE_FOR_CURRENT_PRODUCT_STAGE；focused 50/50 + full unit 505/2 + typecheck + build PASS。下一 Gate：**SPEAKING-TO-VOCAB-V1.1**。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**PRODUCT-LOOP-03B（PLANNER-TARGETED-FIX）** — 由 PRODUCT-LOOP-03A 审计决定（见 PRODUCT_LOOP_03A 节）。候选后续：SPEAKING_TO_VOCAB V1.1（当前 NOT_IMPLEMENTED）、Supabase Goal persistence（当前 MEMORY_REFERENCE_ONLY / SUPABASE_NOT_IMPLEMENTED）。
+**SPEAKING-TO-VOCAB-V1.1**（Speaking→Vocabulary 反向写回；当前 NOT_IMPLEMENTED，V1.1 FUTURE）。
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
@@ -88,14 +88,14 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 - VOCAB_TO_SPEAKING：V1_IMPLEMENTED。session response 返回 `suggestedExpressions`（上限 `MAX_TARGET_EXPRESSIONS = 2`）；无匹配 → `[]` + 普通 Speaking（SAFE FALLBACK）。
 - **NO_LONG_TERM_WRITEBACK**：target-selection 只读 UserItemState，不写 applicationLevel/recallLevel/status/nextReviewAt/currentIntervalDays/consecutiveCorrect。
 
-## PRE_EXISTING_TEST_DEBT（2026-09-11 REBASELINED by PRODUCT-LOOP-02-INTEGRATE）
+## PRE_EXISTING_TEST_DEBT（2026-09-12 REBASELINED by PRODUCT-LOOP-03B-INTEGRATE）
 历史 **24 个失败**（ff01160 基线观测）标记为 **HISTORICALLY_OBSERVED / NOT_CURRENTLY_REPRODUCED**——不宣称被产品代码修复，机制已澄清（见下）。
 
-**当前 integrated tree 实测**（canonical 本机、`LLM_PRIMARY_PROVIDER=mock` 标准测试 env，`npx vitest run` = 465 PASS / 6 FAIL）：
-**CURRENT_REPRODUCIBLE_TEST_DEBT = 6**
-- badcase-026（2）/ badcase-035（2）：learn/card 路由 e2e 返回 **401** —— card 路由 `requireUser`（lib/auth/session），本机 `.env.local` 开启真实鉴权 → 无 session 401。**auth 环境依赖**：干净环境（worktree 无 .env.local）40/40 复现为 0。
-- env.test（1）：Supabase 占位 URL 识别失败 —— `.env.local` 含真实 Supabase URL。**环境依赖**：干净环境通过。
+**当前 integrated tree 实测**（canonical 本机、标准测试 env：`LLM_PRIMARY_PROVIDER=mock` + `AUTH_MODE=demo`，`npx vitest run` = **505 PASS / 2 FAIL**，36 files）：
+**CURRENT_REPRODUCIBLE_TEST_DEBT = 2**
 - llm-safety（1）：`ModelSettingsPanel.tsx` imports `@/lib/llm`（静态检查违规，组件未改）。**确定性静态债**，全环境复现。
+- env.test（1）：Supabase 占位 URL 识别失败 —— `.env.local` 含真实 Supabase URL。**环境依赖**：干净环境通过。
+- 注：历史 4×auth-401（badcase-026/035 learn/card e2e）在 `AUTH_MODE=demo` 标准 env 下不出现（环境配置正确，非产品变化）。无 03B 引入的新失败。
 
 机制澄清（历史 24 构成）：
 - badcase-019/033 “LLM mock 约 5s/例超时”= canonical `.env.local` 设 `LLM_PRIMARY_PROVIDER=deepseek` → 测试命中真实 provider（latency 5–7s）→ 5000ms 超时；mock env 下 019 26/26、033 14/14、02d 6/6 全过。独立 worktree（无 .env.local）默认 `LLM_PRIMARY_PROVIDER=mock`（lib/env.ts:43）故通过。
@@ -112,6 +112,23 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 - 验证：02D（6）+ badcase-019（26）+ badcase-033（14）= **46/46 PASS**；完整 run **432/1**（唯一失败 llm-safety 预存在）；`npx tsc --noEmit` **PASS**；`npx next build` **PASS**。
 - 单泄漏 fixture（1 条 leak、原 score≈85→PASS）已新增，覆盖旧 run-04 未覆盖的“少条泄漏仍安全”路径。
 - 完整 run 实测（02D worktree，无 .env.local）：432/1（仅 llm-safety）；integrated canonical 实测详见上节 PRE_EXISTING_TEST_DEBT（REBASELINED，CURRENT_REPRODUCIBLE_TEST_DEBT = 6）。
+
+## PRODUCT_LOOP_03A（PLANNER QUALITY AUDIT）
+**COMPLETE** — commit `6fb560c`（docs(product): audit planner v1 quality）+ `d5d3d72`（chore(product): record planner quality audit decision），均已入 canonical。识别 P1-1（due>=5 绝对 Learn gate 悬崖）、P1-2（silent over-budget）、P2/P3 系列问题，交由 03B 修复。
+
+## PRODUCT_LOOP_03B（PLANNER TARGETED FIX）
+**COMPLETE — 已入 canonical（cherry-pick `467bdf0` → `e4b2eee`，0 冲突；集成记录 `docs/product/PRODUCT-LOOP-03B-INTEGRATION.md`）**
+- **PLANNER_STATUS: V1_1_STABLE_FOR_CURRENT_PRODUCT_STAGE**（无已知 P0/P1 产品逻辑缺陷；教学策略本身 NEEDS_PEDAGOGY_EVIDENCE，不视为最优）。
+- **P1_ABSOLUTE_DUE_GATE_CLIFF: FIXED**（移除 dueCount>=5 绝对闸门；LEARN 由剩余预算分配）。
+- **P1_SILENT_OVER_BUDGET: FIXED**；**BUDGET_STATUS: IMPLEMENTED**（WITHIN_BUDGET / OVERLOADED + overloadReason，绝不静默）。
+- **DUE_4_TO_5_CLIFF: REMOVED**（weekly=140 放大版悬崖回归通过）。
+- **REVIEW_BUDGET_CAP_RATIO=0.7 激活**，Review target.count 预算感知。
+- **SPEAKING_NULL_IDLE: FIXED**（speakingIdleDays=null = NO_COMPLETED_SPEAKING_HISTORY = cadence overdue；null idle 不允许 REST）。
+- **WEEKLY_TARGET_ZERO: SUPPORTED**（weeklyWordTarget=0 不强制 LEARN_NEW）。
+- **EXAM_DATE_ROLE: CONTEXT_ONLY**；**FEASIBILITY_ROLE: CONTEXT_ONLY**（snapshot-only）；**TARGET_BAND_PLANNER_CONTROL: NO**（Band 不参与任何数量/优先级计算）。
+- **PLANNER_REMAINING_QUESTIONS: NEEDS_PEDAGOGY_EVIDENCE**（learn/review 比例式并行是否最优、20 words/day cap、2-day Speaking cadence、0.5min/review item）——不得继续给 Planner 增加规则。
+- 验证：focused 50/50（planner-v1 17 + 03a-regression 9 + today-api 2 + today-plan-view 6 + 02-E2E 16）；full unit **505 PASS / 2 FAIL**（2 项均为 PRE_EXISTING：llm-safety 静态债 + env.test 环境依赖；无 03B 回归）；`npx tsc --noEmit` PASS；`npx next build` PASS（41/41）。
+- M3 边界：PAUSED；020=PRODUCT_FIXED_FORMAL_EVAL_PENDING；019_030=FIXED_PENDING_REGRESSION_1_OF_3；023_025_035=UNVERIFIED。
 
 ## PRODUCT_LOOP_02_E2E（REAL-LEARNING-LOOP-E2E）
 **COMPLETE / PASS 16/16 — 固化 commit：本次（test(product): freeze product-loop-02 end-to-end learning loop）**
@@ -140,7 +157,7 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 
 ## KNOWN_DEBT
 - **TD-MINI-01**：miniapp 4 个 pre-existing TS errors。
-- **PRE_EXISTING_TEST_DEBT**：CURRENT_REPRODUCIBLE_TEST_DEBT = 6（4×auth 401 环境依赖 + 1×env 环境依赖 + 1×llm-safety 静态债；详见上节）。
+- **PRE_EXISTING_TEST_DEBT**：CURRENT_REPRODUCIBLE_TEST_DEBT = 2（1×env.test 环境依赖 + 1×llm-safety 静态债；详见上节）。
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行）。
 - **M3 UNVERIFIED**：020/023/025/035。
 - docs/tools/*.py 硬编码旧 canonical 路径（provenance only）。
