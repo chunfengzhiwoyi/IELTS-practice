@@ -101,6 +101,27 @@
 - **STATE_MAPPING_DECISION**: STATE_MAPPING_DESIGN_READY_FOR_IMPLEMENTATION；P0=0/P1=0/P2=3（阈值 HEURISTIC_NOT_PEDAGOGICALLY_VALIDATED）
 - **NEXT_GATE**: **PRODUCT-LOOP-04E**；**M3**: PAUSED
 
+## PRODUCT_LOOP_04E (APPLICATION EVIDENCE STATE WRITEBACK)
+**COMPLETE — 已入 canonical（cherry-pick `5c61086` → `a16772a`，0 冲突；实现文档 `docs/product/PRODUCT-LOOP-04E-APPLICATION-STATE-IMPLEMENTATION.md`，集成记录 `docs/product/PRODUCT-LOOP-04E-INTEGRATION.md`）**
+- **PRODUCT_LOOP_04E**: COMPLETE
+- **APPLICATION_EVIDENCE_HISTORY**: IMPLEMENTED（SSOT=evidence history；`applicationLevel` 为 materialized derived cache，可从 history 重算/重建）
+- **APPLICATION_EVIDENCE_SSOT**: EVIDENCE_HISTORY；**APPLICATION_LEVEL_DERIVATION**: IMPLEMENTED（纯函数 `deriveApplicationLevel`，deterministic/idempotent/order-insensitive/recomputable；无 `applicationLevel += 1`）
+- **APPLICATION_LEVEL_WRITEBACK**: ENABLED_FROM_VALIDATED_HISTORY（analyze 完成后落库 validated evidence → 每 target 重算写回）
+- **APPLICATION_LEVEL_RANGE**: 0|1|2（0=NO_STABLE_APPLICATION_EVIDENCE / 1=EMERGING_APPLICATION / 2=STABLE_APPLICATION）
+- **LEVEL_0_TO_1**: 2 CORRECT / 2 distinct sessions（同 session 去重后只算 1）
+- **LEVEL_1_TO_2**: 3 CORRECT / 3 sessions / 2 calendar days / 2 contexts
+- **ONE_CORRECT_PROMOTES**: NO；**SAME_SESSION_DEDUPE**: YES（(userId,itemId,sessionId) 唯一 + upsert；retry 合并一条，recoveredViaRetry=true）
+- **QUALIFYING_EVIDENCE**: VALIDATED_CORRECT_ONLY（upgradeCandidate + pipelineVersion>=04B-validator-1；raw LLM/ISSUE/NOT_USED/UNCERTAIN/malformed/unknown-target/grounding-failed 均不参与正向）
+- **ISSUE_DEMOTES**: NO；**NOT_USED**: NO_OP；**UNCERTAIN**: NO_OP；**DEMOTION_POLICY**: NONE_IN_V1；**DECAY_POLICY**: NONE_IN_V1
+- **RECALL_LEVEL_CHANGED_BY_SPEAKING**: NO；**STATUS_CHANGED_BY_SPEAKING**: NO；**NEXT_REVIEW_AT_CHANGED_BY_SPEAKING**: NO；**CURRENT_INTERVAL_CHANGED**: NO；**CONSECUTIVE_CORRECT_CHANGED**: NO；**REVIEW_SCHEDULE_CHANGED_BY_SPEAKING**: NO
+- **MEMORY_EVIDENCE_PERSISTENCE**: IMPLEMENTED（reference）；**SUPABASE_EVIDENCE_PERSISTENCE_IMPLEMENTATION**: IMPLEMENTED（migration 0010 + Supabase repository，mapping parity 测试覆盖）
+- **REMOTE_SUPABASE_DEPLOYMENT_VERIFIED**: **NO**（本任务未部署 0010 到远程 Supabase、未做真实写读验证；**REMOTE_SUPABASE_EVIDENCE_WRITE_READ: NOT_TESTED**）——创建 migration+repo 只证明 persistence implementation exists，不等同 remote deployment verified
+- **MIGRATION 0010**: 只建 `application_evidence`（id/user_id/item_id/session_id/question_id/part/topic/assessment/quote/reason/validator_notes/upgrade_candidate/recovered_via_retry/recorded_at/pipeline_version/provider/model）+ UNIQUE(user_id,item_id,session_id) + index + RLS（user_id=auth.uid() select/insert/update own）；不依赖 deferred 0009；不触碰 Goal/Planner/其他 schema
+- **HISTORICAL_USERS**: 无 evidence history → derive=0（不从 recallLevel/status/review history 反推）
+- 04C eval tests 3 处 type-only 非空断言修复（pre-existing tsc 基线，零 runtime 行为变化）
+- 验证：04E focused **55/55 PASS**；回归（04B+02C+02D+02-E2E+planner+today）**183/183 PASS**；full unit **617 PASS / 2 FAIL**（llm-safety 静态债 + env.test 环境依赖，均非 04E 回归）；`npx tsc --noEmit` **PASS**；`npx next build` **PASS**（41/41）
+- **M3**: PAUSED；**NEXT_GATE**: **PRODUCT-LOOP-04-FINAL-E2E**
+
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
 
