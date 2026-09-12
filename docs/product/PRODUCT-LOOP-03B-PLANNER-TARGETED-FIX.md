@@ -3,9 +3,11 @@
 > TASK_ID: PRODUCT-LOOP-03B
 > TYPE: ADAPTIVE_PLANNER_TARGETED_FIX（IMPLEMENT）
 > Canonical: `D:\Codex\IELTS-practice` @ branch `repo/arch-consolidate`
-> Base HEAD: `6fb560c3c2c07a4ebfa5e00e6af711949d062d08`（03A 审计已集成）
+> Base HEAD: `d5d3d72`（canonical `repo/arch-consolidate`；03A 审计 + 03A decision chore 已集成）
+> 03B 分支初始基为 `6fb560c`，已 rebase 至 `d5d3d72`（d5d3d72 仅新增 handoff chore，无产品代码冲突）
 > Worktree: `D:\Codex\_worktrees\IELTS-practice\PRODUCT-LOOP-03B` @ branch `fix/product-loop-03b-planner-targeted`
 > 完成日期: 2026-09-12
+> 集成与修订记录：canonical integration = `e4b2eee`（cherry-pick 467bdf0）+ `f4e63ea`（integration/state）；本文件为 revised 版本（db91cc5），经 PRODUCT-LOOP-03B-DELTA-RECONCILE 于 2026-09-12 以 测试+文档 delta 形式 reconcile 入 canonical（产品代码零 delta）；implementation branch base 见上 Base HEAD。
 > 范围声明: 保留现有 deterministic planner 架构（Goal + State → Planner → TodayPlan），**不做 Planner V2 重构**；无 LLM / 无 Multi-Agent / 无 RL / 无动态权重。
 
 ---
@@ -186,6 +188,21 @@ overloadReason?: string   # 仅 OVERLOADED 时存在
 
 ---
 
+## 5.1 Monotonicity Re-Validation（03B §30，MONO-01..06）
+
+以测试形式固化（`planner-v1.test.ts`）：
+
+| 编号 | 属性 | 03B 断言结果 |
+|---|---|---|
+| MONO-01 | due↑ → Learn 不增 | PASS（budget=15/weekly=30：due 0→20 时 learn 5→3，预算驱动渐进，非阈值跳变） |
+| MONO-02 | budget↓ → 总 effort 不增（显式 OVERLOADED 除外） | PASS（due=20+idle=null：30→15→10→8→5→3 预算下 total 22.5→15→12→10→8→7） |
+| MONO-03 | idle↑（含 null）→ Speaking 优先级不降 | PASS（null/2/3/5 均为 HIGH） |
+| MONO-04 | weeklyTarget↑ → Learn pressure 不降 | PASS（0/7/30/70/140 → learn 0/1/5/10/20） |
+| MONO-05 | targetBand 变 → Plan 不变 | PASS（5..9 全一致；TEST-10 亦覆盖 6/7/8/9） |
+| MONO-06 | 周 progress↑ → Learn pressure 不增 | PASS（0%/50%/100%/133% → learn 5/5/0/0） |
+
+**NON_MONOTONIC_PLANNER_BEHAVIOR = 0**（与 03A 结论一致；且 03A 唯一的"单调但断崖"——due 4→5——已随 P1-1 修复消除）。
+
 ## 6. Contract Changes
 
 ### `lib/planner/planner-v1.ts`
@@ -218,7 +235,7 @@ overloadReason?: string   # 仅 OVERLOADED 时存在
 
 | 文件 | 数量 | 覆盖 |
 |---|---|---|
-| `tests/unit/planner-v1.test.ts`（重写） | 17 | §18 全部 12 项 + 确定性 / 薄弱定向 / 周目标落后 / 全清 REST / 7 天 NORMAL |
+| `tests/unit/planner-v1.test.ts`（重写） | 26 | TEST-01..16（§39–52 全量覆盖）+ 确定性 / 薄弱定向 / 周目标落后 / 全清 REST / 7 天 NORMAL + **MONO-01..06 单调性** |
 | `tests/unit/planner-03a-regression.test.ts`（新增） | 9 | B1–B3 垄断日消除、放大版悬崖、B10–B11 / D6–D7 预算、E1 weekly=0、F4/F5 examDate、NORMAL / REVIEW_HEAVY / SPEAKING_NEGLECT 7 天 |
 | `tests/unit/today-plan-view.test.tsx`（重写） | 6 | 顺序 / primary / REST / reason / OVERLOADED 渲染 / WITHIN 不渲染 |
 | `tests/unit/today-api.test.ts`（新增） | 2 | GET /api/today 契约（computedBy / budgetStatus / dueCount 透传 / null idle → SPEAKING / 服务端 Goal 生效） |
@@ -228,9 +245,9 @@ overloadReason?: string   # 仅 OVERLOADED 时存在
 
 | 项 | 结果 |
 |---|---|
-| Focused（planner+UI+api+regression） | **25/25 + 9/9 通过** |
+| Focused（planner 26 + UI 6 + api 2 + regression 9） | **43/43 通过** |
 | Frozen e2e（02） | **16/16 通过** |
-| 全量 unit | **506 passed / 1 failed**（唯一失败 = `llm-safety` 静态检查：`ModelSettingsPanel.tsx` import `@/lib/llm`，**基线既有债务，03B Do-Not-Touch 范围，未触碰**） |
+| 全量 unit | **515 passed / 1 failed**（唯一失败 = `llm-safety` 静态检查：`ModelSettingsPanel.tsx` import `@/lib/llm`，**基线既有债务，03B Do-Not-Touch 范围，未触碰**） |
 | Typecheck `tsc --noEmit` | **TSC_EXIT:0**（另修复 e2e 冻结测试自身 5 处既有类型错误——d32ee8e 引入、03A 只读未捕获，最小化修复不改语义） |
 | Web build `next build` | **BUILD_EXIT:0** |
 | M3 eval run | **未创建**（遵守边界） |

@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-12（PRODUCT-LOOP-03B-INTEGRATE 完成后）。
+> 最后更新：2026-09-12（PRODUCT-LOOP-03B-DELTA-RECONCILE 完成后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -115,6 +115,14 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 
 ## PRODUCT_LOOP_03A（PLANNER QUALITY AUDIT）
 **COMPLETE** — commit `6fb560c`（docs(product): audit planner v1 quality）+ `d5d3d72`（chore(product): record planner quality audit decision），均已入 canonical。识别 P1-1（due>=5 绝对 Learn gate 悬崖）、P1-2（silent over-budget）、P2/P3 系列问题，交由 03B 修复。
+
+## PRODUCT_LOOP_03B_RECONCILE（REVISED PLANNER REGRESSION COVERAGE）
+**COMPLETE — commit 见本次（test(product): reconcile revised planner regression coverage）；记录 `docs/product/PRODUCT-LOOP-03B-DELTA-RECONCILE.md`**
+- **PRODUCT_CODE_DELTA: NONE**（revised db91cc5 vs 已集成 e4b2eee 产品路径零差异；PLANNER_PRODUCT_LOGIC: UNCHANGED_AFTER_03B_INTEGRATION）。
+- **TEST_COVERAGE: REVISED_TO_TEST_01_16_AND_MONO_01_06**（planner-v1.test.ts +151 行；due 3–7 cliff、预算感知、OVERLOADED、null idle、weekly=0、band 6/7/8/9 invariant、Speaking cadence reset、3×7-day、MONO-01..06）。
+- 文档 reconciled（revised 版 + 集成/reconcile 记录；base 表述保持 d5d3d72，未回退 canonical state）。
+- 验证：focused **59/59 PASS**（含 02-E2E 16/16，E2E 语义未变）；full unit **514 PASS / 2 FAIL**（env.test 环境依赖 + llm-safety 静态债，无 delta 回归）；typecheck PASS；next build PASS。
+- M3 边界：PAUSED；020=PRODUCT_FIXED_FORMAL_EVAL_PENDING；019_030=FIXED_PENDING_REGRESSION_1_OF_3；023_025_035=UNVERIFIED。
 
 ## PRODUCT_LOOP_03B（PLANNER TARGETED FIX）
 **COMPLETE — 已入 canonical（cherry-pick `467bdf0` → `e4b2eee`，0 冲突；集成记录 `docs/product/PRODUCT-LOOP-03B-INTEGRATION.md`）**

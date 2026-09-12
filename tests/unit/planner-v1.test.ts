@@ -38,17 +38,35 @@ describe("planner-v1 (03B)", () => {
     expect(plan.primary.href).toBe("/review");
   });
 
-  it("case 2: due 4→5→6 无硬 cliff（Learn 不再因多 1 个到期词条归零）", () => {
+  it("TEST-01/02/03 (§29): due 3→4→5→6→7 无硬 cliff（Learn 由预算决定，不由魔法数字归零）", () => {
     const g = { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 30, weeklyWordTarget: 30 };
-    const p4 = planToday(baseInput({ goal: g, dueCount: 4 }));
-    const p5 = planToday(baseInput({ goal: g, dueCount: 5 }));
-    const p6 = planToday(baseInput({ goal: g, dueCount: 6 }));
-    // weekly=30 → base=5；预算充足时三档 Learn 数量一致，无 5→0 悬崖
-    expect(learnCountOf(p4)).toBe(5);
-    expect(learnCountOf(p5)).toBe(5);
-    expect(learnCountOf(p6)).toBe(5);
-    expect(p4.budgetStatus).toBe("WITHIN_BUDGET");
-    expect(p5.budgetStatus).toBe("WITHIN_BUDGET");
+    const counts = [3, 4, 5, 6, 7].map((due) => {
+      const plan = planToday(baseInput({ goal: g, dueCount: due }));
+      expect(plan.budgetStatus).toBe("WITHIN_BUDGET");
+      return learnCountOf(plan);
+    });
+    // weekly=30 → base=5；预算充足时各档 Learn 数量一致，无 5→0 悬崖
+    expect(counts).toEqual([5, 5, 5, 5, 5]);
+    // 放大版（weekly=140）：03A 为 due4→18 / due5→0（悬崖）；现在因预算渐进减少 18→17
+    const g140 = { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 30, weeklyWordTarget: 140 };
+    expect(learnCountOf(planToday(baseInput({ goal: g140, dueCount: 4 })))).toBe(18);
+    expect(learnCountOf(planToday(baseInput({ goal: g140, dueCount: 5 })))).toBe(18);
+    expect(learnCountOf(planToday(baseInput({ goal: g140, dueCount: 7 })))).toBe(17); // 复习多 2min → 渐减 1 词
+  });
+
+  it("TEST-04: due=20 + budget=10 → Review target 预算感知（14<20），backlog 保留在 inputsSnapshot", () => {
+    const plan = planToday(
+      baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 10, weeklyWordTarget: 30 }, dueCount: 20 }),
+    );
+    const review = plan.actions.find((a) => a.type === "REVIEW")!;
+    // cap=floor(10×0.7)=7min → capacity=14 → count=14（不是 20）
+    expect(review.target.count).toBe(14);
+    expect(plan.inputsSnapshot.dueCount).toBe(20); // 总 backlog 保留
+    expect(review.reason).toContain("20");
+    expect(review.reason).toContain("14");
+    const total = plan.actions.reduce((s, a) => s + a.estimatedMinutes, 0);
+    expect(total).toBeLessThanOrEqual(plan.dailyBudgetMinutes);
+    expect(plan.budgetStatus).toBe("WITHIN_BUDGET");
   });
 
   it("case 3: due=20 + budget=30 → Review 建议量 + 合理剩余分配，不静默超预算", () => {
@@ -124,10 +142,13 @@ describe("planner-v1 (03B)", () => {
     expect(learnB.reason).toContain(`建议学 4 个新表达`);
   });
 
-  it("case 9: targetBand 变化 → Plan 不变（Band 不参与）", () => {
-    const a = planToday(baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, targetBand: 6.5 } }));
-    const b = planToday(baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, targetBand: 7.5 } }));
-    expect(a).toEqual(b);
+  it("TEST-10: targetBand 6/7/8/9 → Plan 完全一致（Band 不作为 control signal）", () => {
+    const plans = [6, 7, 8, 9].map((band) =>
+      planToday(baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, targetBand: band }, dueCount: 5, speakingIdleDays: 3 })),
+    );
+    for (let i = 1; i < plans.length; i++) {
+      expect(plans[i]).toEqual(plans[0]);
+    }
   });
 
   it("case 10: examDate / feasibility 为 context-only（不改变决策，仅快照）", () => {
@@ -236,5 +257,107 @@ describe("planner-v1 7-day normal simulation (03B §17)", () => {
     // Day2 计划不再是"仅复习"
     expect(plans[1]).toContain("LEARN_NEW");
     expect(plans[1]).toContain("REVIEW");
+  });
+});
+
+
+describe("planner-v1 03B spec extras (TEST-06 / MONO / TEST-16)", () => {
+  it("TEST-06: 极低预算 1–3 分钟 + due>0 + 口语 overdue → OVERLOADED + overloadReason", () => {
+    for (const budget of [1, 2, 3]) {
+      const plan = planToday(
+        baseInput({
+          goal: { ...DEFAULT_GOAL_PROFILE, dailyMinutes: budget, weeklyWordTarget: 30 },
+          dueCount: 20,
+          speakingIdleDays: null,
+        }),
+      );
+      expect(plan.budgetStatus).toBe("OVERLOADED");
+      expect(plan.overloadReason).toBeDefined();
+      expect(plan.overloadReason!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("MONO-01: due↑ → Learn New 不增（预算约束，非阈值跳变）", () => {
+    const g = { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 15, weeklyWordTarget: 30 };
+    const learns = [0, 1, 5, 10, 20, 30, 50].map((due) =>
+      learnCountOf(planToday(baseInput({ goal: g, dueCount: due }))),
+    );
+    for (let i = 1; i < learns.length; i++) {
+      expect(learns[i]!).toBeLessThanOrEqual(learns[i - 1]!);
+    }
+    // 预算确实耗尽时才允许降（due 0→20 时 learn 5→3）
+    expect(learns[0]).toBe(5);
+    expect(learns[5]).toBe(3);
+  });
+
+  it("MONO-02: budget↓ → 总计划 effort 不增（显式 OVERLOADED mandatory 除外）", () => {
+    const g = (m: number) => ({ ...DEFAULT_GOAL_PROFILE, dailyMinutes: m, weeklyWordTarget: 30 });
+    const totals = [30, 15, 10, 8, 5, 3].map((m) => {
+      const plan = planToday(baseInput({ goal: g(m), dueCount: 20, speakingIdleDays: null }));
+      return plan.actions.reduce((sum, a) => sum + a.estimatedMinutes, 0);
+    });
+    for (let i = 1; i < totals.length; i++) {
+      expect(totals[i]!).toBeLessThanOrEqual(totals[i - 1]!);
+    }
+  });
+
+  it("MONO-03: idle↑（含 null）→ Speaking 优先级不降", () => {
+    const idleCases: (number | null)[] = [null, 2, 3, 5];
+    for (const idle of idleCases) {
+      const plan = planToday(
+        baseInput({ speakingIdleDays: idle, learnedThisWeek: 30, daysElapsedThisWeek: 7 }),
+      );
+      const speaking = plan.actions.find((a) => a.type === "SPEAKING");
+      expect(speaking).toBeDefined();
+      expect(speaking!.priority).toBe("HIGH"); // due=0 时 cadence floor 为 HIGH
+    }
+  });
+
+  it("MONO-04: weeklyTarget↑ → Learn pressure 不降", () => {
+    const learns = [0, 7, 30, 70, 140].map((w) =>
+      learnCountOf(planToday(baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, weeklyWordTarget: w }, dueCount: 0 }))),
+    );
+    for (let i = 1; i < learns.length; i++) {
+      expect(learns[i]!).toBeGreaterThanOrEqual(learns[i - 1]!);
+    }
+    expect(learns).toEqual([0, 1, 5, 10, 20]);
+  });
+
+  it("MONO-05: targetBand 变化 → Plan 不变（已由 TEST-10 覆盖，此处做 due/idle 组合复核）", () => {
+    const plans = [5, 6, 7, 8, 9].map((band) =>
+      planToday(baseInput({ goal: { ...DEFAULT_GOAL_PROFILE, targetBand: band }, dueCount: 20, speakingIdleDays: 3 })),
+    );
+    for (let i = 1; i < plans.length; i++) {
+      expect(plans[i]).toEqual(plans[0]);
+    }
+  });
+
+  it("MONO-06: 周 progress↑ → Learn pressure 不增（达成后 REST）", () => {
+    const g = { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 30, weeklyWordTarget: 30 };
+    const learns = [0, 15, 30, 40].map((learned) =>
+      learnCountOf(
+        planToday(
+          baseInput({ goal: g, dueCount: 0, learnedThisWeek: learned, daysElapsedThisWeek: 7 }),
+        ),
+      ),
+    );
+    expect(learns).toEqual([5, 5, 0, 0]);
+    for (let i = 1; i < learns.length; i++) {
+      expect(learns[i]!).toBeLessThanOrEqual(learns[i - 1]!);
+    }
+  });
+
+  it("TEST-16: 从未完成口语 → 主动安排 Speaking；完成后重置 → cadence 恢复；再次忽略 → 重新触发", () => {
+    const g = { ...DEFAULT_GOAL_PROFILE, dailyMinutes: 30, weeklyWordTarget: 30 };
+    // Day1：无 completed history → null → cadence overdue → SPEAKING
+    const day1 = planToday(baseInput({ goal: g, speakingIdleDays: null, dueCount: 0, learnedThisWeek: 15, daysElapsedThisWeek: 1 }));
+    expect(day1.actions.some((a) => a.type === "SPEAKING")).toBe(true);
+    expect(day1.primary.type).toBe("SPEAKING");
+    // 用户完成口语 → idle 重置为 0 → Day2 未超 cadence（idle=1）→ 无强制口语
+    const day2 = planToday(baseInput({ goal: g, speakingIdleDays: 1, dueCount: 0, learnedThisWeek: 15, daysElapsedThisWeek: 2 }));
+    expect(day2.actions.some((a) => a.type === "SPEAKING")).toBe(false);
+    // 再次忽略 → Day3 idle=2 → cadence floor 重新触发
+    const day3 = planToday(baseInput({ goal: g, speakingIdleDays: 2, dueCount: 0, learnedThisWeek: 15, daysElapsedThisWeek: 3 }));
+    expect(day3.actions.some((a) => a.type === "SPEAKING")).toBe(true);
   });
 });
