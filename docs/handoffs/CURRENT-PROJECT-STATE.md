@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_04C_COMPLETE** — 04C REAL LLM evidence quality evaluation（`6c6d529`→cherry-pick `49786d4`）已完成集成：deepseek/deepseek-chat 三轮真实评估（159 calls），**AVG_CORRECT_PRECISION=0.9792、MAX_FALSE_CORRECT=1（M45 GOLD_DISPUTE）、GROUNDING_VIOLATIONS=0**；04A 语义误用/回声 FALSE_CORRECT 全部消除。下一 Gate：**PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**（仅设计，写回仍禁用）。
+**PRODUCT_LOOP_04D_COMPLETE** — 04D Evidence→Learner State mapping design（`b6c7c52`→cherry-pick `048659a`）已集成：applicationLevel 语义 0/1/2 操作化（DERIVED_FROM_EVIDENCE_HISTORY）、20 场景验证、假阳性韧性证明、M45 Gold v2 建议修正。**04E 已获授权（含 Supabase evidence migration，仅限 Application Evidence History 持久化）**；写回仍须 04E 实现后才发生。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**（基于 04C 真实证据质量，设计 Evidence → Learner State 映射规则；**仅设计，state writeback 仍禁止**，须单独批准）。
+**PRODUCT-LOOP-04E**（IMPLEMENT-EVIDENCE-HISTORY-AND-DERIVED-APPLICATION-LEVEL）：实现 Application Evidence History 持久化（Supabase migration **AUTHORIZED**，仅限 Application Evidence persistence）+ `deriveApplicationLevel` 纯函数 + 幂等落库钩子；target-selection 无需改；Planner/记忆调度零改动；写回 applicationLevel 自此启用。
 
 ## PRODUCT_LOOP_04A (SPEAKING→VOCAB EVIDENCE AUDIT)
 - **04A_PRODUCT_DECISION**: EVIDENCE_PIPELINE_NEEDS_TARGETED_FIX
@@ -79,6 +79,27 @@
 - **LONG_TERM_STATE_WRITEBACK**: DISABLED；APPLICATION_LEVEL_CHANGED / RECALL_LEVEL_CHANGED / STATUS_CHANGED / NEXT_REVIEW_AT_CHANGED / REVIEW_SCHEDULE_CHANGED: NO
 - **SECRET_LEAK**: NO（.env.local 未 track；real-run JSON/docs 无 key）
 - **NEXT_GATE**: **PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**；**M3**: PAUSED
+
+## PRODUCT_LOOP_04D (EVIDENCE→STATE MAPPING DESIGN)
+- **PRODUCT_LOOP_04D**: COMPLETE（`b6c7c52` → cherry-pick `048659a`，docs-only；无 runtime diff）
+- **APPLICATION_LEVEL_MODEL**: **DERIVED_FROM_EVIDENCE_HISTORY**（evidence=唯一事实源；derived 可重算/可重建）
+- **APPLICATION_LEVEL_RANGE**: 0 | 1 | 2
+  - **LEVEL_0**: NO_STABLE_APPLICATION_EVIDENCE（可能已有 1 条 CORRECT，不足稳定）
+  - **LEVEL_1**: EMERGING_APPLICATION（≥2 validated CORRECT，≥2 distinct sessions）
+  - **LEVEL_2**: STABLE_APPLICATION（≥3 CORRECT，≥3 sessions，≥2 distinct calendar days，≥2 distinct contexts）
+- **LEVEL_0_TO_1**: ≥2 validated CORRECT across ≥2 distinct sessions（同 session immediate retry 经去重排除）
+- **LEVEL_1_TO_2**: ≥3 validated CORRECT across ≥3 sessions + ≥2 distinct days + ≥2 distinct contexts
+- **QUALIFYING_EVIDENCE**: VALIDATED_CORRECT_ONLY（upgradeCandidate + pipelineVersion≥04B-validator-1）
+- **SAME_SESSION_DEDUPE**: YES（(sessionId,itemId) 唯一键 + upsert）
+- **ISSUE_BEHAVIOR**: RECORD_ONLY_NO_DEMOTION（不改调度/状态/计数）
+- **NOT_USED**: NO_OP；**UNCERTAIN**: NO_OP
+- **DEMOTION_POLICY**: NONE_IN_V1；**DECAY_POLICY**: NONE_IN_V1（均 NEEDS_PEDAGOGY_EVIDENCE）
+- **RECALL_LEVEL_CHANGED_BY_SPEAKING**: NO；**STATUS_CHANGED_BY_SPEAKING**: NO；**NEXT_REVIEW_AT_CHANGED_BY_SPEAKING**: NO；**REVIEW_SCHEDULE_CHANGED_BY_SPEAKING**: NO
+- **M45_ADJUDICATION**: **FUTURE_GOLD_V2_RECOMMEND_CORRECT**（pros and cons 本身使用正确，原句主谓一致属表达外错误，符合 04A §9D）；**04C historical Gold/metrics: UNCHANGED**（禁止回写旧 artifact）
+- **04E_SCOPE**: IMPLEMENT_EVIDENCE_HISTORY_AND_DERIVED_APPLICATION_LEVEL；**SUPABASE_EVIDENCE_MIGRATION**: **AUTHORIZED**（仅限 Application Evidence History persistence，不得扩其它 schema）
+- **LONG_TERM_STATE_WRITEBACK**: NO（真正写 applicationLevel 只在 04E implementation）
+- **STATE_MAPPING_DECISION**: STATE_MAPPING_DESIGN_READY_FOR_IMPLEMENTATION；P0=0/P1=0/P2=3（阈值 HEURISTIC_NOT_PEDAGOGICALLY_VALIDATED）
+- **NEXT_GATE**: **PRODUCT-LOOP-04E**；**M3**: PAUSED
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
