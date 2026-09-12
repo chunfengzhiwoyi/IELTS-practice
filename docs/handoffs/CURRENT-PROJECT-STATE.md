@@ -174,6 +174,22 @@
 - **SEPARATE_PERSISTENCE_DEBT**（既有已知，不扩 scope）: 远程 0008 部分未应用；Goal persistence 仍 MEMORY_REFERENCE_ONLY
 - **M3**: PAUSED；**NEXT_GATE**: TARGETED_FIX_REQUIRED（Control Plane 裁决部署机制 + drift 处置后重开）
 
+## DASHBOARD-RECOVERY-01 (DASHBOARD / REPORT 当前状态审计)
+**AUDIT COMPLETE（只读，PRODUCT_CODE_MODIFIED=NO；报告 `docs/product/DASHBOARD-RECOVERY-01-CURRENT-STATE.md`）**
+- **Dashboard UI**: DONE（`/dashboard` 产品数据看板，dev 200，5 section 齐全，无 mock/JSON debug）
+- **Learning Report UI**: DONE（`/report` 学习报告，模块齐全，dev 200）
+- **Dashboard Real API**: DONE（7d/30d/all 200，sourceMode=real，聚合真实，生产不回退 Mock）
+- **Report Real API**: DONE（200，服务端 SSOT 聚合 + 推荐 + LLM summary）
+- **Supabase Read Connectivity**: PASS（dev 实读远程成功）；**Required Remote Data**: PARTIAL
+- **SCHEMA_BLOCKER（error=3）**: dashboard 报告回流率/内容复用依赖 `report_views`/`content_reuse_events`，两表仅存在于 deferred 0009（从未激活部署）
+- **EMPTY_BUT_VALID**: 远程无真实学习活动 → health/lifecycle/impact 多为 0/insufficient（合法展示）
+- **部署**: 无 Vercel 项目/vercel.json/在线 URL（ONLINE_URL=NONE_FOUND）；`scripts/deploy-static.mjs` 静态导出不支持 API；`.env.example` 存在可参考
+- **TYPECHECK**: PASS；**WEB_BUILD**: PASS（41/41，仅非阻塞 warning）
+- **PREVIEW_DEPLOY_READY**: YES（代码可部署，需 Vercel 项目+环境变量）；**PRODUCTION_DEPLOY_READY**: NOT_READY
+- **P2**: demo 模式 llmSummary=null（mock schema mismatch，生产真实 LLM 不受影响）
+- **NEXT_STEP（最多 3）**: ① 建 Vercel 项目+配环境变量出 Preview URL；② Control Plane 裁决激活 deferred 0009（或声明两指标 known-unavailable）；③ 为演示账号写真实学习活动（或确认空数据态上线）
+- **M3**: PAUSED（不受本审计影响）
+
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
 
