@@ -22,12 +22,16 @@ import { SupabaseAbilityRepository } from "@/lib/ability/repositories/supabase-a
 import type { EvaluationRepository } from "@/lib/evaluation/server-repository";
 import { MemoryEvaluationRepository } from "@/lib/evaluation/server-repository";
 import { SupabaseEvaluationRepository } from "@/lib/evaluation/repositories/supabase-evaluation-repository";
+import type { ApplicationEvidenceRepository } from "@/lib/learning/application-evidence";
+import { MemoryApplicationEvidenceRepository } from "@/lib/learning/repositories/memory-application-evidence-repository";
+import { SupabaseApplicationEvidenceRepository } from "@/lib/learning/repositories/supabase-application-evidence-repository";
 
 // Singleton instances
 let _learningRepo: LearningRepository | null = null;
 let _speakingRepo: SpeakingRepository | null = null;
 let _abilityRepo: AbilityObservationRepository | null = null;
 let _evaluationRepo: EvaluationRepository | null = null;
+let _applicationEvidenceRepo: ApplicationEvidenceRepository | null = null;
 
 export function getLearningRepository(): LearningRepository {
   if (!_learningRepo) {
@@ -70,10 +74,20 @@ export function getEvaluationRepository(): EvaluationRepository {
   return _evaluationRepo;
 }
 
+export function getApplicationEvidenceRepository(): ApplicationEvidenceRepository {
+  if (!_applicationEvidenceRepo) {
+    _applicationEvidenceRepo = getServerEnv().DATA_PROVIDER === "supabase"
+      ? new SupabaseApplicationEvidenceRepository()
+      : new MemoryApplicationEvidenceRepository();
+  }
+  return _applicationEvidenceRepo;
+}
+
 /** 测试用：重置所有 singleton（仅 memory 模式有意义） */
 export function _resetRepositories(): void {
   _learningRepo = null;
   _speakingRepo = null;
   _abilityRepo = null;
   _evaluationRepo = null;
+  _applicationEvidenceRepo = null;
 }

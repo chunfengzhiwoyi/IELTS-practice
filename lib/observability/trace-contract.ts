@@ -241,6 +241,7 @@ export interface StateWritePayload {
   evidence_status_before?: string;
   evidence_status_after?: string;
   observation_persisted_flag?: boolean;
+  application_evidence_persisted_flag?: boolean;
 }
 
 /** report.aggregated payload */

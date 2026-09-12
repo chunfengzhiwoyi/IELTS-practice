@@ -113,7 +113,7 @@ describe("PRODUCT-LOOP-04C evidence quality eval", () => {
     const latenciesMs: number[] = [];
 
     for (const cse of corpus.cases) {
-      const targets = cse.targets ?? [cse.gold[0].itemId];
+      const targets = cse.targets ?? [cse.gold[0]!.itemId];
       const suggestedExpressions = targets.map((itemId) => {
         const s = seedByItem.get(itemId);
         if (!s) throw new Error(`seed 缺 ${itemId}`);
@@ -124,7 +124,7 @@ describe("PRODUCT-LOOP-04C evidence quality eval", () => {
       const t0 = Date.now();
       const result = await analyzeSpeakingWithLlm(
         cse.answer,
-        question,
+        question!,
         `04c-${RUN}-${cse.id}`,
         undefined,
         undefined,

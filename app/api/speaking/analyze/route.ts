@@ -11,8 +11,9 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/session";
 import { getQuestionById } from "@/lib/speaking";
-import { getSpeakingRepository, getAbilityRepository, getEvaluationRepository } from "@/lib/repository-factory";
+import { getSpeakingRepository, getAbilityRepository, getEvaluationRepository, getLearningRepository, getApplicationEvidenceRepository } from "@/lib/repository-factory";
 import { analyzeSpeakingWithLlm } from "@/lib/llm/tasks/analyze-speaking";
+import { recordApplicationEvidenceFromAnalysis } from "@/lib/learning/application-evidence";
 import { getUserOverrideProviders } from "@/lib/llm/user-config";
 import { AppError, toAppError } from "@/lib/observability/errors";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
@@ -198,6 +199,48 @@ export async function POST(request: Request) {
         hasIeltsAnalysis: !fallbackUsed,
       }),
     });
+
+    // ─── PRODUCT-LOOP-04E: 落库 validated speaking evidence + 重算 applicationLevel（不阻塞主流程）───
+    // SSOT: evidence history；applicationLevel 为派生缓存。只记录 validator 固化后的
+    // validated evidence；同 session 重复 analyze/retry 按 (userId,itemId,sessionId) upsert 覆盖；
+    // second 覆盖 first 并标记 recoveredViaRetry。绝不修改 recallLevel/status/nextReviewAt/review schedule。
+    let applicationEvidenceWritten = 0;
+    const applicationLevelByItem: Record<string, number> = {};
+    try {
+      const evResult = await recordApplicationEvidenceFromAnalysis({
+        userId: user.id,
+        session: updatedSession,
+        analysis,
+        isSecondAnswer,
+        learningRepo: getLearningRepository(),
+        evidenceRepo: getApplicationEvidenceRepository(),
+      });
+      applicationEvidenceWritten = evResult.recorded.length;
+      for (const [itemId, level] of evResult.levelByItem) {
+        applicationLevelByItem[itemId] = level;
+      }
+      // ---- state.write: application_evidence（现有 trace contract，不发明新事件类型）----
+      if (applicationEvidenceWritten > 0 || Object.keys(applicationLevelByItem).length > 0) {
+        tctx.emitStateWrite({
+          entity: "application_evidence",
+          keys: { userId: user.id, sessionId },
+          idempotency_outcome: "inserted",
+          state_before: null,
+          state_after: {
+            evidence_recorded: applicationEvidenceWritten,
+            application_level_by_item: applicationLevelByItem,
+          },
+          application_evidence_persisted_flag: applicationEvidenceWritten > 0,
+        });
+      }
+    } catch (err) {
+      // evidence 落库失败不阻断主 Speaking 流程（与 ability/evaluation 写失败同策略）
+      logger.warn("application_evidence_write_failed", {
+        traceId,
+        sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     // M1: 服务端写入能力观察（不阻塞主流程）
     let observationsWritten = 0;

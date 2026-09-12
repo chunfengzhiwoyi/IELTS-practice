@@ -25,7 +25,7 @@ describe("04C-FINAL real LLM probe", () => {
     const question = getQuestionById("sp-p1-001");
     const result = await analyzeSpeakingWithLlm(
       "I take my health for granted sometimes, and I should change that.",
-      question,
+      question!,
       "04c-final-probe",
       undefined,
       undefined,
