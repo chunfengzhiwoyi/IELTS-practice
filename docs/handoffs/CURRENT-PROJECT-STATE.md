@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_04AB_INTEGRATED** — 04A Speaking→Vocabulary evidence audit（`2b7ac2c`）与 04B validated evidence pipeline（`a39e8f0`）已 cherry-pick 进入 canonical（0 冲突；04B 仍无长期状态写回）。验证：04B focused+02A/C/D+019/030 135/135、02-E2E+planner 59/59、full unit 562/2（llm-safety 静态债 + env.test 环境依赖）、typecheck + next build PASS。下一 Gate：**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**。
+**PRODUCT_LOOP_04C_COMPLETE** — 04C REAL LLM evidence quality evaluation（`6c6d529`→cherry-pick `49786d4`）已完成集成：deepseek/deepseek-chat 三轮真实评估（159 calls），**AVG_CORRECT_PRECISION=0.9792、MAX_FALSE_CORRECT=1（M45 GOLD_DISPUTE）、GROUNDING_VIOLATIONS=0**；04A 语义误用/回声 FALSE_CORRECT 全部消除。下一 Gate：**PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**（仅设计，写回仍禁用）。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**（用真实模型跑 04A gold corpus 53 cases，评估 validated evidence 的真实 precision；通过前禁止任何长期状态写回）。
+**PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**（基于 04C 真实证据质量，设计 Evidence → Learner State 映射规则；**仅设计，state writeback 仍禁止**，须单独批准）。
 
 ## PRODUCT_LOOP_04A (SPEAKING→VOCAB EVIDENCE AUDIT)
 - **04A_PRODUCT_DECISION**: EVIDENCE_PIPELINE_NEEDS_TARGETED_FIX
@@ -57,10 +57,28 @@
 - **STRICT_VALIDATOR**: IMPLEMENTED（itemId whitelist / enum / quote grounding / missing / duplicate / unknown / contract conflict）
 - **GROUNDING_REQUIRED**: YES
 - **EVIDENCE_RECORDING**: ENABLED_REFERENCE_PATH
-- **EVIDENCE_QUALITY**: NOT_YET_PROVEN（证明属于 04C）
+- **EVIDENCE_QUALITY**: REAL_LLM_VERIFIED（04C：AVG_CORRECT_PRECISION=0.9792；MAX_FALSE_CORRECT=1；GROUNDING_VIOLATIONS=0）
 - **LONG_TERM_STATE_WRITEBACK**: DISABLED；**APPLICATION_LEVEL_WRITEBACK / RECALL_LEVEL_WRITEBACK / REVIEW_SCHEDULE_WRITEBACK**: DISABLED
 - **SUPABASE_EVIDENCE_PERSISTENCE**: NOT_IMPLEMENTED（toDomain 读回恒 []；EVIDENCE_DURABILITY=PARTIAL；无新 DB schema / migration）
 - **SPEAKING→VOCAB V1.1**: evidence 记录已就绪；**反向写回仍 NOT_IMPLEMENTED（V1.1 FUTURE）**
+
+## PRODUCT_LOOP_04C (EVIDENCE QUALITY EVAL — REAL LLM)
+- **PRODUCT_LOOP_04C**: COMPLETE（`6c6d529` → cherry-pick `49786d4`，docs + eval harness + real run artifacts；无产品 runtime diff）
+- **REAL_LLM_PIPELINE**: YES；**PROVIDER**: deepseek；**MODEL**: deepseek-chat；**TEMPERATURE**: 0.3
+- **REAL_RUN_COUNT**: 3（53 cases/57 item labels/轮；159 次真实 LLM 调用；avg latency ≈8.4s/call；tokens/cost NOT_AVAILABLE）
+- **CORRECT_PRECISION**: RUN1=1.0 / RUN2=1.0 / RUN3=0.9375 / **AVG=0.9792**；**CORRECT_RECALL**: AVG=0.7302
+- **ISSUE_PRECISION**: 0.7493；**ISSUE_RECALL**: 0.8；**NOT_USED_ACCURACY**: 0.9792；**UNCERTAIN_RATE**: 0.1696；**OVERALL_ACCURACY**: 0.7544
+- **GROUNDING_VIOLATIONS**: 0（三轮）；**VALIDATOR_DOWNGRADES**: 8/6/6（全保守路径）；**MISSING_EVIDENCE**: 0；**DUPLICATE_CONFLICT**: 2/1/1
+- **FALSE_CORRECT**: 0 / 0 / 1；**MAX_FALSE_CORRECT**: 1；**AVG_FALSE_CORRECT**: 0.33；**FALSE_ISSUE**: 4/4/4
+- **04A BEFORE/AFTER**: SEMANTIC_MISUSE_FALSE_CORRECT 4→0；META_ECHO_FALSE_CORRECT 1→0；precision 0.8077→0.9792；FALSE_CORRECT 5→0.33
+- **CONSERVATIVE_TRADEOFF**: CORRECT recall 1.0→~0.73、UNCERTAIN ~5.3%→~17% —— **PRECISION_FIRST_TRADEOFF（非能力退化，亦非完美）**
+- **M45_GOLD_STATUS**: **DISPUTED**（pros and cons：RUN_3 判 CORRECT；模型理由=目标表达本身正确、错误在表达外句级主谓一致，与 04A §9D 契约冲突；原 Gold 不覆盖、历史 metrics 不重算；Gold v2 需 adjudication 后修订）
+- **P0_FINDINGS**: 0；**P1_FINDINGS**: 0；**P2_FINDINGS**: 3（P2-1 FALSE_ISSUE/保守误判 D17/M44/D18；P2-2 模型枚举漂移 "INCORRECT"→保守降级；P2-3 M45 多目标+句级语法不稳定）—— 均不阻塞 state mapping design，必须保留
+- **EVIDENCE_SAFETY_DECISION**: **SAFE_FOR_STATE_MAPPING_DESIGN**
+- **PRODUCT_DECISION**: **EVIDENCE_QUALITY_GOOD_ENOUGH_FOR_STATE_MAPPING_DESIGN**（=允许进入 04D 设计映射；**不等于 state writeback 已批准**）
+- **LONG_TERM_STATE_WRITEBACK**: DISABLED；APPLICATION_LEVEL_CHANGED / RECALL_LEVEL_CHANGED / STATUS_CHANGED / NEXT_REVIEW_AT_CHANGED / REVIEW_SCHEDULE_CHANGED: NO
+- **SECRET_LEAK**: NO（.env.local 未 track；real-run JSON/docs 无 key）
+- **NEXT_GATE**: **PRODUCT-LOOP-04D-STATE-MAPPING-DESIGN**；**M3**: PAUSED
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
