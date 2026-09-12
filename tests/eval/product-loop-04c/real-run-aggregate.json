@@ -1,0 +1,121 @@
+{
+  "runs": [
+    {
+      "run": 1,
+      "provider": "deepseek",
+      "realLlmConfigured": true,
+      "metrics": {
+        "totalLabels": 57,
+        "correctPrecision": 1,
+        "correctRecall": 0.7143,
+        "issuePrecision": 0.7333,
+        "issueRecall": 0.7333,
+        "notUsedAccuracy": 1,
+        "uncertainRate": 0.193,
+        "overallAccuracy": 0.7368,
+        "falseCorrect": 0,
+        "falseCorrectIds": [],
+        "falseIssue": 4,
+        "falseIssueIds": [
+          "D17(CORRECT)",
+          "D18(CORRECT)",
+          "M44(CORRECT)",
+          "P52(CORRECT)"
+        ],
+        "counts": {
+          "tpC": 15,
+          "fpC": 0,
+          "fnC": 6,
+          "tpI": 11,
+          "fpI": 4,
+          "fnI": 4,
+          "tnN": 16,
+          "fpN": 0,
+          "fnN": 0,
+          "sysU": 11,
+          "goldU": 5
+        }
+      },
+      "avgLatencyMs": 8368
+    },
+    {
+      "run": 2,
+      "provider": "deepseek",
+      "realLlmConfigured": true,
+      "metrics": {
+        "totalLabels": 57,
+        "correctPrecision": 1,
+        "correctRecall": 0.7619,
+        "issuePrecision": 0.75,
+        "issueRecall": 0.8,
+        "notUsedAccuracy": 1,
+        "uncertainRate": 0.1579,
+        "overallAccuracy": 0.7719,
+        "falseCorrect": 0,
+        "falseCorrectIds": [],
+        "falseIssue": 4,
+        "falseIssueIds": [
+          "D17(CORRECT)",
+          "D18(CORRECT)",
+          "M44(CORRECT)",
+          "M45(CORRECT)"
+        ],
+        "counts": {
+          "tpC": 16,
+          "fpC": 0,
+          "fnC": 5,
+          "tpI": 12,
+          "fpI": 4,
+          "fnI": 3,
+          "tnN": 16,
+          "fpN": 0,
+          "fnN": 0,
+          "sysU": 9,
+          "goldU": 5
+        }
+      },
+      "avgLatencyMs": 8551
+    },
+    {
+      "run": 3,
+      "provider": "deepseek",
+      "realLlmConfigured": true,
+      "metrics": {
+        "totalLabels": 57,
+        "correctPrecision": 0.9375,
+        "correctRecall": 0.7143,
+        "issuePrecision": 0.7647,
+        "issueRecall": 0.8667,
+        "notUsedAccuracy": 0.9375,
+        "uncertainRate": 0.1579,
+        "overallAccuracy": 0.7544,
+        "falseCorrect": 1,
+        "falseCorrectIds": [
+          "M45(ISSUE)"
+        ],
+        "falseIssue": 4,
+        "falseIssueIds": [
+          "C16(CORRECT)",
+          "D17(CORRECT)",
+          "M44(CORRECT)",
+          "M45(CORRECT)"
+        ],
+        "counts": {
+          "tpC": 15,
+          "fpC": 1,
+          "fnC": 6,
+          "tpI": 13,
+          "fpI": 4,
+          "fnI": 2,
+          "tnN": 15,
+          "fpN": 0,
+          "fnN": 1,
+          "sysU": 9,
+          "goldU": 5
+        }
+      },
+      "avgLatencyMs": 8398
+    }
+  ],
+  "count": 3
+}

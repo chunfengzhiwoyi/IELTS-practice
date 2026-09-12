@@ -1,0 +1,1449 @@
+{
+  "meta": {
+    "run": 3,
+    "timestamp": "2026-09-12T08:54:50.654Z",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "temperature": 0.3,
+    "pipeline": "analyzeSpeakingWithLlm (single LLM structured call, tier=main) -> validateTargetExpressionEvidence (deterministic)",
+    "realLlmConfigured": true,
+    "realProviderKeyPresent": true,
+    "note": "QUALITY RUN (真实模型，计入质量指标)",
+    "canonicalCommit": "95f65aadf546e1454a0e2a9b8f7b9a7a6213857a",
+    "goldVersion": "04A frozen gold-cases.json (53 cases / 57 item labels)",
+    "mockExcludedFromQuality": true,
+    "totalLatencyMs": 445093,
+    "avgLatencyMs": 8398,
+    "llmCalls": 53
+  },
+  "metrics": {
+    "totalLabels": 57,
+    "correctPrecision": 0.9375,
+    "correctRecall": 0.7143,
+    "issuePrecision": 0.7647,
+    "issueRecall": 0.8667,
+    "notUsedAccuracy": 0.9375,
+    "uncertainRate": 0.1579,
+    "overallAccuracy": 0.7544,
+    "falseCorrect": 1,
+    "falseCorrectIds": [
+      "M45(ISSUE)"
+    ],
+    "falseIssue": 4,
+    "falseIssueIds": [
+      "C16(CORRECT)",
+      "D17(CORRECT)",
+      "M44(CORRECT)",
+      "M45(CORRECT)"
+    ],
+    "counts": {
+      "tpC": 15,
+      "fpC": 1,
+      "fnC": 6,
+      "tpI": 13,
+      "fpI": 4,
+      "fnI": 2,
+      "tnN": 15,
+      "fpN": 0,
+      "fnN": 1,
+      "sysU": 9,
+      "goldU": 5
+    }
+  },
+  "rows": [
+    {
+      "id": "A01",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "无 take...for granted 结构或相关片段"
+    },
+    {
+      "id": "A02",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "表达未出现（for me 非 for granted）"
+    },
+    {
+      "id": "A03",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "相似词 grateful/for everything，非目标表达"
+    },
+    {
+      "id": "A04",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "未使用"
+    },
+    {
+      "id": "A05",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "极短回答，无目标表达"
+    },
+    {
+      "id": "A06",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "未使用"
+    },
+    {
+      "id": "A07",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "有 take 词族但无 for granted，非目标表达"
+    },
+    {
+      "id": "A08",
+      "cat": "A",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "take risks 是另一搭配，非目标表达"
+    },
+    {
+      "id": "B09",
+      "cat": "B",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I take my health for granted sometimes.",
+      "notes": [],
+      "goldReason": "精确标准结构：take + object(my health) + for granted"
+    },
+    {
+      "id": "B10",
+      "cat": "B",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "People often take the things they have for granted.",
+      "notes": [],
+      "goldReason": "object 为名词短语，语义正确"
+    },
+    {
+      "id": "B11",
+      "cat": "B",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I think we all take it for granted that the internet always works.",
+      "notes": [],
+      "goldReason": "take it for granted that 句型，标准用法"
+    },
+    {
+      "id": "B12",
+      "cat": "B",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "Don't take your parents' support for granted.",
+      "notes": [],
+      "goldReason": "祈使句，object 明确"
+    },
+    {
+      "id": "B13",
+      "cat": "B",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I shouldn't take my health for granted.",
+      "notes": [],
+      "goldReason": "否定语境下搭配仍正确"
+    },
+    {
+      "id": "C14",
+      "cat": "C",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "He took her kindness for granted for years.",
+      "notes": [],
+      "goldReason": "过去时 took，合法形态变化"
+    },
+    {
+      "id": "C15",
+      "cat": "C",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "Taking your family for granted",
+      "notes": [],
+      "goldReason": "动名词 taking 作主语，合法形态"
+    },
+    {
+      "id": "C16",
+      "cat": "C",
+      "gold": "CORRECT",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "They have taken their opportunity for granted.",
+      "notes": [],
+      "goldReason": "过去分词 taken，现在完成时，合法"
+    },
+    {
+      "id": "D17",
+      "cat": "D",
+      "gold": "CORRECT",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take it for granted every single day.",
+      "notes": [],
+      "goldReason": "代词 it 替代对象，标准"
+    },
+    {
+      "id": "D18",
+      "cat": "D",
+      "gold": "CORRECT",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "conservative_fallback"
+      ],
+      "goldReason": "代词 them，标准"
+    },
+    {
+      "id": "D19",
+      "cat": "D",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "She takes her friends' help for granted",
+      "notes": [],
+      "goldReason": "名词短语 + 关系从句，语义正确"
+    },
+    {
+      "id": "E20",
+      "cat": "E",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take my exam for granted because it is very hard.",
+      "notes": [],
+      "goldReason": "语义误用：exam 并非被理所当然对待的对象，句意不自洽"
+    },
+    {
+      "id": "E21",
+      "cat": "E",
+      "gold": "ISSUE",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "conservative_fallback"
+      ],
+      "goldReason": "语义误用：把 take for granted 当 rely on 用，句意错误"
+    },
+    {
+      "id": "E22",
+      "cat": "E",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "The weather takes the umbrella for granted.",
+      "notes": [],
+      "goldReason": "无生命主语+荒谬语义，搭配在语义层不成立"
+    },
+    {
+      "id": "E23",
+      "cat": "E",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take English grammar for granted every morning to practice.",
+      "notes": [],
+      "goldReason": "语义误用：句意无法成立（为了练习把语法当理所当然？）"
+    },
+    {
+      "id": "F24",
+      "cat": "F",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take my parents for grant.",
+      "notes": [],
+      "goldReason": "拼写/形态错误：for grant 缺 -ed"
+    },
+    {
+      "id": "F25",
+      "cat": "F",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I took for granted my friends.",
+      "notes": [],
+      "goldReason": "语序错误：object 后置导致搭配核心破坏"
+    },
+    {
+      "id": "F26",
+      "cat": "F",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take for granted.",
+      "notes": [],
+      "goldReason": "缺 object，结构不完整"
+    },
+    {
+      "id": "F27",
+      "cat": "F",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I make it for granted.",
+      "notes": [],
+      "goldReason": "动词错误：make 而非 take"
+    },
+    {
+      "id": "G28",
+      "cat": "G",
+      "gold": "UNCERTAIN",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": "Take something for granted.",
+      "notes": [],
+      "goldReason": "仅照读提示短语，无完整句子，非应用证据"
+    },
+    {
+      "id": "G29",
+      "cat": "G",
+      "gold": "UNCERTAIN",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": "take something for granted...",
+      "notes": [],
+      "goldReason": "照读提示 + 填充语，未形成语义使用"
+    },
+    {
+      "id": "G30",
+      "cat": "G",
+      "gold": "UNCERTAIN",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "conservative_fallback"
+      ],
+      "goldReason": "元语言提及（谈论能否用），非实际使用"
+    },
+    {
+      "id": "G31",
+      "cat": "G",
+      "gold": "UNCERTAIN",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "conservative_fallback"
+      ],
+      "goldReason": "定义式复述，未在自创句子中应用"
+    },
+    {
+      "id": "H32",
+      "cat": "H",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take it for grant every day.",
+      "notes": [],
+      "goldReason": "部分表达：for grant 缺 -ed"
+    },
+    {
+      "id": "H33",
+      "cat": "H",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "for granted, people should appreciate family",
+      "notes": [],
+      "goldReason": "部分表达：仅有 for granted 片段，缺 take 结构，未构成有效使用"
+    },
+    {
+      "id": "H34",
+      "cat": "H",
+      "gold": "UNCERTAIN",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": "I take my family... for granted? maybe",
+      "notes": [],
+      "goldReason": "自我怀疑/悬而未决，使用意图不确定"
+    },
+    {
+      "id": "I35",
+      "cat": "I",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I take their support for granted.",
+      "notes": [],
+      "goldReason": "先错后自纠，以最终正确 span 为证据；reason 记录 earlier issue"
+    },
+    {
+      "id": "I36",
+      "cat": "I",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I take my friends for granted",
+      "notes": [],
+      "goldReason": "自纠为完整正确结构"
+    },
+    {
+      "id": "I37",
+      "cat": "I",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I make it for granted.",
+      "notes": [],
+      "goldReason": "自纠到错误形式结束（make），最终证据为错"
+    },
+    {
+      "id": "J38",
+      "cat": "J",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I mean take it for granted.",
+      "notes": [],
+      "goldReason": "错误在前，自纠后最终正确"
+    },
+    {
+      "id": "J39",
+      "cat": "J",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take my health for granted, but actually I make it for granted.",
+      "notes": [],
+      "goldReason": "正确在前但最终明确改错，聚合取最终错误"
+    },
+    {
+      "id": "K40",
+      "cat": "K",
+      "gold": "CORRECT",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "duplicate_count=2"
+      ],
+      "goldReason": "两次均正确，无冲突"
+    },
+    {
+      "id": "K41",
+      "cat": "K",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take it for granted, but I shouldn't make it for granted.",
+      "notes": [],
+      "goldReason": "先正确后错误，最终错误句压过；证据冲突且最终为错"
+    },
+    {
+      "id": "L42",
+      "cat": "L",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "People often take their health for granted.",
+      "notes": [],
+      "goldReason": "take their health for granted 正确"
+    },
+    {
+      "id": "L42",
+      "cat": "L",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "bear in mind 未出现"
+    },
+    {
+      "id": "L43",
+      "cat": "L",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "There are pros and cons to everything",
+      "notes": [],
+      "goldReason": "pros and cons 正确使用"
+    },
+    {
+      "id": "L43",
+      "cat": "L",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "broaden one's horizons 未出现"
+    },
+    {
+      "id": "M44",
+      "cat": "M",
+      "gold": "CORRECT",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take it for granted every day",
+      "notes": [],
+      "goldReason": "take it for granted 正确"
+    },
+    {
+      "id": "M44",
+      "cat": "M",
+      "gold": "ISSUE",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I should bare in mind my health",
+      "notes": [],
+      "goldReason": "bear in mind 拼写错误 bare in mind（同音误拼）"
+    },
+    {
+      "id": "M45",
+      "cat": "M",
+      "gold": "CORRECT",
+      "got": "ISSUE",
+      "upgrade": false,
+      "quote": "I take my family for granted every day",
+      "notes": [],
+      "goldReason": "take my family for granted 正确"
+    },
+    {
+      "id": "M45",
+      "cat": "M",
+      "gold": "ISSUE",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "there is pros and cons to that",
+      "notes": [],
+      "goldReason": "pros and cons 搭配语法错误：单数 is 配复数"
+    },
+    {
+      "id": "N46",
+      "cat": "N",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "granted 作动词授意，非 for granted 结构"
+    },
+    {
+      "id": "N47",
+      "cat": "N",
+      "gold": "NOT_USED",
+      "got": "UNCERTAIN",
+      "upgrade": false,
+      "quote": null,
+      "notes": [
+        "conservative_fallback"
+      ],
+      "goldReason": "take...for me 非目标搭配"
+    },
+    {
+      "id": "N48",
+      "cat": "N",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "granting me 为动词用法，非目标表达"
+    },
+    {
+      "id": "O49",
+      "cat": "O",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "极短回答"
+    },
+    {
+      "id": "O50",
+      "cat": "O",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "极短回答"
+    },
+    {
+      "id": "P51",
+      "cat": "P",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I take their love for granted sometimes",
+      "notes": [],
+      "goldReason": "长回答中 grounding 正确，一次正确使用成立"
+    },
+    {
+      "id": "P52",
+      "cat": "P",
+      "gold": "CORRECT",
+      "got": "CORRECT",
+      "upgrade": true,
+      "quote": "I take it for granted",
+      "notes": [],
+      "goldReason": "目标表达正确，虽有口误/填充，不影响目标本身"
+    },
+    {
+      "id": "P53",
+      "cat": "P",
+      "gold": "NOT_USED",
+      "got": "NOT_USED",
+      "upgrade": false,
+      "quote": null,
+      "notes": [],
+      "goldReason": "长回答无目标表达"
+    }
+  ],
+  "rawEvidences": [
+    {
+      "id": "A01",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A02",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A03",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A04",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A05",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现该表达或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A06",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A07",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "A08",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体；'take risks' 与目标表达核心义不同，不构成使用。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "B09",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my health for granted sometimes.",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了目标表达 take something for granted 的合法形态（take my health for granted），语义为'把健康视为理所当然'，搭配和结构正确，且为真实回答内容而非元语言回声。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "B10",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "People often take the things they have for granted.",
+        "assessment": "CORRECT",
+        "reason": "学生使用了目标表达 'take something for granted' 的合法变体（take the things they have for granted），核心搭配正确，语义为'把拥有的东西视为理所当然'，与句子语境相符。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "B11",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I think we all take it for granted that the internet always works.",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了 'take it for granted that...' 结构，语义为'把互联网总是能用视为理所当然'，核心搭配和语义均正确。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "B12",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "Don't take your parents' support for granted.",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了目标表达 take something for granted 的祈使否定形式，核心搭配 take ... for granted 完整且语义（把父母的支持视为理所当然）成立。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "B13",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I shouldn't take my health for granted.",
+        "assessment": "CORRECT",
+        "reason": "学生使用了目标表达 take something for granted 的合法变体（take my health for granted），核心搭配正确，语义在句中成立。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "C14",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "He took her kindness for granted for years.",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了目标表达 'take something for granted' 的过去式形式，语义（把某人的善意视为理所当然）和搭配均正确。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "C15",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "Taking your family for granted",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了 take something for granted 的动名词形式，结构正确，语义为“把家人的存在视为理所当然”。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "C16",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "They have taken their opportunity for granted.",
+        "assessment": "ISSUE",
+        "reason": "短语结构正确，但语义角色错误：题目询问个人日常，回答却用第三人称 'They' 指代他人，且 'opportunity' 与日常忙碌话题无关，句意不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "D17",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take it for granted every single day.",
+        "assessment": "ISSUE",
+        "reason": "短语形式完整且为合法变体，但语义角色错误：'take something for granted' 意为把某事视为理所当然，不能用来回答'你通常忙碌吗/通常做什么'。此处 'it' 指代不明，句意不成立，属于搭配对象/语义使用不当。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "D18",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "analysis_fallback_no_reliable_usage_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "conservative_fallback"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "D19",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "She takes her friends' help for granted",
+        "assessment": "CORRECT",
+        "reason": "正确使用了目标表达 'take something for granted' 的第三人称单数形式，核心搭配与语义均正确。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "E20",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my exam for granted because it is very hard.",
+        "assessment": "ISSUE",
+        "reason": "短语结构完整出现，但语义角色错误：'take something for granted' 意为把某事视为理所当然、不珍惜，与 'because it is very hard' 的因果关系不成立，句意不通。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "E21",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "analysis_fallback_no_reliable_usage_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "conservative_fallback"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "E22",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "The weather takes the umbrella for granted.",
+        "assessment": "ISSUE",
+        "reason": "短语形式完整（take something for granted 的第三人称单数形式），但语义角色错误：weather（天气）不可能把 umbrella（雨伞）视为理所当然，句意不成立，属于搭配对象与语义逻辑错误。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "E23",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take English grammar for granted every morning to practice.",
+        "assessment": "ISSUE",
+        "reason": "短语形式完整出现，但语义角色错误：'take something for granted' 意为把某事视为理所当然，而此处想表达的是'每天早晨练习英语语法'，搭配对象和句意不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "F24",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my parents for grant.",
+        "assessment": "ISSUE",
+        "reason": "学生尝试使用目标表达 take something for granted，但核心搭配错误：固定短语为 take something for granted，此处误写为 for grant，缺少 -ed 形式，结构不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "F25",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I took for granted my friends.",
+        "assessment": "ISSUE",
+        "reason": "使用了目标表达 take something for granted，但宾语位置错误（应为 take my friends for granted），且语义与题目 Daily Routine 无关，句意不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "F26",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take for granted.",
+        "assessment": "ISSUE",
+        "reason": "学生使用了目标表达 take something for granted，但缺少宾语 it/things，结构不完整，语义不成立，属于搭配/结构错误。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "F27",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I make it for granted.",
+        "assessment": "ISSUE",
+        "reason": "学生试图使用 'take something for granted'，但动词搭配错误，将 'take' 误用为 'make'，且语义上 'it' 指代不明，整体表达不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "G28",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "Take something for granted.",
+        "assessment": "UNCERTAIN",
+        "reason": "学生逐字重复了建议表达本身，但未将其嵌入任何有意义的语境中，无法判断是真实使用还是单纯复述提示词，因此判为 UNCERTAIN。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "G29",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "take something for granted...",
+        "assessment": "UNCERTAIN",
+        "reason": "短语以孤立形式出现，后接省略号，未构成完整句子，语义角色和搭配对象不明，无法判断是否真正用于表达'把某事视为理所当然'。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "G30",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "analysis_fallback_no_reliable_usage_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "conservative_fallback"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "G31",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "analysis_fallback_no_reliable_usage_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "conservative_fallback"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "H32",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take it for grant every day.",
+        "assessment": "ISSUE",
+        "reason": "学生尝试使用目标表达，但核心搭配错误：应为 'take it for granted'，此处误写为 'grant'（缺少 -ed，且固定结构为 for granted）。此外语义与题目不匹配：题目问的是日常是否忙碌、通常做什么，'把某事视为理所当然' 无法回答该问题，句意不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "H33",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "for granted, people should appreciate family",
+        "assessment": "ISSUE",
+        "reason": "学生使用了目标表达 'take something for granted' 的片段 'for granted'，但缺少核心动词 'take' 和宾语结构，且与后句 'people should appreciate family' 语义衔接不清，未能构成合法搭配或完整语义。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "H34",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my family... for granted? maybe",
+        "assessment": "UNCERTAIN",
+        "reason": "学生使用了目标表达的核心结构 take ... for granted，但结尾的 '? maybe' 表明自我怀疑，无法可靠判断是否为有意的正确使用，故判 UNCERTAIN。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "I35",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take their support for granted.",
+        "assessment": "CORRECT",
+        "reason": "学生先说出错误形式 'take my parents for grant'，随后自我纠正为 'take their support for granted'，最终使用正确，语义（把父母的支持视为理所当然）与结构均符合目标表达。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "I36",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my friends for granted",
+        "assessment": "CORRECT",
+        "reason": "学生最终自纠后使用了目标表达 'take my friends for granted'，结构完整（take + 宾语 + for granted），语义为'把朋友视为理所当然'，符合该短语核心含义，属合法变体。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "I37",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I make it for granted.",
+        "assessment": "ISSUE",
+        "reason": "学生先说出正确形式 \"I take it for granted\"，但随即自我修正为 \"I make it for granted\"，最终表达使用了错误动词搭配（make 不能与 it for granted 构成该表达），核心搭配错误，故判 ISSUE。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "J38",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I mean take it for granted.",
+        "assessment": "CORRECT",
+        "reason": "学生先说出错误形式 'make my health for granted'，随后自我纠正为 'take it for granted'，最终表达清晰、结构正确，且语义（把健康视为理所当然）与目标表达一致，属于 self-corrected 的合法使用。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "J39",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my health for granted, but actually I make it for granted.",
+        "assessment": "ISSUE",
+        "reason": "前半句 'take my health for granted' 形式与语义正确，但学生随后用 'make it for granted' 重新表述，'make something for granted' 不是合法搭配，最终表达意图为错误说法，因此整体判为 ISSUE。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "K40",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "duplicate_conflicting_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "duplicate_count=2"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "K41",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take it for granted, but I shouldn't make it for granted.",
+        "assessment": "ISSUE",
+        "reason": "前半句 I take it for granted 形式正确，但后半句 make it for granted 搭配错误（应为 take ... for granted），且整体语义与题目不匹配，属于语义角色错误。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "L42",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "People often take their health for granted.",
+        "assessment": "CORRECT",
+        "reason": "完整使用了目标表达 take something for granted，形式为 take their health for granted，语义与搭配正确。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "L42",
+      "itemId": "seed-015",
+      "validated": {
+        "itemId": "seed-015",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生使用了 remember 而非建议表达 bear in mind，未出现该目标表达。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "L43",
+      "itemId": "seed-016",
+      "validated": {
+        "itemId": "seed-016",
+        "attempted": true,
+        "quote": "There are pros and cons to everything",
+        "assessment": "CORRECT",
+        "reason": "学生准确使用了目标表达 pros and cons，结构正确（there are pros and cons to...），语义为\"凡事都有利弊\"，符合该短语的核心含义。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "L43",
+      "itemId": "seed-008",
+      "validated": {
+        "itemId": "seed-008",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 broaden one's horizons 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "M44",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take it for granted every day",
+        "assessment": "ISSUE",
+        "reason": "短语结构完整出现，但语义角色错误：take something for granted 意为「把某事视为理所当然」，其宾语应是被忽视/被当作理所当然的具体事物（如健康、家人的付出）。此处宾语 it 指代不明，且与后半句「但我应该牢记健康」逻辑上无法构成「把某事视为理所当然」的合理语义，句意不成立。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "M44",
+      "itemId": "seed-015",
+      "validated": {
+        "itemId": "seed-015",
+        "attempted": true,
+        "quote": "I should bare in mind my health",
+        "assessment": "ISSUE",
+        "reason": "拼写/用词错误：正确形式为 bear in mind，学生写成 bare in mind（bare 意为「裸露的」，属形近词误用）。虽然结构 bear in mind + 宾语 的意图可辨，但核心搭配用词错误，故判 ISSUE。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "M45",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take my family for granted every day",
+        "assessment": "ISSUE",
+        "reason": "短语结构本身正确，但语义角色与语境不符：题目询问日常是否忙碌及通常做什么，此处把家人视为理所当然与问题无关，句意无法成立，属于搭配对象/语境错误。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "M45",
+      "itemId": "seed-016",
+      "validated": {
+        "itemId": "seed-016",
+        "attempted": true,
+        "quote": "there is pros and cons to that",
+        "assessment": "CORRECT",
+        "reason": "学生确实使用了目标表达 pros and cons，语义（利弊）在句中成立，核心搭配正确；仅存在主谓一致（is 应为 are）的语法问题，不影响该表达的判定。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "N46",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中只出现了 'granted' 作为动词 'grant' 的过去式（grant a wish），并非目标表达 'take something for granted' 或其合法变体，语义和结构均不匹配。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "N47",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "UNCERTAIN",
+        "reason": "analysis_fallback_no_reliable_usage_evidence",
+        "upgradeCandidate": false,
+        "validatorNotes": [
+          "conservative_fallback"
+        ]
+      },
+      "summary": null
+    },
+    {
+      "id": "N48",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现该表达或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "O49",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 take something for granted 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "O50",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 \"take something for granted\" 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "P51",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take their love for granted sometimes",
+        "assessment": "CORRECT",
+        "reason": "学生正确使用了目标表达 'take something for granted' 的合法变体（take their love for granted），核心搭配与语义（把父母的爱视为理所当然）均正确，且为真实语境中的自然使用，非元语言回声。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "P52",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": true,
+        "quote": "I take it for granted",
+        "assessment": "CORRECT",
+        "reason": "学生使用了目标表达 take something for granted 的合法形态（take it for granted），核心搭配与结构正确，语义为'把某事视为理所当然'，与后半句 'appreciate more what they have' 语义一致，构成完整表达。",
+        "upgradeCandidate": true,
+        "validatorNotes": []
+      },
+      "summary": null
+    },
+    {
+      "id": "P53",
+      "itemId": "seed-003",
+      "validated": {
+        "itemId": "seed-003",
+        "attempted": false,
+        "quote": null,
+        "assessment": "NOT_USED",
+        "reason": "学生回答中未出现 'take something for granted' 或其任何变体。",
+        "upgradeCandidate": false,
+        "validatorNotes": []
+      },
+      "summary": null
+    }
+  ]
+}
