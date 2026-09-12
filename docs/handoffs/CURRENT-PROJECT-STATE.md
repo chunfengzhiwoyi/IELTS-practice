@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-**PRODUCTION-PERSISTENCE-01-REMOTE-SUPABASE-EVIDENCE** — 部署 `supabase/migrations/0010_application_evidence.sql` 到真实远程 Supabase，并验证：insert / upsert / select / unique(user_id,item_id,session_id) / RLS user isolation / derived applicationLevel flow。当前 REMOTE_SUPABASE_DEPLOYMENT_VERIFIED=NO、REMOTE_SUPABASE_EVIDENCE_WRITE_READ=NOT_TESTED（production persistence 未宣称 complete）。
+**TARGETED_FIX_REQUIRED（PRODUCTION-PERSISTENCE-01 BLOCKED）** — 远程 Supabase 部署被两项 blocker 阻断：① 无 DDL 通道（缺 DATABASE_URL / Management API token / supabase CLI；anon+service role 均无 DDL 能力）；② 远程 schema drift（0008 的 speaking_evaluations 缺失、无 schema_migrations 追踪）。Control Plane 需先裁决部署机制与 drift 处置，再重开远程验证（目标仍为部署 0010 + insert/upsert/select/unique/RLS/derive flow 验证）。REMOTE_SUPABASE_DEPLOYMENT_VERIFIED 仍为 NO。
 
 ## PRODUCT_LOOP_04A (SPEAKING→VOCAB EVIDENCE AUDIT)
 - **04A_PRODUCT_DECISION**: EVIDENCE_PIPELINE_NEEDS_TARGETED_FIX
@@ -160,6 +160,19 @@
 - **PRODUCT_LOOP_04**: **COMPLETE**（理由：Evidence quality real-LLM verified + Evidence history/state writeback implemented + Level0→1 real path verified + Level2 mapping verified + Level2 real content path reachable + target-selection feedback verified）
 - **REMOTE_SUPABASE_DEPLOYMENT_VERIFIED**: **NO**（PRODUCT_LOOP_04_COMPLETE ≠ PRODUCTION_PERSISTENCE_COMPLETE）
 - **M3**: PAUSED；**NEXT_GATE**: **PRODUCTION-PERSISTENCE-01-REMOTE-SUPABASE-EVIDENCE**
+
+## PRODUCTION_PERSISTENCE_01 (REMOTE SUPABASE EVIDENCE VERIFICATION)
+**BLOCKED — PREFLIGHT 停止，未部署未写入（报告 `docs/product/PRODUCTION-PERSISTENCE-01-REMOTE-SUPABASE-EVIDENCE.md`）**
+- **REMOTE_PROJECT_CONFIGURED**: YES（ref `nizjfakkmziwanxdcdxd`）；**REMOTE_CONNECTIVITY**: PASS（端点可达，auth/rest 401 为未带 key 预期；service role 只读探测成功）
+- **REMOTE_SCHEMA_DRIFT**: **YES**（远程缺 0008 的 speaking_evaluations；无 supabase_migrations.schema_migrations 追踪；远程部署为手工/选择性应用）
+- **APPLICATION_EVIDENCE_TABLE_BEFORE**: **ABSENT**（0010 未部署，符合预期）
+- **DEPLOYMENT_METHOD**: NONE_AVAILABLE — 缺 DDL 凭据：DATABASE_URL / Management API token / supabase CLI 全部缺失；anon+service role 均无 DDL 能力（PostgREST 不提供 create table）
+- **0010_DEPLOYMENT**: **BLOCKED**（两个 blocker：DATABASE_DEPLOYMENT_CREDENTIAL_REQUIRED + REMOTE_SCHEMA_DRIFT；按任务卡 §8/§9 STOP，不通过 REST 绕过 DDL，不强推 0010）
+- **TEST_ROWS_CREATED**: 0；**TEST_ROWS_CLEANED**: 0（无需清理）；未触碰任何远程真实数据
+- **保留真实标签**: REMOTE_SUPABASE_DEPLOYMENT_VERIFIED=NO、REMOTE_SUPABASE_EVIDENCE_WRITE_READ=NOT_TESTED、REMOTE_SUPABASE_RLS_VERIFIED=NO、APPLICATION_EVIDENCE_DURABILITY=NOT_VERIFIED（repository 实现 + memory E2E 仍 PASS）、CROSS_DEVICE_VERIFIED=NO
+- **PRODUCT_RUNTIME_MODIFIED**: NO；本地回归快速确认 93/93 PASS（04E/04F/02-E2E/02C）；secret 无泄漏；.env.local 未 tracked
+- **SEPARATE_PERSISTENCE_DEBT**（既有已知，不扩 scope）: 远程 0008 部分未应用；Goal persistence 仍 MEMORY_REFERENCE_ONLY
+- **M3**: PAUSED；**NEXT_GATE**: TARGETED_FIX_REQUIRED（Control Plane 裁决部署机制 + drift 处置后重开）
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
