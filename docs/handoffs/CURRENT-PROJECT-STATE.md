@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-11（PRODUCT-LOOP-02-E2E-CLOSE 完成后）。
+> 最后更新：2026-09-12（PRODUCT-LOOP-03A-PLANNER-QUALITY-AUDIT 入 canonical 后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -38,7 +38,7 @@
 - **LEGACY_MINIAPP_API_KEY_ROTATION**：建议 provider 端 ROTATE/REVOKE（未执行，非 blocking）。
 
 ## NEXT_GATE
-待 Control Plane 指定。候选：SPEAKING_TO_VOCAB V1.1（Speaking→Vocabulary 反向写回，当前 NOT_IMPLEMENTED）、Supabase Goal persistence（当前 MEMORY_REFERENCE_ONLY / SUPABASE_NOT_IMPLEMENTED）、或进入 PRODUCT_LOOP_03。
+**PRODUCT-LOOP-03B（PLANNER-TARGETED-FIX）** — 由 PRODUCT-LOOP-03A 审计决定（见 PRODUCT_LOOP_03A 节）。候选后续：SPEAKING_TO_VOCAB V1.1（当前 NOT_IMPLEMENTED）、Supabase Goal persistence（当前 MEMORY_REFERENCE_ONLY / SUPABASE_NOT_IMPLEMENTED）。
 
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
@@ -124,6 +124,16 @@ PRESENT — canonical switch 后 typecheck PASS + next build PASS（依赖经 np
 - **M3: PAUSED**；**020: PRODUCT_FIXED_FORMAL_EVAL_PENDING**；**019_030: FIXED_PENDING_REGRESSION_1_OF_3**；**023_025_035: UNVERIFIED**。本任务未创建新 Eval run、未推进 lifecycle、未改 Frozen Gold。
 - E2E_FINDING：无产品 bug（初始 6 个失败均为 harness 契约假设错误，已修正）。
 - 产物：harness `tests/unit/product-loop-02-e2e.test.ts`（16 用例）；报告 `docs/product/PRODUCT-LOOP-02-E2E.md`。
+
+## PRODUCT_LOOP_03A（PLANNER-QUALITY-AUDIT）
+**COMPLETE** — 正式产品决策证据已入 canonical（commit 6fb560c，cherry-pick 4e44623）。审计文档：docs/product/PRODUCT-LOOP-03A-PLANNER-QUALITY-AUDIT.md（75 次场景执行 / 36 pairs / 3×7 天模拟）。
+- **PLANNER_DECISION: PLANNER_V1_NEEDS_TARGETED_FIXES**（无 P0；骨架健康：Memory floor / Speaking cadence floor / Band 隔离 / 确定性 / reason 真实性 53/53）。
+- **P0_FINDINGS: 0**；**P1_FINDINGS: 2**：
+  - **P1_1: ABSOLUTE_DUE_GATE_CLIFF** — dueCount>=5 → learn=0 绝对闸门不看预算：due 4→5 悬崖（w140 时 learn 18→0）、普通学习者 LEARN↔REVIEW 逐日振荡、持续积压期新学饿死。
+  - **P1_2: SILENT_OVER_BUDGET** — Review floor（+受保护口语）超预算时无 TODAY_OVERLOAD 信号（6 场景实测静默超预算）。
+- P2×5（examDate/feasibility DEAD_GOAL_SIGNAL、null-idle 绕过 cadence floor、weeklyWordTarget=0 不可表达、learn reason 压缩后不刷新、REVIEW 垄断日）；P3×3（REVIEW_BUDGET_CAP_RATIO 死配置等）；NEEDS_PEDAGOGY_EVIDENCE×4。
+- **NEXT_GATE: PRODUCT-LOOP-03B（PLANNER-TARGETED-FIX）** — 比例式 learn 分配 + 超预算显式信号 + P2 打包小修；完成后才进入 SPEAKING_TO_VOCAB V1.1。
+- PRODUCT_CODE_MODIFIED: NO；NEW_EVAL_RUN: NO；M3 维持 PAUSED。
 
 ## LAST_VERIFIED_EVAL_RUN
 `m3-20260910-125036` — 35 PASS / 0 FAIL / 4 UNVERIFIED（020/023/025/035）
