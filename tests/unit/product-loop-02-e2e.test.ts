@@ -313,9 +313,9 @@ describe("PRODUCT-LOOP-02-E2E: REAL LEARNING LOOP", () => {
     }
   });
 
-  it("E2E-08 SAFE FALLBACK：P3 题库与 daily 目标无自然匹配 → suggestedExpressions=[] 但 session 正常创建", async () => {
-    // seed-003 tags=[daily, ielts-part1]；P3 题库（Education and Technology 等）无子串重叠 → 无自然匹配
-    const r = await post(SPK_SESSION, "http://local/api/speaking/session", { part: "P3" });
+  it("E2E-08 SAFE FALLBACK：目标与限定题池无自然匹配 → suggestedExpressions=[] 但 session 正常创建", async () => {
+    // 04F 后 seed-003 在 P1/P2/P3 均有匹配；改用 topic 过滤锁定 Environment 题（seed-003 对其无匹配）→ 走 SAFE FALLBACK
+    const r = await post(SPK_SESSION, "http://local/api/speaking/session", { part: "P3", topic: "environment" });
     expect(r.status).toBe(200);
     spkSessionFallback = r.json;
     expect(spkSessionFallback.session.id).toBeTruthy();

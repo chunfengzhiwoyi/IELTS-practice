@@ -142,5 +142,17 @@
     "keyTopicWords": ["globalisation", "culture", "local", "benefits", "drawbacks"],
     "goodConnectors": ["there's no doubt that", "however", "a case in point is", "weighing both sides", "in the final analysis"],
     "dimensions": ["fluency", "vocabulary", "coherence", "argumentation"]
+  },
+  {
+    "questionId": "sp-p1-005",
+    "part": "P1",
+    "topic": "Environmental Habits",
+    "question": "Do you try to live in an environmentally friendly way? What do you do in your daily life?",
+    "questionZh": "你会尝试以环保的方式生活吗？你在日常生活中会做什么？",
+    "followUps": ["Do you think individual actions can make a real difference?", "Would you pay more for environmentally friendly products?"],
+    "expectedLength": { "min": 40, "ideal": 80, "max": 200 },
+    "keyTopicWords": ["environment", "friendly", "daily", "habits", "protect"],
+    "goodConnectors": ["for example", "to be honest", "one thing I do is", "also", "in the long run"],
+    "dimensions": ["fluency", "vocabulary", "coherence"]
   }
 ]

@@ -21,13 +21,13 @@ function getP3Question(): SpeakingQuestion {
 }
 
 describe("题库加载", () => {
-  it("1. 加载全部题目（12 题）", () => {
+  it("1. 加载全部题目（13 题）", () => {
     const all = getAllQuestions();
-    expect(all.length).toBe(12);
+    expect(all.length).toBe(13);
   });
 
   it("2. 按 Part 筛选", () => {
-    expect(getQuestionsByPart("P1").length).toBe(4);
+    expect(getQuestionsByPart("P1").length).toBe(5);
     expect(getQuestionsByPart("P2").length).toBe(4);
     expect(getQuestionsByPart("P3").length).toBe(4);
   });

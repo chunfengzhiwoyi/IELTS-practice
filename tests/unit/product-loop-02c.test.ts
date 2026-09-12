@@ -114,9 +114,9 @@ describe("PRODUCT-LOOP-02C target-selection（纯函数）", () => {
   });
 
   it("D1: 无可靠匹配 → match 返回 null（调用方走 SAFE FALLBACK）", () => {
-    const targets = selectTargetExpressions([makeState("seed-003", "EXPOSED")], itemOf);
-    // P3 题库无 daily 相关题
-    const match = matchQuestionForTargets(getQuestionsByPart("P3"), targets, topicTagsOf);
+    // 04F 后 seed-003 在 P1/P2/P3 均有匹配；改用 from my perspective（P2 池无 technology/environment/culture/opinion 题）
+    const targets = selectTargetExpressions([makeState("seed-006", "EXPOSED")], itemOf);
+    const match = matchQuestionForTargets(getQuestionsByPart("P2"), targets, topicTagsOf);
     expect(match.question).toBeNull();
     expect(match.matchedTargets).toEqual([]);
     expect(match.matchScore).toBe(0);
@@ -150,11 +150,12 @@ describe("PRODUCT-LOOP-02C session route（V1 接线）", () => {
   });
 
   it("D2: 无匹配 part → suggestedExpressions=[] 且普通 Speaking 正常（fallback 非错误）", async () => {
-    await seedLearnState(makeState("seed-003", "EXPOSED"));
-    const { status, json } = await callSession({ part: "P3" });
+    // 04F 后 seed-003 在 P3 有匹配；改用 pros and cons（P2 池无 technology/culture/environment/academic 题）
+    await seedLearnState(makeState("seed-016", "EXPOSED"));
+    const { status, json } = await callSession({ part: "P2" });
     expect(status).toBe(200);
     expect(json.suggestedExpressions).toEqual([]);
-    expect(json.session.part).toBe("P3");
+    expect(json.session.part).toBe("P2");
     expect(typeof json.questionData.questionId).toBe("string");
   });
 
