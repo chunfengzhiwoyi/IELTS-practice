@@ -298,6 +298,12 @@ button, input, textarea { font: inherit; color: inherit; }
 .today-zone__action-label { color: var(--ink); font-weight: 600; }
 .today-zone__action-reason { flex: 1 1 auto; min-width: 12ch; }
 .today-zone__action-meta { font-variant-numeric: tabular-nums; }
+.today-zone__overload {
+  margin: 10px 0 0; padding: 8px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--warn, #b45309) 10%, transparent);
+  color: var(--warn, #b45309); font-size: 0.875rem;
+  font-family: var(--font-ui); max-width: 56ch;
+}
 
 /* ---------- 能力货架（文本条目，非等权彩卡） ---------- */
 .ability-shelf { display: grid; gap: 0; }

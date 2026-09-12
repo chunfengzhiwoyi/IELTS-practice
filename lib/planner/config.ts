@@ -1,19 +1,20 @@
 /**
- * Planner V1 集中参数（PRODUCT-LOOP-02B）
+ * Planner V1 集中参数（PRODUCT-LOOP-02B + 03B targeted fix）
  * ------------------------------------------------------------
  * 所有可调阈值集中于此；改参数不碰决策逻辑。
+ * 03B：移除 REVIEW_PRESSURE_DUE_COUNT 绝对闸门；REVIEW_BUDGET_CAP_RATIO 正式激活。
  */
 export const PLANNER_CONFIG = {
-  /** Speaking cadence floor：闲置 ≥ 该天数 → 必须安排口语（预算允许时保留最小 slot） */
+  /** Speaking cadence floor：闲置 ≥ 该天数 → 必须安排口语（受保护 slot）。
+   *  speakingIdleDays == null（从未完成口语）同样视为 cadence overdue。 */
   SPEAKING_MAX_IDLE_DAYS: 2,
   /** 最小口语训练时长（分钟） */
   SPEAKING_SLOT_MINUTES: 5,
 
   /** 复习耗时模型：每词条约 0.5 分钟，向上取整 */
   REVIEW_MINUTES_PER_ITEM: 0.5,
-  /** Review 压力阈值：dueCount ≥ 该值 → 新学数量直接降到 0（高负载日允许只复习/复习+口语） */
-  REVIEW_PRESSURE_DUE_COUNT: 5,
-  /** 复习单独占用预算超过该比例 → 只复习，不追加任何任务 */
+  /** Review 预算上限比例：Review 建议量至多占用 dailyBudget 的该比例。
+   *  03B 激活：REVIEW target.count 预算感知（不再假设"必须完成全部 due"）。 */
   REVIEW_BUDGET_CAP_RATIO: 0.7,
 
   /** 新学日切片：weeklyWordTarget / 该除数 */

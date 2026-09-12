@@ -2,12 +2,14 @@
  * 备考目标档案 — 共享类型（client/server 通用，不依赖 localStorage）
  * ------------------------------------------------------------
  * Goal = 用户想去哪（约束输入）。
- * V1 参与调度的 Goal 信号：examDate / dailyMinutes / weeklyWordTarget。
+ * V1 真正参与调度的 Goal 信号：dailyMinutes / weeklyWordTarget。
+ * examDate 为 contextOnly（仅派生 feasibility 供展示与目标概览，不驱动 Planner 决策
+ * —— 03A P2-1 / 03B 契约修正，无经过验证的"距考试 X 天"教学规则）。
  * targetBand / currentBand 仅展示与记录，不允许参与训练量/能力推断
  * （当前没有经过验证的 Band → 训练规则，见 PRODUCT-LOOP-02B §3）。
  */
 export interface GoalProfile {
-  /** 考试日期 YYYY-MM-DD；null = 未设定 */
+  /** 考试日期 YYYY-MM-DD；null = 未设定（contextOnly，不驱动 Planner 决策） */
   examDate: string | null;
   /** 目标总分 */
   targetBand: number;
@@ -15,7 +17,7 @@ export interface GoalProfile {
   currentBand: number;
   /** 每日可投入分钟 */
   dailyMinutes: number;
-  /** 每周目标表达数 */
+  /** 每周目标表达数；0 = 本周不学新（合法语义，03B） */
   weeklyWordTarget: number;
   /** 首次设定时间 ISO；用于按真实流逝周数推进阶段进度 */
   setAt: string | null;

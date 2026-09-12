@@ -200,10 +200,10 @@ describe("PRODUCT-LOOP-02-E2E: REAL LEARNING LOOP", () => {
       plannedWeeks: null,
     });
     expect(r.status).toBe(200);
-    goalProfile = r.json.profile;
-    expect(goalProfile.dailyMinutes).toBe(30);
-    expect(goalProfile.weeklyWordTarget).toBe(30);
-    expect(goalProfile.targetBand).toBe(7);
+    goalProfile = r.json.profile as GoalProfile;
+    expect(goalProfile!.dailyMinutes).toBe(30);
+    expect(goalProfile!.weeklyWordTarget).toBe(30);
+    expect(goalProfile!.targetBand).toBe(7);
 
     const g = await get(GET_GOAL, "http://local/api/goal");
     expect(g.status).toBe(200);
@@ -431,7 +431,7 @@ describe("PRODUCT-LOOP-02-E2E: REAL LEARNING LOOP", () => {
       recurringIssueCount: 0,
       learnedThisWeek: 1,
       daysElapsedThisWeek: 2,
-      feasibility: "feasible" as const,
+      feasibility: "comfortable" as const,
       now,
     });
 

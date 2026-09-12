@@ -1,12 +1,13 @@
 /**
- * TodayPlanView UI 测试（PRODUCT-LOOP-02B §14 case 10）
- * 纯展示组件：渲染 planner.primary + actions，绝不重新排序。
+ * TodayPlanView UI 测试（PRODUCT-LOOP-02B §14 case 10 + 03B overload 展示）
+ * 纯展示组件：渲染 planner.primary + actions（顺序=planner 顺序），
+ * 以及 OVERLOADED 时的 overloadReason。
  */
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TodayPlanView } from "@/components/home/today-plan-view";
-import type { TodayPlan, NextAction } from "@/lib/planner/planner-v1";
+import type { TodayPlan, NextAction, BudgetStatus } from "@/lib/planner/planner-v1";
 
 vi.mock("next/link", () => ({
   default: ({
@@ -32,7 +33,10 @@ function action(type: NextAction["type"], i: number): NextAction {
   };
 }
 
-function plan(types: NextAction["type"][]): TodayPlan {
+function plan(
+  types: NextAction["type"][],
+  over: { budgetStatus?: BudgetStatus; overloadReason?: string } = {},
+): TodayPlan {
   const actions = types.map(action);
   return {
     date: "2026-09-11",
@@ -40,6 +44,8 @@ function plan(types: NextAction["type"][]): TodayPlan {
     primary: actions[0]!,
     dailyBudgetMinutes: 30,
     computedBy: "planner-v1",
+    budgetStatus: over.budgetStatus ?? "WITHIN_BUDGET",
+    overloadReason: over.overloadReason,
     inputsSnapshot: {
       dueCount: 0,
       speakingIdleDays: null,
@@ -85,5 +91,21 @@ describe("TodayPlanView", () => {
     const html = renderToStaticMarkup(<TodayPlanView plan={p} />);
     expect(html).toContain("REVIEW-reason-0");
     expect(html).toContain("今日预算 30 分钟");
+  });
+
+  it("case 10e: OVERLOADED 时渲染 overloadReason，不让 UI 猜", () => {
+    const p = plan(["REVIEW", "SPEAKING"], {
+      budgetStatus: "OVERLOADED",
+      overloadReason: "今天到期复习较多，同时口语已超期未练。计划略超出你的时间预算。",
+    });
+    const html = renderToStaticMarkup(<TodayPlanView plan={p} />);
+    expect(html).toContain('data-today-overload');
+    expect(html).toContain("计划略超出你的时间预算");
+  });
+
+  it("case 10f: WITHIN_BUDGET 不渲染 overload 提示", () => {
+    const p = plan(["LEARN_NEW"]);
+    const html = renderToStaticMarkup(<TodayPlanView plan={p} />);
+    expect(html).not.toContain("data-today-overload");
   });
 });

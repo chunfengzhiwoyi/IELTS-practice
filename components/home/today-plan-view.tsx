@@ -33,6 +33,12 @@ export function TodayPlanView({ plan }: { plan: TodayPlan }) {
 
       <p className="today-zone__sub">{primary.reason}</p>
 
+      {plan.budgetStatus === "OVERLOADED" && plan.overloadReason && (
+        <p className="today-zone__overload" data-today-overload>
+          {plan.overloadReason}
+        </p>
+      )}
+
       <Link
         href={primary.href}
         className="btn btn--primary"
