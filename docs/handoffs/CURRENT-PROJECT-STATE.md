@@ -122,6 +122,27 @@
 - 验证：04E focused **55/55 PASS**；回归（04B+02C+02D+02-E2E+planner+today）**183/183 PASS**；full unit **617 PASS / 2 FAIL**（llm-safety 静态债 + env.test 环境依赖，均非 04E 回归）；`npx tsc --noEmit` **PASS**；`npx next build` **PASS**（41/41）
 - **M3**: PAUSED；**NEXT_GATE**: **PRODUCT-LOOP-04-FINAL-E2E**
 
+## PRODUCT_LOOP_04_FINAL (FINAL E2E + INTEGRATION)
+**COMPLETE — 已入 canonical（cherry-pick `4468b84` → `e488de5`，0 冲突；报告 `docs/product/PRODUCT-LOOP-04-FINAL-E2E.md`，集成记录 `docs/product/PRODUCT-LOOP-04-FINAL-INTEGRATION.md`）**
+- **PRODUCT_LOOP_04_CORE_LOGIC**: **COMPLETE**（学→建议→真实使用→validated evidence→History→派生→target-selection 反馈，整链真实成立）
+- **PRODUCT_LOOP_04_FINAL_E2E**: **PASS**；**PRODUCT_LOOP_04_TECHNICAL_E2E**: PASS
+- **PRODUCT_LOOP_04_PRODUCTION_CONTENT_READINESS**: **NEEDS_CONTEXT_COVERAGE_FIX**（如实：技术闭环通过，但真实内容供给不足）
+- **APPLICATION_EVIDENCE_LOOP**: END_TO_END_VERIFIED；**REAL_LLM_PATH**: PASS（deepseek / deepseek-chat，5 次真实调用，fallback_used=false）
+- **APPLICATION_LEVEL_0_TO_1**: REAL_PATH_VERIFIED（真实 LLM 两独立 session CORRECT → 0 → 1）
+- **APPLICATION_LEVEL_1_TO_2**: PRODUCTION_LOGIC_VERIFIED_WITH_CONTROLLED_TIME_CONTEXT_FIXTURE（跨日/跨语境 evidence fixture + 真实 derive/写回 → 2；**LEVEL_2_TEST_SETUP: CONTROLLED_EVIDENCE_FIXTURE**）
+- **TARGET_SELECTION_FEEDBACK_LOOP**: VERIFIED（Level 0 score 4 → Level 2 score 2；入选但优先级下降；不永久排除）
+- **PLANNER_APPLICATION_LEVEL_INDEPENDENCE**: PASS（PlannerInput 无 applicationLevel）
+- **STATE_INVARIANTS**: PASS（recallLevel/status/nextReviewAt/currentIntervalDays/consecutiveCorrect/recognitionLevel 全程不变）
+- **RECOMPUTABLE_FROM_HISTORY**: PASS（人为置 0 → recompute 恢复 2；SSOT=Evidence History）
+- **SAME_SESSION_DEDUPE**: PASS（真实 LLM 路径 + 确定性路径双验证）
+- **ISSUE_DEMOTES**: NO；**NOT_USED**: NO_OP；**UNCERTAIN**: NO_OP；单条假阳性 CORRECT → Level 0（PASS）
+- **CURRENT_SPEAKING_QUESTION_BANK**: **12 questions**；**CROSS_CONTEXT_LEVEL2_REAL_PATH**: **STRUCTURALLY_UNREACHABLE**（可匹配 PHRASE/CHUNK 无任何表达能在题库匹配 ≥2 distinct contexts → 真实用户当前无法自然满足 >=2 distinct contexts）
+- **分类**: **P2_PRODUCT_CONTENT_COVERAGE_GAP**（非 state machine / LLM / evidence / planner bug；限制 STABLE_APPLICATION 在生产中的可达性）
+- **MEMORY_E2E**: PASS；**SUPABASE_REPOSITORY_SEMANTICS**: PASS（04E persistence mapping parity）；**SUPABASE_PERSISTENCE_IMPLEMENTED**: YES
+- **REMOTE_SUPABASE_DEPLOYMENT_VERIFIED**: **NO**；**REMOTE_SUPABASE_EVIDENCE_WRITE_READ**: **NOT_TESTED**（production persistence 未宣称 complete）
+- 回归：04E/04B/02C/02D/02-E2E/Planner/badcase-026 全 PASS；04C deterministic harness PASS（未重跑 159 次真实调用）；full unit **631/632 PASS**（**KNOWN_DEBT**: llm-safety.test.ts pre-existing——ModelSettingsPanel.tsx client import @/lib/llm/catalog，494eb69 即存在，未修改）；`tsc --noEmit` PASS；`next build` PASS
+- **M3**: PAUSED；**NEXT_GATE**: **PRODUCT-LOOP-04F-SPEAKING-CONTEXT-COVERAGE**（独立题库覆盖修复任务；本任务不得趁机补题库）
+
 ## LEGACY_SOURCE_RETIREMENT
 **COMPLETE** — `D:\Codex\ielts-monorepo` / `D:\Codex\ielts-android` / `D:\Codex\IELTS-m2-debug-console` 已退休删除；`feature/m2-debug-console` 与 `integration/m3-p1` branch 历史保留。
 
