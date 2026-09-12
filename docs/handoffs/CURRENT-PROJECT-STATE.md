@@ -1,7 +1,7 @@
 # CURRENT PROJECT STATE — IELTS Learning Platform Consolidation
 
 > 任何新 Agent 接管时：先读本文件 + `git status` / `git log` / `git worktree list`，再读 `docs/architecture/REPO-ARCH-03G-CANONICAL-SWITCH.md` 即可恢复当前施工状态。
-> 最后更新：2026-09-12（PRODUCT-LOOP-04B 实施完成后）。
+> 最后更新：2026-09-12（PRODUCT-LOOP-04AB-INTEGRATE 完成后）。
 
 ## REPO_CONSOLIDATION
 **COMPLETE**
@@ -16,7 +16,7 @@
 以 `git rev-parse HEAD` 为准（canonical switch 后 = 6a0ccb1 之上的 final switch docs commit）。
 
 ## CURRENT_PHASE
-**PRODUCT_LOOP_04B_IMPLEMENTED** — Speaking→Vocabulary evidence pipeline 已实现（04B worktree `feature/product-loop-04b-speaking-vocab-evidence`，base=0b7d773，未 merge canonical）：session frozen target snapshot + analyze 读回 + 单次 LLM 调用 schema 扩展 + 确定性 validator（grounding/白名单/枚举/missing-duplicate 降级）+ LONG_TERM_STATE_WRITEBACK=NO。04A audit（`audit/product-loop-04a-speaking-vocab-evidence`@`7761aa5`，docs-only）未集成 canonical（与任务卡假设不符，已如实记录）。验证：04B 48/48 + 回归 85/85 + 61/61 + full unit 563/1（llm-safety 静态债）+ typecheck + build PASS。下一 Gate：**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**。
+**PRODUCT_LOOP_04AB_INTEGRATED** — 04A Speaking→Vocabulary evidence audit（`2b7ac2c`）与 04B validated evidence pipeline（`a39e8f0`）已 cherry-pick 进入 canonical（0 冲突；04B 仍无长期状态写回）。验证：04B focused+02A/C/D+019/030 135/135、02-E2E+planner 59/59、full unit 562/2（llm-safety 静态债 + env.test 环境依赖）、typecheck + next build PASS。下一 Gate：**PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**。
 
 ## COMPLETED_REPO_ARCH_PHASES
 - REPO-ARCH-02-INVENTORY — PASS
@@ -40,15 +40,26 @@
 ## NEXT_GATE
 **PRODUCT-LOOP-04C-EVIDENCE-QUALITY-EVAL**（用真实模型跑 04A gold corpus 53 cases，评估 validated evidence 的真实 precision；通过前禁止任何长期状态写回）。
 
+## PRODUCT_LOOP_04A (SPEAKING→VOCAB EVIDENCE AUDIT)
+- **04A_PRODUCT_DECISION**: EVIDENCE_PIPELINE_NEEDS_TARGETED_FIX
+- **04A_EVIDENCE_SAFETY**: SAFE_FOR_EVIDENCE_ONLY
+- **04A_FALSE_CORRECT**: 5（SEMANTIC_MISUSE ×4 + DEFINITIONAL_META_ECHO ×1）
+- **04A_CORRECT_PRECISION**: 0.8077（21/26）
+- **APPLICATION_LEVEL_SEMANTICS**: SEMANTICS_PARTIAL
+- **04A_COMMIT**: 2b7ac2c（cherry-pick 7761aa5，docs-only：audit doc + frozen gold corpus 53 cases）
+- 结论：结构规则不可捕获语义误用/回声；直接写回 19.2% 虚假升级 → 冻结 LONG_TERM_STATE_WRITEBACK=NO
+
 ## PRODUCT_LOOP_04B (SPEAKING→VOCAB EVIDENCE PIPELINE)
-- **EVIDENCE_PIPELINE**: IMPLEMENTED（04B worktree，待 Control Plane 集成）
-- **EVIDENCE_RECORDING**: ENABLED
+- **EVIDENCE_PIPELINE**: IMPLEMENTED（已集成 canonical `a39e8f0`）
+- **SESSION_TARGET_SNAPSHOT**: IMPLEMENTED（itemId/canonicalForm/meaning frozen at session creation）
+- **SERVER_TARGET_AUTHORITY**: YES（analyze 按 sessionId 读回 frozen targets；不重选；客户端不可注入）
+- **EXISTING_ANALYZER_REUSED**: YES；**SECOND_LLM_CALL**: NO
+- **STRICT_VALIDATOR**: IMPLEMENTED（itemId whitelist / enum / quote grounding / missing / duplicate / unknown / contract conflict）
+- **GROUNDING_REQUIRED**: YES
+- **EVIDENCE_RECORDING**: ENABLED_REFERENCE_PATH
 - **EVIDENCE_QUALITY**: NOT_YET_PROVEN（证明属于 04C）
-- **LONG_TERM_STATE_WRITEBACK**: DISABLED（applicationLevel/recallLevel/status/nextReviewAt/currentIntervalDays/consecutiveCorrect 一律不动）
-- **SERVER_TARGET_AUTHORITY**: YES（session frozen snapshot；analyze 不重选、客户端不可注入）
-- **SECOND_LLM_CALL**: NO；**NEW_DATABASE_SCHEMA / NEW_SUPABASE_MIGRATION**: NO
-- **SUPABASE_EVIDENCE_PERSISTENCE**: NOT_IMPLEMENTED（toDomain 读回恒 []；EVIDENCE_DURABILITY=PARTIAL）
-- **04A INTEGRATION**: 未集成 canonical（audit branch `7761aa5` docs-only 保留；04B 以 0b7d773 为 base）
+- **LONG_TERM_STATE_WRITEBACK**: DISABLED；**APPLICATION_LEVEL_WRITEBACK / RECALL_LEVEL_WRITEBACK / REVIEW_SCHEDULE_WRITEBACK**: DISABLED
+- **SUPABASE_EVIDENCE_PERSISTENCE**: NOT_IMPLEMENTED（toDomain 读回恒 []；EVIDENCE_DURABILITY=PARTIAL；无新 DB schema / migration）
 - **SPEAKING→VOCAB V1.1**: evidence 记录已就绪；**反向写回仍 NOT_IMPLEMENTED（V1.1 FUTURE）**
 
 ## LEGACY_SOURCE_RETIREMENT
