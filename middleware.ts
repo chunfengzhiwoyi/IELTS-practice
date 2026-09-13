@@ -6,6 +6,7 @@
  *  2. 请求日志（trace_id 注入）
  *  3. 路由保护（AUTH_MODE=supabase 时保护 /learn /review /speaking /report）
  *  4. DASHBOARD-DEPLOY-ISOLATION-02：dashboard-only 独立部署路由白名单
+ *  5. LEARNING-REPORT-ONLINE-02：additive 放行 Learning Report 自身路由
  *
  * 交接单 §9.2：
  *  - OpenAI/Bailian/DeepSeek API Key 只存在服务端
@@ -22,16 +23,29 @@ const DASHBOARD_ALLOWED_EXACT = new Set([
   "/login",
   "/reset-password",
   "/auth/callback",
+  "/report", // LEARNING-REPORT-ONLINE-02
+]);
+
+/**
+ * LEARNING-REPORT-ONLINE-02：Learning Report 自身必要 API（additive）。
+ * 只放行报告页实际依赖的精确路径，不放宽任何其他 API。
+ */
+const REPORT_ALLOWED_EXACT = new Set([
+  "/api/report",
+  "/api/goal",
+  "/api/learning/stats",
 ]);
 
 /**
  * dashboard-only 白名单（仅 DASHBOARD-DEPLOY-ISOLATION-02 分支生效）。
  * 允许：根(→/dashboard)、/dashboard、/api/dashboard 及其子路由、
- * supabase 登录所需 /login /reset-password /auth/callback、Next 运行时资源。
+ * supabase 登录所需 /login /reset-password /auth/callback、Next 运行时资源、
+ * Learning Report 自身路由（/report 与 /api/report /api/goal /api/learning/stats）。
  * 其余一切页面/API 返回 404，不暴露原 IELTS 产品。
  */
 function isDashboardOnlyAllowed(pathname: string): boolean {
   if (DASHBOARD_ALLOWED_EXACT.has(pathname)) return true;
+  if (REPORT_ALLOWED_EXACT.has(pathname)) return true; // LEARNING-REPORT-ONLINE-02
   if (pathname.startsWith("/api/dashboard")) return true; // 主 API + bad-cases/lifecycle/modules/traces
   if (pathname.startsWith("/_next/")) return true; // Next 运行时资源（静态已由 matcher 排除）
   if (pathname.startsWith("/__nextjs")) return true; // dev overlay / stack frame

@@ -17,6 +17,8 @@ import {
 } from "@/lib/report";
 import { generateReportSummaryWithLlm } from "@/lib/llm/tasks/generate-report-summary";
 import { toAppError } from "@/lib/observability/errors";
+import { isSpeakingEvaluationsMissingError } from "@/lib/evaluation/missing-table";
+import type { SpeakingEvaluation } from "@/lib/evaluation/types";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { startTrace, endTraceSuccess, endTraceError, appErrorToTrace } from "@/lib/observability/trace-api-helper";
 import { canonicalStateHash } from "@/lib/observability/trace-context";
@@ -55,7 +57,29 @@ export async function GET(request: Request) {
 
     // M1: 从服务端 Repository 获取能力观察和评估
     const abilityObservations = await abilityRepo.getAll(user.id);
-    const evaluations = await evalRepo.getAll(user.id);
+    // LEARNING-REPORT-ONLINE-02: speaking_evaluations 缺表（42P01/PGRST205）时仅对该表降级，
+    // 报告其余真实指标照常返回；auth/RLS/network/未知错误一律 fail loudly。
+    let evaluations: SpeakingEvaluation[] = [];
+    let speakingEvaluationsStatus: "OK" | "NOT_INSTRUMENTED" = "OK";
+    try {
+      evaluations = await evalRepo.getAll(user.id);
+    } catch (err) {
+      if (isSpeakingEvaluationsMissingError(err)) {
+        evaluations = [];
+        speakingEvaluationsStatus = "NOT_INSTRUMENTED";
+        tctx.emitFallbackTriggered({
+          trigger_error_code: "SPEAKING_EVALUATIONS_NOT_INSTRUMENTED",
+          chain_snapshot: [
+            { step: "eval_repo_read", from: "supabase", to: "none", status: "unavailable" },
+            { step: "degraded_empty", from: "none", to: "report", status: "used" },
+          ],
+          degradation_flag: true,
+          to_kind: "rule_based_analysis",
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // M1: 获取词条内容供前端词库展示
     const itemContents: Record<string, { term: string; coreMeaning: string }> = {};
@@ -162,6 +186,7 @@ export async function GET(request: Request) {
         llmSummary,
         abilityObservations,
         evaluations,
+        speakingEvaluationsStatus,
         _raw: {
           states: aggregated.states,
           events: aggregated.events,
