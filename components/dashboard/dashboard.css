@@ -211,3 +211,11 @@
   .lxdb *{transition-duration:.08s!important;animation-duration:.08s!important}
   .lxdb-main.lxdb-refreshing *{filter:none;opacity:1}
 }
+
+/* DASHBOARD-DEPLOY-FIX-01: auth/error states (dashboard-only) */
+.lxdb-error{min-height:70vh;display:grid;place-content:center;gap:10px;color:var(--lx-text);text-align:center}
+.lxdb-error a{color:var(--lx-accent,#2563eb);text-decoration:underline}
+.lxdb-deny{min-height:70vh;display:grid;place-content:center;text-align:center;gap:8px;color:var(--lx-text)}
+.lxdb-deny strong{font-size:1.15rem}
+.lxdb-deny p{color:var(--lx-muted,#64748b);max-width:38ch;margin:0 auto}
+.lxdb-deny a{color:var(--lx-accent,#2563eb);text-decoration:underline}

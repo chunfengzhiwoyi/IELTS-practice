@@ -27,6 +27,7 @@ export function DashboardPage({ repository }: { repository: DashboardRepository 
   const [range, setRange] = useState<DashboardRange>("7d");
   const [data, setData] = useState<DashboardData | null>(null);
   const [phase, setPhase] = useState<"initial_loading" | "refreshing" | "ready">("initial_loading");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [overlay, setOverlay] = useState<OverlayContent | null>(null);
   const [popover, setPopover] = useState<{ id: ImpactMetricId; left: number; top: number } | null>(null);
   const first = useRef(true);
@@ -34,6 +35,7 @@ export function DashboardPage({ repository }: { repository: DashboardRepository 
   useEffect(() => {
     let alive = true;
     setPopover(null);
+    setLoadError(null);
     setPhase(first.current ? "initial_loading" : "refreshing");
     repository
       .getDashboard(range)
@@ -42,6 +44,15 @@ export function DashboardPage({ repository }: { repository: DashboardRepository 
         setData(d);
         setPhase("ready");
         first.current = false;
+      })
+      .catch((e: unknown) => {
+        if (!alive) return;
+        // DASHBOARD-DEPLOY-FIX-01：兜底错误态，避免 401/5xx 时无限 loading。
+        // 401 由服务端 auth guard（app/dashboard/layout.tsx）处理并 redirect /login；
+        // 此处仅保证任何失败都有明确反馈。
+        const msg = e instanceof Error ? e.message : String(e);
+        setLoadError(msg.includes("401") ? "请先登录查看数据看板" : "数据看板加载失败，请稍后重试");
+        setPhase("ready");
       });
     return () => {
       alive = false;
@@ -67,10 +78,21 @@ export function DashboardPage({ repository }: { repository: DashboardRepository 
   if (!data) {
     return (
       <div className="lxdb">
-        <div className="lxdb-load">
-          <div>灵犀 IELTS</div>
-          <strong>产品数据看板</strong>
-        </div>
+        {loadError ? (
+          <div className="lxdb-error" role="alert">
+            <strong>{loadError}</strong>
+            <p>
+              <a href="/login">前往登录</a>
+              <span> · </span>
+              <a href="/dashboard">重新加载</a>
+            </p>
+          </div>
+        ) : (
+          <div className="lxdb-load">
+            <div>灵犀 IELTS</div>
+            <strong>产品数据看板</strong>
+          </div>
+        )}
       </div>
     );
   }

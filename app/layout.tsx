@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Masthead } from "@/components/layout/masthead";
-import { AssistantDock } from "@/components/assistant/assistant-dock";
 import { AuthProvider } from "@/components/auth/useAuth";
 import { LlmStatusProvider } from "@/components/llm/llm-status";
 
+/**
+ * DASHBOARD-DEPLOY-FIX-01：dashboard-only 部署专用根布局。
+ * 仅存在于 dashboard-only 分支。
+ * 移除原 IELTS 产品全局 chrome（Masthead 导航 / AssistantDock / 学习 streak / AI 状态 UI），
+ * 保留 globals.css、字体与无视觉 providers（登录表单依赖 AuthProvider）。
+ */
 export const metadata: Metadata = {
-  title: "灵犀 · IELTS 英语高效学习助手",
-  description: "成熟、安静、专业的雅思高效学习助手 — 新词学习、主动回忆复习、口语训练与学习报告。",
+  title: "产品数据看板",
+  description: "灵犀 IELTS 产品数据看板",
 };
 
 export default function RootLayout({
@@ -27,11 +31,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-paper text-ink antialiased">
         <AuthProvider>
-          <LlmStatusProvider>
-            <Masthead />
-            {children}
-            <AssistantDock />
-          </LlmStatusProvider>
+          <LlmStatusProvider>{children}</LlmStatusProvider>
         </AuthProvider>
       </body>
     </html>
