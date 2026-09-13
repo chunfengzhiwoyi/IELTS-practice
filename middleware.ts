@@ -5,6 +5,7 @@
  *  1. 安全 headers (CSP, X-Content-Type-Options 等)
  *  2. 请求日志（trace_id 注入）
  *  3. 路由保护（AUTH_MODE=supabase 时保护 /learn /review /speaking /report）
+ *  4. DASHBOARD-DEPLOY-ISOLATION-02：dashboard-only 独立部署路由白名单
  *
  * 交接单 §9.2：
  *  - OpenAI/Bailian/DeepSeek API Key 只存在服务端
@@ -14,7 +15,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/** dashboard-only 部署允许的精确路径 */
+const DASHBOARD_ALLOWED_EXACT = new Set([
+  "/",
+  "/dashboard",
+  "/login",
+  "/reset-password",
+  "/auth/callback",
+]);
+
+/**
+ * dashboard-only 白名单（仅 DASHBOARD-DEPLOY-ISOLATION-02 分支生效）。
+ * 允许：根(→/dashboard)、/dashboard、/api/dashboard 及其子路由、
+ * supabase 登录所需 /login /reset-password /auth/callback、Next 运行时资源。
+ * 其余一切页面/API 返回 404，不暴露原 IELTS 产品。
+ */
+function isDashboardOnlyAllowed(pathname: string): boolean {
+  if (DASHBOARD_ALLOWED_EXACT.has(pathname)) return true;
+  if (pathname.startsWith("/api/dashboard")) return true; // 主 API + bad-cases/lifecycle/modules/traces
+  if (pathname.startsWith("/_next/")) return true; // Next 运行时资源（静态已由 matcher 排除）
+  if (pathname.startsWith("/__nextjs")) return true; // dev overlay / stack frame
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
+  // --- DASHBOARD-DEPLOY-ISOLATION-02：路由隔离（404 优先于 redirect）---
+  if (!isDashboardOnlyAllowed(request.nextUrl.pathname)) {
+    const blocked = new NextResponse("404 Not Found", { status: 404 });
+    blocked.headers.set("X-Content-Type-Options", "nosniff");
+    blocked.headers.set("X-Frame-Options", "DENY");
+    return blocked;
+  }
+
   const response = NextResponse.next({ request: { headers: request.headers } });
 
   // --- 安全 Headers ---
@@ -54,9 +86,6 @@ export async function middleware(request: NextRequest) {
   // --- Trace ID ---
   const traceId = request.headers.get("x-trace-id") ?? generateTraceId();
   response.headers.set("x-trace-id", traceId);
-
-  // --- 路由保护：当前全部页面公开访问，不强制登录 ---
-  // 认证检查由各 API Route 自行负责（如 /api/account/profile）
 
   return response;
 }

@@ -18,6 +18,17 @@ const nextConfig: NextConfig = {
         images: { unoptimized: true },
       }
     : {}),
+  // DASHBOARD-DEPLOY-ISOLATION-02：dashboard-only 独立部署专用。
+  // 根 URL 直接展示 /dashboard（rewrite 保持浏览器 URL 为 /）。
+  // beforeFiles 确保在 app/page.tsx 之前拦截根路径。
+  // 仅存在于 dashboard-only 分支；原产品分支不受影响。
+  ...(!staticExport
+    ? {
+        async rewrites() {
+          return { beforeFiles: [{ source: "/", destination: "/dashboard" }] };
+        },
+      }
+    : {}),
 };
 
 export default nextConfig;
