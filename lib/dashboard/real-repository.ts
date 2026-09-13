@@ -83,7 +83,9 @@ function isMissingTable(err: any): boolean {
   if (!err) return false;
   const code = err.code ?? "";
   const msg = String(err.message ?? "");
-  return code === "42P01" || /does not exist|not found|relation .* does not exist/i.test(msg);
+  // 42P01（直接 Postgres）/ PGRST205（PostgREST schema cache）均表示表不存在，
+  // 与 safeQuery 设计注释一致：missing → not_instrumented / not_connected，绝不 error。
+  return code === "42P01" || code === "PGRST205" || /does not exist|not found|relation .* does not exist|could not find the table/i.test(msg);
 }
 
 /** 能力探测：表缺失 -> unavailable（not_connected/not_instrumented），绝不 500/0/ready。 */

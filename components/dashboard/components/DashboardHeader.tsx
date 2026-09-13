@@ -18,7 +18,7 @@ export function DashboardHeader({
         <div className="lxdb-sub">观察核心价值、持续学习、学习效果与 AI 运行质量</div>
       </div>
       <div className="lxdb-topright">
-        <div className="lxdb-proto">原型示意数据 · 非生产指标</div>
+        <div className="lxdb-proto">Supabase 真实数据 · 离线评测独立标注</div>
         <div className="lxdb-controls">
           <div className="lxdb-seg">
             {(["7d", "30d", "all"] as DashboardRange[]).map((r) => (
