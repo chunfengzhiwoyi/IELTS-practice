@@ -7,7 +7,9 @@ type DashboardLoginPageProps = {
   onSubmit?: (credentials: { email: string; password: string }) => Promise<void> | void;
   loading?: boolean;
   error?: string | null;
-  onForgotPassword?: () => void;
+  onForgotPassword?: (email: string) => void;
+  /** 外部（登录路由）传递的提示消息，与内部 toast 共用 .toast 样式 */
+  toastMessage?: string | null;
 };
 
 const BASE_BAR_HEIGHTS = [12, 18, 24, 14, 27, 20, 31, 17, 23, 19];
@@ -17,6 +19,7 @@ export default function DashboardLoginPage({
   loading = false,
   error = null,
   onForgotPassword,
+  toastMessage = null,
 }: DashboardLoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -98,7 +101,7 @@ export default function DashboardLoginPage({
 
   function handleForgotPassword() {
     if (onForgotPassword) {
-      onForgotPassword();
+      onForgotPassword(email);
       return;
     }
 
@@ -293,7 +296,9 @@ export default function DashboardLoginPage({
         </form>
       </section>
 
-      {toast ? <div className={styles.toast}>{toast}</div> : null}
+      {toast ?? toastMessage ? (
+        <div className={styles.toast}>{toast ?? toastMessage}</div>
+      ) : null}
     </main>
   );
 }
