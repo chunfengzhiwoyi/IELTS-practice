@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 import {
   buildClientReportFromRaw,
@@ -109,7 +108,9 @@ export function ReportPage() {
         setLexicon(lex);
 
         // M1: 从服务端 observations 构建能力画像
-        const profile = buildSpeakingAbilityProfileFromObservations("demo-user-001", json.abilityObservations);
+        // LEARNING-REPORT-ONLINEIZATION-01: 不再使用 demo 身份；userId 取服务端真实数据。
+        const realUserId = json._raw.states[0]?.userId ?? "";
+        const profile = buildSpeakingAbilityProfileFromObservations(realUserId, json.abilityObservations);
         setSpeakingProfile(profile);
         setEvaluations(json.evaluations);
       } catch (err) {
@@ -151,7 +152,7 @@ export function ReportPage() {
       <div className="py-16 text-center">
         <h2 className="font-display text-lg text-ink">暂无学习记录</h2>
         <p className="mt-2 text-ink-meta">开始学习新表达后，报告会自动生成。</p>
-        <Link href="/learn" className="btn btn--primary mt-6">学习一个新表达</Link>
+        <p className="mt-6 text-sm text-ink-meta">学习功能入口未在当前部署开放（当前仅数据看板与学习报告）。</p>
       </div>
     );
   }
@@ -237,7 +238,7 @@ export function ReportPage() {
             </div>
             {report.thisWeek.reviewAccuracy != null && (
               <span className="text-xs font-mono text-ink-meta tabular-nums">
-                正确率 {Math.round(report.thisWeek.reviewAccuracy * 100)}%
+                正确率 {Math.round(report.thisWeek.reviewAccuracy)}%
               </span>
             )}
           </div>

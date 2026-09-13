@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { generateStudyPlan, type StudyPlan } from "@/lib/goal/plan";
 import { useGoalProfile } from "@/lib/client/use-goal-profile";
 import { useLearningStats } from "@/lib/client/use-learning-stats";
@@ -69,18 +68,17 @@ export function GoalOverview() {
 
   if (!hasGoal) {
     return (
-      <Link href="/goals" className="goal-overview goal-overview--empty">
+      <div className="goal-overview goal-overview--empty">
         <span className="goal-overview__kicker">备考目标</span>
-        <span className="goal-overview__cta">尚未设定 · 去设定 ›</span>
-      </Link>
+        <span className="goal-overview__cta">尚未设定</span>
+      </div>
     );
   }
 
   return (
-    <Link href="/goals" className="goal-overview">
+    <div className="goal-overview">
       <div className="goal-overview__head">
         <span className="goal-overview__kicker">备考目标</span>
-        <span className="goal-overview__edit">查看 / 调整 ›</span>
       </div>
       <p className="goal-overview__t">
         距考试 <span className="b">{weeksUntil}</span> 周 · 每周 {p.weeklyWordTarget} 词
@@ -105,6 +103,6 @@ export function GoalOverview() {
           ))}
         </div>
       )}
-    </Link>
+    </div>
   );
 }

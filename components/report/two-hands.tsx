@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ClientReport } from "@/lib/client/report-transform";
 
 export function TwoHands({ report }: { report: ClientReport }) {
@@ -27,9 +26,7 @@ export function TwoHands({ report }: { report: ClientReport }) {
           </p>
           <p>{vocabJudgment}</p>
         </div>
-        <Link href="/review" className="entry__more">
-          去复习 →
-        </Link>
+        <span className="entry__more entry__more--muted">学习入口未在当前部署开放</span>
       </div>
 
       {/* 口语表达 */}
@@ -56,9 +53,7 @@ export function TwoHands({ report }: { report: ClientReport }) {
             <p>还没有口语记录。你的词库已经有 {totalItems} 条，其中一部分可以直接用在口语里。</p>
           )}
         </div>
-        <Link href="/speaking" className="entry__more">
-          去练一题 →
-        </Link>
+        <span className="entry__more entry__more--muted">学习入口未在当前部署开放</span>
       </div>
     </section>
   );
