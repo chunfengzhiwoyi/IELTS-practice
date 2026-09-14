@@ -60,7 +60,7 @@
 
 ## 4. 当前管理员密码状态
 
-- 完整 E2E 验证后管理员密码为：`Lingxi-Dash-2026-v2!`（由 recovery session 设置）
+- 完整 E2E 验证后管理员密码为：[REDACTED — user-managed credential]（由 recovery session 设置）
 - 建议用户登录后通过「忘记密码」流程改回个人密码
 
 ## 5. 边界确认
