@@ -127,7 +127,7 @@ export default function DashboardResetPasswordRoute() {
 
           {phase === "done" ? (
             <>
-              <h1>密码已更新，请重新登录</h1>
+              <h1>密码已更新</h1>
               <p className={styles.subtitle}>即将返回登录页…</p>
             </>
           ) : null}
@@ -135,7 +135,7 @@ export default function DashboardResetPasswordRoute() {
           {phase === "ready" ? (
             <>
               <h1>设置新密码</h1>
-              <p className={styles.subtitle}>请输入新密码并确认</p>
+              <p className={styles.subtitle}>请输入新的登录密码</p>
 
               <div className={styles.field}>
                 <label htmlFor="reset-password">新密码</label>
@@ -211,6 +211,12 @@ export default function DashboardResetPasswordRoute() {
           ) : null}
         </form>
       </section>
+
+      {phase === "done" ? (
+        <div className={styles.toast} role="status">
+          密码已更新，请重新登录
+        </div>
+      ) : null}
     </main>
   );
 }

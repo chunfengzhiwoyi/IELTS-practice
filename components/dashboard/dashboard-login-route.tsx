@@ -45,19 +45,25 @@ export default function DashboardLoginRoute() {
   async function handleForgotPassword(email: string) {
     setError(null);
     if (!email.trim()) {
-      setToast("请先输入邮箱");
+      setToastAuto("请先输入邮箱");
       return;
     }
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: "https://ielts-practice-data.vercel.app/reset-password",
-    });
+    // 回跳当前部署来源（开发 localhost / 线上看板域名），统一走数据看板的 /reset-password
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     if (error) {
-      // 技术性失败也统一提示，不区分账号是否存在
-      setToast("如果该邮箱存在，我们已发送密码重置邮件");
+      // 技术性失败也统一提示，不区分账号是否存在（anti-account-enumeration）
+      setToastAuto("重置邮件已发送，请检查邮箱");
       return;
     }
-    setToast("如果该邮箱存在，我们已发送密码重置邮件");
+    setToastAuto("重置邮件已发送，请检查邮箱");
+  }
+
+  /** 悬浮 toast：统一自动消失，避免消息常驻 */
+  function setToastAuto(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2200);
   }
 
   return (
