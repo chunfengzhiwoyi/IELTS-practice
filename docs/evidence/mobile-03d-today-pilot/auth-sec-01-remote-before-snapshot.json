@@ -1,0 +1,46 @@
+{
+  "taken_at": "2026-09-15T11:47:41.587Z",
+  "project": "nizjfakkmziwanxdcdxd",
+  "wechat_login_states": {
+    "rls": "OFF",
+    "acl": "anon=ALL, authenticated=ALL, service_role=ALL (explicit)",
+    "session_json_contains_full_supabase_session": "YES (confirm/route.ts 写入 session 全量对象)",
+    "anon_http": {
+      "http": 200,
+      "bodyPrefix": "[]",
+      "role": "anon"
+    },
+    "service_http": {
+      "http": 200,
+      "bodyPrefix": "[]",
+      "role": "service_role"
+    }
+  },
+  "user_secrets": {
+    "rls": "ON",
+    "acl": "service_role=ALL (explicit); anon/authenticated=RLS-deny(no policy)",
+    "anon_http": {
+      "http": 200,
+      "bodyPrefix": "[]",
+      "role": "anon"
+    },
+    "service_http": {
+      "http": 200,
+      "bodyPrefix": "[]",
+      "role": "service_role"
+    }
+  },
+  "functions": {
+    "handle_new_auth_user": {
+      "prosecdef": true,
+      "search_path": "public (mutable per Advisor)"
+    },
+    "clean_expired_wechat_states": {
+      "search_path": "mutable (Advisor)"
+    },
+    "set_updated_at": {
+      "search_path": "mutable (Advisor)"
+    }
+  },
+  "note": "首轮并行探测 wechat_login_states/service 曾出现一次性 401 PGRST303（瞬态）；串行重跑确定性 200/200，以本文件为准。"
+}

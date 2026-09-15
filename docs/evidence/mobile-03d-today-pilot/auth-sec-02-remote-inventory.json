@@ -1,0 +1,59 @@
+{
+  "task": "AUTH-SEC-02 Remote Migration History Reconciliation Preflight",
+  "taken_at": "2026-09-15T20:20:00+08:00",
+  "channel": "READ_ONLY: PostgREST OpenAPI GET + limit=0 SELECT probes (service_role); no DML/DDL",
+  "remote_project": "nizjfakkmziwanxdcdxd",
+  "remote_migration_history": {
+    "entries": ["20260913131204", "remote_schema_recovery_01"],
+    "source": "用户最新只读检查（Agent 无 CLI token / DATABASE_URL，无法自取 supabase_migrations.schema_migrations）",
+    "note": "20260913131204 在 repo 中无来源记录（远程 bootstrap 痕迹）；remote_schema_recovery_01 为 RSR-01 用户 SQL Editor 执行记录"
+  },
+  "remote_tables_openapi": {
+    "users": ["id", "email", "target_exam", "preferences_json", "created_at", "updated_at", "display_name", "wechat_openid", "avatar_url", "last_login_at"],
+    "learning_items": ["id", "item_type", "canonical_form", "content_json", "topic_tags", "created_at", "normalized_term", "canonical_key"],
+    "user_item_states": ["user_id", "item_id", "recognition_level", "recall_level", "application_level", "consecutive_correct", "current_interval_days", "next_review_at", "updated_at", "status"],
+    "learning_events": ["id", "user_id", "item_id", "event_type", "answer", "correctness", "hint_level", "result_json", "client_event_id", "created_at", "task_type", "trace_id"],
+    "speaking_sessions": ["id", "user_id", "part", "topic", "question", "first_answer", "main_issue", "second_answer", "created_at"],
+    "ability_observations": ["id", "user_id", "dimension", "evidence_status", "source_type", "source_id", "note", "created_at"],
+    "recommendations": ["id", "user_id", "task_type", "reason", "priority", "status", "payload_json", "created_at"],
+    "user_secrets": ["user_id", "model_config_cipher", "ima_config_cipher", "kek_version", "created_at", "updated_at"],
+    "wechat_login_states": ["state", "status", "session_json", "created_at", "expires_at"],
+    "speaking_evaluations": ["id", "session_id", "user_id", "feedback_adopted", "dimension_changes", "resolved_issues", "unresolved_issues", "issue_resolution_rate", "feedback_effectiveness", "overall_change", "evaluated_at"]
+  },
+  "probe_results": {
+    "application_evidence": "HTTP 404 PGRST205 (table not found) -> 0010 未部署",
+    "ability_observations.level": "HTTP 400 42703 column does not exist",
+    "ability_observations.issues": "HTTP 400 42703",
+    "ability_observations.evidence": "HTTP 400 42703",
+    "ability_observations.suggestions": "HTTP 400 42703",
+    "user_item_states.status": "HTTP 200 OK",
+    "learning_events.task_type": "HTTP 200 OK",
+    "learning_events.trace_id": "HTTP 200 OK",
+    "learning_items.canonical_key": "HTTP 200 OK",
+    "speaking_evaluations.id": "HTTP 200 OK",
+    "users.wechat_openid": "HTTP 200 OK",
+    "user_secrets.model_config_cipher": "HTTP 200 OK",
+    "wechat_login_states.state": "HTTP 200 OK"
+  },
+  "schema_gaps_vs_local": {
+    "0008_section_1_2_ability_observations_level_issues_evidence_suggestions": "REMOTE_BEHIND (缺 4 列 + 相关 check)",
+    "0010_application_evidence": "REMOTE_BEHIND (整表缺失, PGRST205)"
+  },
+  "recovery_context": {
+    "docs": [
+      "docs/audits/REMOTE-SCHEMA-RECOVERY-01.md",
+      "docs/audits/REMOTE-SCHEMA-RECOVERY-01-deploy.sql",
+      "docs/audits/REMOTE-SCHEMA-RECOVERY-02.md",
+      "docs/product/REMOTE_SCHEMA_RECOVERY_PLAN.md",
+      "docs/product/DASHBOARD-RECOVERY-01-CURRENT-STATE.md"
+    ],
+    "deploy_channel": "用户 Supabase SQL Editor 手工执行（Agent 无 CLI token / DATABASE_URL，RSR-01 判定 DDL 通道）",
+    "deploy_content": "A 段 0008 §3 speaking_evaluations + B 段 0011 canonical_key",
+    "verification": "RSR-02: speaking_evaluations/canonical_key 部署后验证 PASS；/api/report 200",
+    "note": "REMOTE_SCHEMA_RECOVERY_PLAN.md 曾列 application_evidence 为存在，但 2026-09-15 只读探测为 PGRST205 不存在 —— 以本次实测为准"
+  },
+  "cli_help_verified": {
+    "version": "2.117.0 (npx cached, 与 RSR-01 记录一致)",
+    "repair_semantics": "supabase migration repair --status applied <version...> 仅修改 migration history 表，不重跑 migration SQL"
+  }
+}
