@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.1",
+  "generated_at": "2026-09-15T21:20:00+08:00",
+  "generated_by": "IELTS-HANDOFF-02 (agent, read-only reconciliation)",
+  "note": "仅包含可由当前 repo / 测试 / 只读证据验证的事实；推测与未来计划不在此文件。HANDOFF-02 已将外部核验的远程 Supabase 状态写入（SOURCE=external verified Supabase state, VERIFIED_AT=2026-09-15）。",
+
+  "repo": {
+    "canonical_path": "D:\\Codex\\IELTS-practice",
+    "branch": "dashboard-only",
+    "head": "69b5517",
+    "head_message": "fix(auth): dashboard auth flow — forgot-password toast, origin-based recovery redirect, reset page polish",
+    "upstream": "origin/dashboard-only",
+    "ahead_behind_origin": "0/0",
+    "worktree_dirty_count": 30,
+    "worktree_modified": [
+      "apps/android/app/build.gradle.kts",
+      "apps/android/app/src/main/kotlin/com/ielts/app/nav/Navigation.kt",
+      "apps/android/app/src/main/kotlin/com/ielts/app/screens/SpeakingScreen.kt",
+      "apps/android/app/src/main/kotlin/com/ielts/app/screens/TodayScreen.kt",
+      "apps/android/app/src/main/kotlin/com/ielts/app/theme/Theme.kt"
+    ],
+    "worktree_untracked_groups": [
+      "apps/android/app/*.png (16 screenshots)",
+      "apps/android/app/src/main/kotlin/com/ielts/app/screens/SpeakingResultDetailScreen.kt",
+      "apps/android/app/src/main/kotlin/com/ielts/app/screens/SpeakingResultScreen.kt",
+      "apps/android/app/src/main/kotlin/com/ielts/app/speaking/",
+      "apps/android/app/src/test/",
+      "supabase/migrations/0012_auth_surface_security_hardening.sql",
+      "tests/unit/auth-surface-security.test.ts",
+      "tests/unit/dashboard-login-v10-handoff.zip",
+      "scripts/security/",
+      "docs/audits/PUBLIC-DASHBOARD-SECURITY-AUDIT-01.md",
+      "docs/evidence/mobile-03d-today-pilot/",
+      "docs/handoff/2026-09-account-migration/",
+      "supabase/.temp/"
+    ],
+    "worktree_classification_ref": "02_CURRENT_STATE.md section 7 (HANDOFF-02 full table, 30 items)",
+    "secret_scan": "PASS — no JWT/sbp_/postgresql:///private-key tokens in untracked or modified files; .env/.env.local gitignored (.gitignore:21-22)",
+    "remote": "https://github.com/chunfengzhiwoyi/IELTS-practice.git",
+    "other_branches_seen": ["main", "repo/arch-consolidate"]
+  },
+
+  "product": {
+    "web_stack": "Next.js App Router + TypeScript",
+    "data_provider_switch": "DATA_PROVIDER=memory|supabase (lib/repository-factory.ts)",
+    "auth_mode_switch": "AUTH_MODE=demo|supabase (lib/auth/session.ts)",
+    "dashboard_only_middleware": true,
+    "learning_loop": {
+      "user_item_states": "SSOT, recall_level=mastery 0-2 frozen",
+      "learning_events": "append-only SSOT, idempotent (user_id, client_event_id)",
+      "application_evidence": "SSOT, idempotent (user_id, item_id, session_id)",
+      "application_level": "derived cache, recomputable from application_evidence",
+      "ability_observations": "SSOT, evidence_status state machine",
+      "speaking_evaluations": "SSOT, issueResolutionRate"
+    },
+    "current_gate": "SPEAKING_RESULT_V2 — canonical Analyzer lacks numeric IELTS Band / stable strengths / sentence-level analysis, Android Result V1 needs redesign"
+  },
+
+  "android": {
+    "stack": "Kotlin + Jetpack Compose + Robolectric/Roborazzi",
+    "compile_sdk": 34,
+    "min_sdk": 24,
+    "today": "IMPLEMENTED + VISUAL_FROZEN (PILOT-01 R3, real data wired)",
+    "speaking_shell": "IMPLEMENTED + VISUAL_FROZEN (PILOT-02, mock states)",
+    "speaking_recorder": "NOT_IMPLEMENTED (no RECORD_AUDIO)",
+    "speaking_auth_bridge": "NOT_IMPLEMENTED",
+    "speaking_http_client": "NOT_IMPLEMENTED",
+    "speaking_transcribe_analyze": "NOT_IMPLEMENTED (mock only)",
+    "result_mapping": "MOCK_FIXTURE_ONLY (band 6.5 is fixture, backend has no band)",
+    "result_v1": "PENDING REDESIGN under SPEAKING_RESULT_V2 product gate",
+    "bottom_nav": "5 items: 今日/学习/复习/口语/我的, active=wine",
+    "canonical_logo": "apps/android/app/src/main/res/drawable/seal.png",
+    "theme_tokens": "Paper #FAF8F4 / Accent #7A2E2B / Bronze #A07C4A (theme/Theme.kt)",
+    "screenshot_tests": [
+      "apps/android/app/src/test/kotlin/com/ielts/app/TodayScreenScreenshotTest.kt",
+      "apps/android/app/src/test/kotlin/com/ielts/app/SpeakingScreenshotTest.kt"
+    ],
+    "build_this_round": "NOT_RUN / ENVIRONMENT_BLOCKED (JAVA_HOME=D:/AI-Models/Andorid Studio/jbr invalid path, no JDK on disk; JDK not repaired this round)",
+    "build_history_evidence": "docs/evidence/mobile-03d-today-pilot/final_build.log (JDK 17.0.20+8, assembleDebug OK) — historical, not a current run"
+  },
+
+  "speaking": {
+    "endpoints": [
+      "POST /api/speaking/session",
+      "GET /api/speaking/sessions",
+      "POST /api/speaking/transcribe",
+      "POST /api/speaking/analyze",
+      "POST /api/speaking/complete"
+    ],
+    "web_recorder": "lib/client/audio-utils.ts (browser MediaRecorder)",
+    "ielts_band_available": "NO",
+    "band_leak_redline": "BAND_SCORE_LEAK in lib/llm/tasks/analyze-speaking.ts forces rule-engine fallback",
+    "sentence_level_analysis_server": "NO (android result detail is mock)",
+    "vocabulary_analysis": "PARTIAL (lexicalResource dimension + targetExpressionEvidence)",
+    "application_evidence_writeback_web": "IMPLEMENTED (recordApplicationEvidenceFromAnalysis)",
+    "application_evidence_remote_table": "NOT_DEPLOYED (AUTH-SEC-02 PGRST205 2026-09-15; outstanding gap for AUTH-SCHEMA-04)"
+  },
+
+  "supabase": {
+    "remote_project": "nizjfakkmziwanxdcdxd",
+    "remote_state_source": "external verified Supabase state (user channel)",
+    "remote_state_verified_at": "2026-09-15",
+    "auth_security_patch": "DEPLOYED_AND_VERIFIED",
+    "auth_security_patch_migration_id": "20260915123227_auth_surface_security_hardening",
+    "remote_migrations": [
+      "20260913131204 remote_schema_recovery_01",
+      "20260915123227 auth_surface_security_hardening"
+    ],
+    "remote_schema": "REMOTE_BEHIND",
+    "remote_schema_gaps": ["0008 section1+2 ability_observations 4 columns (42703)", "0010 application_evidence table (PGRST205)"],
+    "remote_verified_facts": {
+      "wechat_login_states_rls": "ON",
+      "wechat_login_states_anon": "SELECT/INSERT/UPDATE/DELETE = FALSE",
+      "wechat_login_states_authenticated": "SELECT/INSERT/UPDATE/DELETE = FALSE",
+      "wechat_login_states_service_role": "SELECT/INSERT/UPDATE/DELETE = TRUE",
+      "user_secrets_rls": "ON",
+      "user_secrets_anon_authenticated": "CRUD = FALSE",
+      "user_secrets_service_role": "CRUD = TRUE",
+      "handle_new_auth_user": "SECURITY DEFINER = TRUE, search_path='', anon EXECUTE=FALSE, authenticated EXECUTE=FALSE, service_role EXECUTE=TRUE",
+      "clean_expired_wechat_states": "search_path='', anon EXECUTE=FALSE, authenticated EXECUTE=FALSE, service_role EXECUTE=TRUE",
+      "set_updated_at": "search_path=''"
+    },
+    "superseded_evidence": {
+      "auth_sec_03_blocked": "SUPERSEDED_BY_REMOTE_VERIFICATION (0012 now DEPLOYED_AND_VERIFIED; BLOCKED was due to no DDL channel, resolved externally 2026-09-15)"
+    },
+    "local_migrations": ["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0010", "0011", "0012"],
+    "missing_local_slot": "0009 (deferred, no file)",
+    "migration_history_drift": "YES (canonical 0001-0011 not recorded remotely; repair part of AUTH-SCHEMA-04)"
+  },
+
+  "tests": {
+    "security_tests": "24/24 PASS (tests/unit/auth-surface-security.test.ts)",
+    "web_full_suite": "636 PASS / 32 FAIL (9 files pre-existing: badcase-019, badcase-026, badcase-033, product-loop-02d, int-m3-01)",
+    "web_typecheck": "PASS (tsc --noEmit)",
+    "web_lint_new_files": "PASS",
+    "android_screenshot_tests": "NOT_RUN / ENVIRONMENT_BLOCKED (JDK missing this round); historical screenshots in docs/evidence/mobile-03d-today-pilot/ and apps/android/app/"
+  },
+
+  "open_gates": {
+    "product": "SPEAKING_RESULT_V2 — Android Result V1 redesign (band/strengths/sentence-level not supported by canonical analyzer)",
+    "engineering": "AUTH_SCHEMA_04 — (1) materialize remote 0008§1/§2 (2) materialize 0010 application_evidence (3) verify local/remote schema equality (4) migration history reconciliation (5) restore normal migration workflow",
+    "later": ["MOBILE-04 (Android recorder + auth bridge plan B + real API wiring) — NOT current execution item", "session_json encryption (P1)", "deploy env verification (Vercel/Supabase Auth URL)", "web test debt 32 pre-existing failures"],
+    "deferred": ["0009 instrumentation", "goal supabase persistence", "miniapp api key rotation", "real-device android screenshots"]
+  },
+
+  "known_unknowns": [
+    "Remote supabase_migrations.schema_migrations full table content (canonical 0001-0011 status per-migration still unverified — repair step of AUTH-SCHEMA-04)",
+    "Remote function ACLs/proconfig beyond the 2026-09-15 external verification (pg_catalog not visible via REST)",
+    "Vercel production env values (DASHBOARD_ALLOWED_EMAILS / NEXT_PUBLIC_APP_URL)",
+    "Supabase Auth Site URL / Redirect URL configuration status",
+    "Whether application_evidence was ever deployed then dropped (recovery plan doc claims present, 2026-09-15 probe says absent)",
+    "Real-device Android rendering (current verification is Robolectric JVM rendering)",
+    "JDK install location for future Android builds (JAVA_HOME invalid; SDK ready at C:\\Users\\34394\\AppData\\Local\\Android\\Sdk)"
+  ]
+}
