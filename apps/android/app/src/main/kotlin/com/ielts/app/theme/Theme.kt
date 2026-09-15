@@ -31,6 +31,11 @@ val Pos = Color(0xFF3F7A4F)      // 在线 / 就绪（沉静绿）
 val Amber = Color(0xFFB07A2A)    // 已配置未测（琥珀）
 val Bar = Color(0xFFC4BCAE)      // 柱状图非今日柱（沉静灰褐）
 
+// ----------------------------- 今日页环境色（取自 Approved Visual Reference 取样） -----------------------------
+val HeroWarm = Color(0xFFF8EDDF)  // Hero 顶部暖光（轻环境光）
+val Cream = Color(0xFFFBEEE2)     // 本周学习卡暖米底
+val Blush = Color(0xFFF9EAE5)     // 快捷入口浅暖红底
+
 // ----------------------------- 字体（内置 OFL 衬线 + 中文回退） -----------------------------
 val DisplayFont = FontFamily(
     Font(R.font.fraunces, FontWeight.Normal),

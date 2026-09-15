@@ -11,7 +11,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -35,6 +38,8 @@ object Routes {
     const val PRIVACY = "privacy"
     const val API_CONFIG = "api_config"
     const val REPORT = "report"
+    const val SPEAKING_RESULT = "speaking_result"
+    const val SPEAKING_RESULT_DETAIL = "speaking_result_detail"
     const val GOAL = "goal"
     const val LOGIN = "login"
 }
@@ -56,7 +61,11 @@ private fun currentRoute(navController: NavController): String? =
 @Composable
 fun BottomBar(navController: NavController) {
     val current = currentRoute(navController)
-    NavigationBar(containerColor = Paper, contentColor = InkMeta) {
+    NavigationBar(
+        containerColor = Paper,
+        contentColor = InkMeta,
+        modifier = Modifier.height(72.dp),
+    ) {
         tabs.forEach { tab ->
             val selected = current == tab.route
             NavigationBarItem(
@@ -72,13 +81,14 @@ fun BottomBar(navController: NavController) {
                     Icon(
                         painter = painterResource(if (selected) tab.iconActive else tab.icon),
                         contentDescription = tab.label,
-                        tint = Color.Unspecified,
+                        tint = if (selected) Accent else InkMeta,
+                        modifier = Modifier.size(24.dp),
                     )
                 },
                 label = {
                     Text(
                         tab.label,
-                        style = Type.uiLabel.copy(fontSize = 11.sp, color = if (selected) Accent else InkMeta),
+                        style = Type.uiLabel.copy(fontSize = 10.sp, color = if (selected) Accent else InkMeta),
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
@@ -101,7 +111,9 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel) {
             composable(Routes.TODAY) { TodayScreen(vm, navController, innerPadding) }
             composable(Routes.LEARN) { LearnScreen(vm, navController, innerPadding) }
             composable(Routes.REVIEW) { ReviewScreen(vm, navController, innerPadding) }
-            composable(Routes.SPEAKING) { SpeakingScreen(vm, innerPadding) }
+            composable(Routes.SPEAKING) { SpeakingScreen(vm, navController, innerPadding) }
+            composable(Routes.SPEAKING_RESULT) { SpeakingResultScreen(navController, innerPadding) }
+            composable(Routes.SPEAKING_RESULT_DETAIL) { SpeakingResultDetailScreen(navController, innerPadding) }
             composable(Routes.PROFILE) { ProfileScreen(vm, navController, innerPadding) }
             composable(Routes.PROFILE_EDIT) { ProfileEditScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.IDENTITY) { IdentityScreen(navController, innerPadding) { navController.popBackStack() } }
