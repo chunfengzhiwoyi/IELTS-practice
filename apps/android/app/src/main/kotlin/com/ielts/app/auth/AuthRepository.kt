@@ -69,6 +69,14 @@ class AuthRepository(
         serverOk
     }
 
+    /**
+     * MOBILE-04C — session 已过期/失效（业务请求 401）时的本地清理：
+     * 只清本地 CookieJar，不发 server logout（session 本身已无效）。
+     */
+    suspend fun clearLocalSession(): Unit = withContext(Dispatchers.IO) {
+        client.clearCookies()
+    }
+
     private fun parseAuthenticated(resp: Response): AuthResult {
         val body = resp.body?.string().orEmpty()
         val dto = try {

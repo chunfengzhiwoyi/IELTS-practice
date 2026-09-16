@@ -51,6 +51,8 @@ data class SpeakingUiState(
     val micPermissionPermanentlyDenied: Boolean = false,
     /** 录音启动/保存失败的产品级提示 */
     val recordingError: String? = null,
+    /** 提交分析失败的产品级提示（真实后端路径；仅产品语言，禁止技术文本） */
+    val submitError: String? = null,
 )
 
 /** 状态回调：所有用户动作都以显式回调表达，Screen 层决定如何响应。 */

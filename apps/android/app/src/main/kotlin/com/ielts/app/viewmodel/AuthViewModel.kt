@@ -86,4 +86,16 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             state = AuthState(AuthStatus.UNAUTHENTICATED)
         }
     }
+
+    /**
+     * MOBILE-04C §4.4 — 业务请求收到 401（session 过期/失效）时由调用方触发：
+     * 清空本地 cookie → 状态回 UNAUTHENTICATED → Auth Gate 导航至 Login。
+     * 不向 server 发起 logout（session 已无效）。
+     */
+    fun onSessionExpired() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { repo.clearLocalSession() }
+            state = AuthState(AuthStatus.UNAUTHENTICATED)
+        }
+    }
 }

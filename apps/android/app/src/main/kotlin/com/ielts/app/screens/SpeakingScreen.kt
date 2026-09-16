@@ -53,10 +53,15 @@ import com.ielts.app.speaking.AudioSessionState
 import com.ielts.app.speaking.MicPermissionDecision
 import com.ielts.app.speaking.SpeakingAudioFactory
 import com.ielts.app.speaking.SpeakingAudioSession
+import com.ielts.app.speaking.SpeakingBackendClient
+import com.ielts.app.speaking.SpeakingBackendException
 import com.ielts.app.speaking.SpeakingEvents
 import com.ielts.app.speaking.SpeakingInputMode
 import com.ielts.app.speaking.SpeakingMock
 import com.ielts.app.speaking.SpeakingRecordingState
+import com.ielts.app.speaking.SpeakingResultHolder
+import com.ielts.app.speaking.SpeakingResultMapper
+import com.ielts.app.speaking.SpeakingSubmitError
 import com.ielts.app.speaking.SpeakingUiState
 import com.ielts.app.speaking.resolveMicPermission
 import com.ielts.app.theme.Accent
@@ -73,9 +78,11 @@ import com.ielts.app.theme.Paper
 import com.ielts.app.theme.Paper2
 import com.ielts.app.theme.Type
 import com.ielts.app.theme.UiFont
+import com.ielts.app.viewmodel.AuthViewModel
 import com.ielts.app.viewmodel.StudyViewModel
 import com.ielts.core.model.SpeakingQuestion
 import com.ielts.core.service.SeedData
+import java.io.File
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
@@ -102,6 +109,7 @@ internal fun formatSpeakingSeconds(s: Int): String = "%02d:%02d".format(s / 60, 
  * - 生命周期：ON_STOP 安全停止录音并保留有效录音；dispose 停止一切并清理 temp
  *
  * @param initialState 仅测试/预览注入；生产调用不传（默认 null 走完整状态机）。
+ * @param authVm 真实 Auth Gate 场景传入；提交遇 401 时触发 session-expired 重新登录路径。
  */
 @Composable
 fun SpeakingScreen(
@@ -109,6 +117,7 @@ fun SpeakingScreen(
     navController: NavController,
     innerPadding: PaddingValues,
     initialState: SpeakingUiState? = null,
+    authVm: AuthViewModel? = null,
 ) {
     // ---------------- 真实题库（只读，不写回） ----------------
     val poolOf = { part: String -> SeedData.questions.filter { it.part == part } }
@@ -127,6 +136,16 @@ fun SpeakingScreen(
     var timerSeconds by remember { mutableIntStateOf(initialState?.timerSeconds ?: 0) }
     var recordedSeconds by remember { mutableIntStateOf(initialState?.recordedSeconds ?: 0) }
     var text by remember { mutableStateOf(initialState?.text ?: "") }
+
+    // MOBILE-04C：真实后端链路状态（生产路径 initialState == null）
+    var serverSessionId by remember { mutableStateOf<String?>(null) }
+    var submitError by remember { mutableStateOf<String?>(null) }
+    val useRealBackend = initialState == null
+
+    // 新一轮练习开始清空旧结果（防止 Result 页残留显示上一轮）
+    LaunchedEffect(Unit) {
+        if (useRealBackend) SpeakingResultHolder.clear()
+    }
 
     fun slot(): SpeakingUiState {
         val list = poolOf(part)
@@ -217,16 +236,65 @@ fun SpeakingScreen(
         }
     }
 
-    // ---------------- 提交（MOCK_ANALYSIS=YES：不读真实音频时长/内容） ----------------
+    // ---------------- 提交（真实后端链路 / 测试注入路径分离） ----------------
+    // MOBILE-04C：生产（initialState==null）→ createSession → transcribe(m4a) / text →
+    // canonical analyze → Result V2 真实映射 → complete。测试注入 initialState → 保留 Mock。
+    suspend fun submitToBackend() {
+        submitError = null
+        try {
+            // 1. 确保真实 server session（会话已创建则复用；questionId 与本地题库展示一致）
+            val currentQuestion = slot().slot.question
+            val sid = serverSessionId ?: run {
+                val s = SpeakingBackendClient.createSession(part, currentQuestion.questionId)
+                serverSessionId = s.id
+                s.id
+            }
+            // 2. 获取答案：VOICE → 真实 m4a transcribe；TEXT → 直接文本（VOICE/TEXT 汇合点）
+            val answer = if (mode == SpeakingInputMode.VOICE) {
+                val rec = session.lastRecording
+                val file = rec?.path?.let { File(it) }
+                if (file == null || !file.exists()) {
+                    throw SpeakingBackendException(SpeakingSubmitError.AUDIO_UPLOAD_FAILED)
+                }
+                SpeakingBackendClient.transcribe(file)
+            } else {
+                text.trim()
+            }
+            if (answer.isBlank()) {
+                throw SpeakingBackendException(SpeakingSubmitError.TRANSCRIPTION_FAILED)
+            }
+            // 3. canonical analyze（与 Web 共享同一后端）
+            val raw = SpeakingBackendClient.analyze(sid, answer, isSecondAnswer = false)
+            // 4. 真实 Result V2 映射（复用冻结 mapper，不改视觉）
+            SpeakingResultHolder.set(SpeakingResultMapper.map(raw), raw)
+            // 5. 显式完成会话（尽力而为；失败不销毁已成功的 analysis）
+            SpeakingBackendClient.complete(sid)
+            recording = SpeakingRecordingState.SUCCESS
+        } catch (e: SpeakingBackendException) {
+            submitError = e.error.userMessage
+            if (e.error == SpeakingSubmitError.SESSION_EXPIRED) {
+                authVm?.onSessionExpired()
+            }
+            recording = SpeakingRecordingState.ERROR
+        } catch (e: Exception) {
+            submitError = SpeakingSubmitError.SERVER_UNAVAILABLE.userMessage
+            recording = SpeakingRecordingState.ERROR
+        }
+    }
+
     LaunchedEffect(recording, slotIndex, text) {
         if (recording == SpeakingRecordingState.SUBMITTING) {
-            SpeakingMock.submitDelay()
-            val fail = if (mode == SpeakingInputMode.TEXT) {
-                SpeakingMock.textTooShort(text.length)
+            if (useRealBackend) {
+                submitToBackend()
             } else {
-                SpeakingMock.voiceSubmitFails()
+                SpeakingMock.submitDelay()
+                val fail = if (mode == SpeakingInputMode.TEXT) {
+                    SpeakingMock.textTooShort(text.length)
+                } else {
+                    SpeakingMock.voiceSubmitFails()
+                }
+                recording = if (fail) SpeakingRecordingState.ERROR else SpeakingRecordingState.SUCCESS
             }
-            recording = if (fail) SpeakingRecordingState.ERROR else SpeakingRecordingState.SUCCESS
         }
     }
 
@@ -278,6 +346,8 @@ fun SpeakingScreen(
                 timerSeconds = 0
                 recordedSeconds = 0
                 micError = null
+                serverSessionId = null
+                submitError = null
             }
         },
         toggleHint = { hintOpen = !hintOpen },
@@ -290,6 +360,8 @@ fun SpeakingScreen(
                 timerSeconds = 0
                 recordedSeconds = 0
                 micError = null
+                serverSessionId = null
+                submitError = null
             }
         },
         startRecording = {
@@ -323,6 +395,7 @@ fun SpeakingScreen(
             timerSeconds = 0
             recordedSeconds = 0
             micError = null
+            submitError = null
         },
         submit = {
             // 提交前停止本地播放（录音与播放互斥；PLAYING 态不允许带着播放进分析）
@@ -330,6 +403,7 @@ fun SpeakingScreen(
             if (mode == SpeakingInputMode.TEXT) {
                 recordedSeconds = 0
             }
+            submitError = null
             recording = SpeakingRecordingState.SUBMITTING
         },
         retrySubmit = {
@@ -361,6 +435,7 @@ fun SpeakingScreen(
         micPermissionDenied = micDenied,
         micPermissionPermanentlyDenied = micPermanent,
         recordingError = micError,
+        submitError = submitError,
     )
     SpeakingShell(state = uiState, events = events, modifier = Modifier.padding(innerPadding))
 }
@@ -549,7 +624,7 @@ private fun VoicePanel(state: SpeakingUiState, events: SpeakingEvents) {
         SpeakingRecordingState.RECORDED -> RecordedState(state, events)
         SpeakingRecordingState.SUBMITTING -> SubmittingState()
         SpeakingRecordingState.SUCCESS -> SuccessState(events)
-        SpeakingRecordingState.ERROR -> ErrorState(events)
+        SpeakingRecordingState.ERROR -> ErrorState(state, events)
     }
 }
 
@@ -780,7 +855,7 @@ private fun SuccessState(events: SpeakingEvents) {
 // ---- ERROR ----
 
 @Composable
-private fun ErrorState(events: SpeakingEvents) {
+private fun ErrorState(state: SpeakingUiState, events: SpeakingEvents) {
     Column(
         Modifier.fillMaxWidth().padding(vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -794,7 +869,7 @@ private fun ErrorState(events: SpeakingEvents) {
         Spacer(Modifier.height(14.dp))
         Text("分析没有完成", style = SubmitMain)
         Spacer(Modifier.height(4.dp))
-        Text("请再试一次", style = IdleSub)
+        Text(state.submitError ?: "请再试一次", style = IdleSub)
         Spacer(Modifier.height(20.dp))
         PrimaryButton(text = "重新提交", onClick = events.retrySubmit)
         Spacer(Modifier.height(10.dp))

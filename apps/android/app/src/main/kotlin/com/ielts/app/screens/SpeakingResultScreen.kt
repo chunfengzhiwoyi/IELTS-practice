@@ -14,6 +14,7 @@ import com.ielts.app.components.PrimaryButton
 import com.ielts.app.nav.Routes
 import com.ielts.app.speaking.ResultSummaryModel
 import com.ielts.app.speaking.SpeakingResultFixtures
+import com.ielts.app.speaking.SpeakingResultHolder
 import com.ielts.app.theme.Paper
 
 /**
@@ -31,7 +32,7 @@ import com.ielts.app.theme.Paper
 fun SpeakingResultScreen(
     navController: NavController,
     innerPadding: PaddingValues,
-    model: ResultSummaryModel = SpeakingResultFixtures.fullUi(),
+    model: ResultSummaryModel = SpeakingResultHolder.current ?: SpeakingResultFixtures.fullUi(),
 ) {
     Column(
         Modifier

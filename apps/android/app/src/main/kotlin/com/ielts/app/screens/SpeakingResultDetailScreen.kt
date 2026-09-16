@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.ielts.app.speaking.ResultDimensionCard
 import com.ielts.app.speaking.ResultSummaryModel
 import com.ielts.app.speaking.SpeakingResultFixtures
+import com.ielts.app.speaking.SpeakingResultHolder
 import com.ielts.app.theme.Accent
 import com.ielts.app.theme.AccentWash
 import com.ielts.app.theme.InkMeta
@@ -41,7 +42,7 @@ import com.ielts.app.theme.Type
 fun SpeakingResultDetailScreen(
     navController: NavController,
     innerPadding: PaddingValues,
-    model: ResultSummaryModel = SpeakingResultFixtures.fullUi(),
+    model: ResultSummaryModel = SpeakingResultHolder.current ?: SpeakingResultFixtures.fullUi(),
 ) {
     var tabIndex by remember { mutableIntStateOf(0) }
     val showAbility = model.hasAbilityAnalysis

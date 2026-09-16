@@ -22,6 +22,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.ielts.app.auth.EncryptedCookieJar
+import com.ielts.app.auth.InMemoryCookieCipher
+import com.ielts.app.auth.LingxiApiClient
 import com.ielts.app.nav.AppNavHost
 import com.ielts.app.nav.BottomBar
 import com.ielts.app.nav.Routes
@@ -36,6 +39,11 @@ import com.ielts.app.theme.IeltsTheme
 import com.ielts.app.theme.Paper
 import com.ielts.app.viewmodel.StudyViewModel
 import java.nio.file.Files
+import java.util.concurrent.TimeUnit
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -270,48 +278,103 @@ class SpeakingResultAppShellTest {
     }
 
     /**
-     * 真实 AppNavHost 下的真实用户路径（VOICE 主流程，与 PILOT-02 六状态机一致）：
+     * 真实 AppNavHost 下的真实用户路径（VOICE 主流程，MOBILE-04C 真实后端链路）：
      * IDLE → 点击开始录音 → RECORDING（Fake 会话；真实 timer 以 elapsedRealtime 为准）
-     * → 结束回答 → RECORDED → 提交分析 → SUBMITTING → mainClock 推进 Mock 延迟 → SUCCESS
-     * → 查看结果（真实导航）→ Result Summary。
+     * → 结束回答 → RECORDED → 提交分析 → SUBMITTING
+     * → MockWebServer 模拟 Lingxi backend（session/transcribe/analyze/complete）
+     * → SUCCESS → 查看结果（真实导航）→ Result Summary。
      *
-     * MOBILE-04A：VOICE 提交不再读取录音时长判失败（D4 解耦，REAL_AUDIO=YES / MOCK_ANALYSIS=YES）。
-     * 注：TEXT 模式提交后 UI 恒渲染 TextPanel（SUBMITTING/SUCCESS 态仅在 VOICE 面板展示），
-     * 属 V1 既有行为、独立于 Recorder（TEXT_MODE_ISSUE_RELATION = INDEPENDENT，DEFER）。
+     * 这是 Robolectric 下的后端集成路径（非真实设备/真实 Whisper）。
      */
     @Test
     fun realFlowVoiceSubmitToResult() {
-        withAppShell { nav, _ ->
-            nav.navigate(Routes.SPEAKING)
-            composeTestRule.waitForIdle()
-
-            // IDLE → 点击麦克风（contentDescription，与 V1 clickThroughVoiceFlow 一致）→ RECORDING
-            composeTestRule.onNodeWithContentDescription("开始录音").performClick()
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("结束回答").assertExists()
-            // 推进会话计时（驱动 RECORDING 计时 effect；提交成功不依赖录音时长）
-            composeTestRule.mainClock.advanceTimeBy(5_000)
-            composeTestRule.waitForIdle()
-
-            // 结束回答 → RECORDED
-            composeTestRule.onNodeWithText("结束回答").performClick()
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("提交分析").assertExists()
-
-            // 提交分析 → SUBMITTING
-            composeTestRule.onNodeWithText("提交分析").performClick()
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("正在分析你的回答…").assertExists()
-
-            // 推进 Mock 延迟（1.6s + 0.9s）→ SUCCESS
-            composeTestRule.mainClock.advanceTimeBy(3_000)
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("查看结果").assertExists()
-
-            // 查看结果 → 真实导航 → Result Summary
-            composeTestRule.onNodeWithText("查看结果").performClick()
-            composeTestRule.waitForIdle()
-            composeTestRule.onNodeWithText("口语练习 · 结果").assertIsDisplayed()
+        val server = MockWebServer()
+        LingxiApiClient.cookieJar = EncryptedCookieJar(app(), InMemoryCookieCipher())
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                val p = request.path ?: return MockResponse().setResponseCode(404)
+                return when {
+                    p.startsWith("/api/auth/mobile/session") ->
+                        MockResponse().setResponseCode(401).setBody("""{"authenticated":false}""")
+                    p.startsWith("/api/speaking/session") ->
+                        MockResponse().setResponseCode(200).setBody(
+                            """{"session":{"id":"spk-test-0001","questionId":"seed-p1-001","part":"P1"},"questionData":{"id":"seed-p1-001","part":"P1","topic":"Study","question":"What do you usually read?"}}""",
+                        )
+                    p.startsWith("/api/speaking/transcribe") ->
+                        MockResponse()
+                            .setResponseCode(200)
+                            .setBodyDelay(1_500, TimeUnit.MILLISECONDS)
+                            .setBody(
+                                """{"transcript":"I usually read fiction books before going to bed.","duration":5000}""",
+                            )
+                    p.startsWith("/api/speaking/analyze") ->
+                        MockResponse().setResponseCode(200).setBody(ANALYZE_OK_JSON)
+                    p.startsWith("/api/speaking/complete") ->
+                        MockResponse().setResponseCode(200).setBody(
+                            """{"session":{"id":"spk-test-0001","status":"completed"}}""",
+                        )
+                    else -> MockResponse().setResponseCode(404).setBody("""{"error":{"kind":"NOT_FOUND"}}""")
+                }
+            }
         }
+        server.start()
+        LingxiApiClient.baseUrlOverride = server.url("/").toString().trimEnd('/')
+        try {
+            withAppShell { nav, _ ->
+                nav.navigate(Routes.SPEAKING)
+                composeTestRule.waitForIdle()
+
+                // IDLE → 点击麦克风（contentDescription，与 V1 clickThroughVoiceFlow 一致）→ RECORDING
+                composeTestRule.onNodeWithContentDescription("开始录音").performClick()
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithText("结束回答").assertExists()
+                // 推进会话计时（驱动 RECORDING 计时 effect；提交成功不依赖录音时长）
+                composeTestRule.mainClock.advanceTimeBy(5_000)
+                composeTestRule.waitForIdle()
+
+                // 结束回答 → RECORDED
+                composeTestRule.onNodeWithText("结束回答").performClick()
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithText("提交分析").assertExists()
+
+                // 提交分析 → SUBMITTING（真实后端：session → transcribe(m4a) → analyze → complete）
+                composeTestRule.onNodeWithText("提交分析").performClick()
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithText("正在分析你的回答…").assertExists()
+
+                // 等真实 MockWebServer 链路完成 → SUCCESS
+                composeTestRule.waitUntil(timeoutMillis = 15_000) {
+                    composeTestRule.onAllNodesWithText("查看结果").fetchSemanticsNodes().isNotEmpty()
+                }
+
+                // 查看结果 → 真实导航 → Result Summary（真实映射数据）
+                composeTestRule.onNodeWithText("查看结果").performClick()
+                composeTestRule.waitForIdle()
+                composeTestRule.onNodeWithText("口语练习 · 结果").assertIsDisplayed()
+            }
+        } finally {
+            LingxiApiClient.baseUrlOverride = null
+            server.shutdown()
+        }
+    }
+
+    private companion object {
+        /** MockWebServer 的 canonical analyze 成功响应（与后端 ContractSpeakingResult 对齐）。 */
+        val ANALYZE_OK_JSON = """
+            {"analysis":{
+              "summary":"内容完整，表达基本清晰，围绕话题给出了具体说明。",
+              "metrics":{"wordCount":14,"sentenceCount":2},
+              "mainIssue":{"dimension":"fluency","severity":"major","description":"回答开头略有停顿，个别句子不够连贯。","suggestion":"用简单连接词把要点串起来，先说完再补充细节。"},
+              "ieltsAnalysis":{
+                "fluency":{"label":"流利度","level":"adequate","evidence":["能完整说出主要观点"],"issues":["个别停顿"],"suggestions":["用连接词串联要点"]},
+                "lexicalResource":{"label":"词汇资源","level":"adequate","evidence":["使用了一些日常词汇"],"issues":[],"suggestions":[]},
+                "grammaticalRange":{"label":"语法范围","level":"developing","evidence":[],"issues":["简单句为主"],"suggestions":["尝试用复合句"]},
+                "pronunciation":{"label":"发音","level":null,"evidence":[],"issues":[],"suggestions":[]},
+                "overallDiagnosis":"整体表现不错，内容完整，表达基本清晰。",
+                "prioritizedSuggestions":["用连接词串联要点","尝试用复合句","先说完再补充细节"]
+              },
+              "qualityWarning":null
+            }}
+        """.trimIndent()
     }
 }

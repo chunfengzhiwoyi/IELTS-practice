@@ -204,7 +204,7 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
             composable(Routes.TODAY) { TodayScreen(vm, navController, innerPadding) }
             composable(Routes.LEARN) { LearnScreen(vm, navController, innerPadding) }
             composable(Routes.REVIEW) { ReviewScreen(vm, navController, innerPadding) }
-            composable(Routes.SPEAKING) { SpeakingScreen(vm, navController, innerPadding) }
+            composable(Routes.SPEAKING) { SpeakingScreen(vm, navController, innerPadding, authVm = authVm) }
             composable(Routes.SPEAKING_RESULT) { SpeakingResultScreen(navController, innerPadding) }
             composable(Routes.SPEAKING_RESULT_DETAIL) { SpeakingResultDetailScreen(navController, innerPadding) }
             composable(Routes.PROFILE) { ProfileScreen(vm, authVm, navController, innerPadding) }
