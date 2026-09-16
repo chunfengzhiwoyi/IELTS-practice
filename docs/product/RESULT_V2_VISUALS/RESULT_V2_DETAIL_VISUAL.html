@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RESULT_V2_DETAIL_VISUAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+  html,body { background:#EDE8DF; }
+  .phone {
+    width:393px; min-height:852px; margin:0 auto; background:#FAF8F4;
+    font-family:'Instrument Sans','PingFang SC','Microsoft YaHei',sans-serif; color:#2A2723;
+    display:flex; flex-direction:column; position:relative;
+  }
+  .statusbar { display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px; font-size:14px; font-weight:600; color:#2A2723; }
+  .statusbar .right { display:flex; gap:6px; align-items:center; }
+  .statusbar svg { display:block; }
+  .content { flex:1; padding:6px 20px 0; display:flex; flex-direction:column; }
+  .h1 { font-size:20px; font-weight:600; color:#2A2723; letter-spacing:0.2px; margin:10px 2px 14px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tab { flex:1; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:500; }
+  .tab.off { background:#F1EDE6; color:#767067; }
+  .tab.on { background:#F3E7E5; color:#7A2E2B; font-weight:600; }
+  .card { background:#FFFFFF; border:1px solid #E8E2D8; border-radius:16px; padding:16px; margin-bottom:12px; }
+  .label { font-size:13px; font-weight:600; color:#767067; margin-bottom:8px; letter-spacing:0.3px; }
+  .dimhead { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dimname { font-size:15px; font-weight:600; color:#2A2723; }
+  .badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; }
+  .b-strong { background:#F3E7E5; color:#7A2E2B; }
+  .b-adequate { background:#F3E5D5; color:#A07C4A; }
+  .b-developing { background:#F1EDE6; color:#767067; }
+  .b-weak { background:#F9EAE5; color:#2A2723; }
+  .sublabel { font-size:11px; font-weight:600; color:#767067; margin:9px 0 4px; letter-spacing:0.3px; }
+  .li { display:flex; align-items:flex-start; gap:7px; font-size:13px; line-height:20px; color:#2A2723; padding:1.5px 0; }
+  .li .bdot { width:4px; height:4px; border-radius:50%; flex:none; margin-top:8px; }
+  .li.ev .bdot { background:#9C968C; }
+  .li.iss .bdot { background:#C9A468; }
+  .li.sug .bdot { background:#7A2E2B; }
+  .li .txt { flex:1; }
+  .divider { height:1px; background:#F0EBE3; margin:8px 0 2px; }
+  .pron { display:flex; align-items:center; justify-content:space-between; }
+  .pron .note { font-size:13px; color:#767067; }
+  .pron .chip { font-size:12px; font-weight:500; color:#9C968C; background:#F6F2EA; border-radius:8px; padding:4px 10px; }
+  .nav { height:72px; background:#FFFFFF; border-top:1px solid #E8E2D8; display:flex; }
+  .nav .item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:#9C968C; font-size:10px; }
+  .nav .item svg { width:21px; height:21px; }
+  .nav .item.on { color:#7A2E2B; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="right">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0.5" y="7.5" width="3" height="3" rx="0.8" fill="#2A2723"/><rect x="4.5" y="5.5" width="3" height="5" rx="0.8" fill="#2A2723"/><rect x="8.5" y="3.5" width="3" height="7" rx="0.8" fill="#2A2723"/><rect x="12.5" y="0.5" width="3" height="10" rx="0.8" fill="#2A2723"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M7.5 9.2 1 3.5c1.8-1.9 4-2.9 6.5-2.9S12.2 1.6 14 3.5L7.5 9.2Z" fill="#2A2723"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="3" stroke="#2A2723" opacity="0.5"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#2A2723"/><rect x="22" y="3.5" width="2" height="4" rx="1" fill="#2A2723" opacity="0.5"/></svg>
+    </span>
+  </div>
+
+  <div class="content">
+    <div class="h1">查看完整分析</div>
+
+    <div class="tabs">
+      <div class="tab off">总览</div>
+      <div class="tab on">能力分析</div>
+    </div>
+
+    <div class="card">
+      <div class="dimhead"><span class="dimname">流利度</span><span class="badge b-adequate">良好</span></div>
+      <div class="sublabel">判断依据</div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">回答长度约 87 词，符合 Part 1 建议范围</span></div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">句间使用 of course、to be honest 自然过渡</span></div>
+      <div class="sublabel">发现问题</div>
+      <div class="li iss"><span class="bdot"></span><span class="txt">个别句子之间停顿略长</span></div>
+      <div class="sublabel">改善建议</div>
+      <div class="li sug"><span class="bdot"></span><span class="txt">在观点前保持简短停顿，让节奏更自然</span></div>
+    </div>
+
+    <div class="card">
+      <div class="dimhead"><span class="dimname">词汇资源</span><span class="badge b-developing">发展中</span></div>
+      <div class="sublabel">判断依据</div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">使用 paper books、reading habit 等话题词汇</span></div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">对 fiction 有同义替换的尝试</span></div>
+      <div class="sublabel">发现问题</div>
+      <div class="li iss"><span class="bdot"></span><span class="txt">部分重复题目原词，替换幅度有限</span></div>
+      <div class="sublabel">改善建议</div>
+      <div class="li sug"><span class="bdot"></span><span class="txt">用 novel、non-fiction 替换重复表达</span></div>
+    </div>
+
+    <div class="card">
+      <div class="dimhead"><span class="dimname">语法范围</span><span class="badge b-weak">待加强</span></div>
+      <div class="sublabel">判断依据</div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">能使用 because、which 连接从句</span></div>
+      <div class="li ev"><span class="bdot"></span><span class="txt">出现一般现在时与一般过去时混用</span></div>
+      <div class="sublabel">发现问题</div>
+      <div class="li iss"><span class="bdot"></span><span class="txt">时态切换不够稳定</span></div>
+      <div class="sublabel">改善建议</div>
+      <div class="li sug"><span class="bdot"></span><span class="txt">先确定时间框架再开口，专项练习时态切换</span></div>
+    </div>
+
+    <div class="card">
+      <div class="dimhead"><span class="dimname">发音</span></div>
+      <div class="pron"><span class="note">本次未评估</span></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>今日</div>
+    <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v13"/><path d="M4 19.5a2.5 2.5 0 0 0 2.5 2.5H20"/><path d="M8 8h8M8 12h5"/></svg>学习</div>
+    <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4h-4"/></svg>复习</div>
+    <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.5a6.5 6.5 0 0 0 13 0"/><path d="M12 17v4.5"/></svg>口语</div>
+    <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.5 3.5-5.5 7-5.5s6.2 2 7 5.5"/></svg>我的</div>
+  </div>
+</div>
+</body>
+</html>

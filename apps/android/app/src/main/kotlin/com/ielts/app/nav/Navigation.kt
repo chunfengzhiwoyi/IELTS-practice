@@ -67,7 +67,11 @@ fun BottomBar(navController: NavController) {
         modifier = Modifier.height(72.dp),
     ) {
         tabs.forEach { tab ->
-            val selected = current == tab.route
+            // Result V2：口语结果路由（Summary/Detail）隶属「口语」tab，
+            // 保持 active 高亮（与已批准 Result V2 视觉稿底部导航一致）。
+            val selected = current == tab.route ||
+                (tab.route == Routes.SPEAKING &&
+                    (current == Routes.SPEAKING_RESULT || current == Routes.SPEAKING_RESULT_DETAIL))
             NavigationBarItem(
                 selected = selected,
                 onClick = {
