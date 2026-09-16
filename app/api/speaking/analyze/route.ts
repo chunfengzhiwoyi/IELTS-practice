@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/speaking/analyze
  * ------------------------------------------------------------
  * 分析口语回答：LLM 深度分析，降级回退到规则引擎。
@@ -82,6 +82,10 @@ export async function POST(request: Request) {
     const session = await repo.getSession(sessionId);
     if (!session) {
       throw new AppError("NOT_FOUND", `会话 ${sessionId} 不存在`, traceId);
+    }
+    // MOBILE-04C：session 归属校验（与 complete 路由一致），防止借用他人会话
+    if (session.userId !== user.id) {
+      throw new AppError("FORBIDDEN", "无权操作该会话", traceId);
     }
     tctx.emitStateRead({
       entity: "speaking_session",
@@ -330,6 +334,7 @@ export async function POST(request: Request) {
       appErr.kind === "AUTH_REQUIRED" ? 401
         : appErr.kind === "INVALID_INPUT" ? 400
           : appErr.kind === "NOT_FOUND" ? 404
+          : appErr.kind === "FORBIDDEN" ? 403
             : 500;
     const { code, message } = appErrorToTrace(err);
     endTraceError(tctx, status, code, message);

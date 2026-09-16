@@ -28,6 +28,7 @@ import { NextResponse } from "next/server";
 import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { logger } from "@/lib/observability/logger";
 import { startTrace, endTraceSuccess } from "@/lib/observability/trace-api-helper";
+import { requireUser } from "@/lib/auth/session";
 import type { AudioMetadata, PauseInfo, TranscribeResponse, WordTimestamp } from "@/lib/speaking/audio-types";
 import type { RequestReceivedPayload } from "@/lib/observability/trace-contract";
 
@@ -121,6 +122,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // 0. 鉴权（MOBILE-04C：transcribe 与其它 Speaking 路由一致，必须 authenticated）
+    //    FormData 解析已在 startTrace 前完成，audio_metadata 摘要始终可见。
+    const authUser = await requireUser(traceId).catch(() => null);
+    if (!authUser) {
+      return fail(401, "AUTH_REQUIRED", "请先登录", null);
+    }
+
     // 1. 校验 audio 文件（FormData 解析已在 startTrace 前完成）
     if (!audioFile) {
       return fail(400, "INVALID_INPUT", formParseError ? `表单解析失败: ${formParseError}` : "缺少 audio 文件");
@@ -131,11 +139,14 @@ export async function POST(request: Request) {
     }
 
     // 2. 调用 Whisper API
-    const openaiKey = process.env.OPENAI_API_KEY ?? process.env.DEEPSEEK_API_KEY;
+    //    STT credential 契约（MOBILE-04C）：只接受专用 WHISPER_API_KEY；
+    //    兼容 OPENAI_API_KEY（同为 OpenAI Whisper 兼容端点）。
+    //    禁止 DEEPSEEK_API_KEY —— DeepSeek chat key 不是 OpenAI Whisper key。
+    const whisperApiKey = process.env.WHISPER_API_KEY ?? process.env.OPENAI_API_KEY;
     const whisperBaseUrl = process.env.WHISPER_BASE_URL ?? "https://api.openai.com/v1";
 
-    if (!openaiKey) {
-      return fail(503, "CONFIG_ERROR", "未配置 STT API Key（OPENAI_API_KEY 或 DEEPSEEK_API_KEY）", "CONFIG_ERROR");
+    if (!whisperApiKey) {
+      return fail(503, "CONFIG_ERROR", "未配置 STT API Key（WHISPER_API_KEY）", "CONFIG_ERROR");
     }
 
     // 构造 Whisper 请求
@@ -149,7 +160,7 @@ export async function POST(request: Request) {
     const whisperRes = await fetch(`${whisperBaseUrl}/audio/transcriptions`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openaiKey}`,
+        Authorization: `Bearer ${whisperApiKey}`,
       },
       body: whisperForm,
     });
