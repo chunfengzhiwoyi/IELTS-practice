@@ -167,13 +167,14 @@ fun SpeakingScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
+        // 先取请求前状态：首次请求前 rationale=false 属正常现象，不得误判永久拒绝；
+        // 只有「本次之前已请求过」且系统不再建议理由才视为永久拒绝（resolveMicPermission 语义）。
+        val requestedBefore = hasRequestedMic
         hasRequestedMic = true
-        // shouldShowRequestPermissionRationale=false 不能单独视为永久拒绝（首次请求前也可能 false）；
-        // 仅当「已请求过」且「系统不再建议理由」时才视为永久拒绝（见 resolveMicPermission）。
         val rational = (context as? android.app.Activity)
             ?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
             ?: true
-        when (resolveMicPermission(granted, hasRequestedMic, rational)) {
+        when (resolveMicPermission(granted, requestedBefore, rational)) {
             MicPermissionDecision.START_RECORDING -> startSessionRecording()
             MicPermissionDecision.DENIED_LIGHT -> {
                 micDenied = true
