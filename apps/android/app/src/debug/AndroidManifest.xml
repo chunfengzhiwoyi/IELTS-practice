@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOBILE-04B §18：仅 debug 构建允许明文 HTTP（本机 dev server 10.0.2.2）。
+     release 不放宽：生产必须 HTTPS（contract: HTTPS production only）。 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:usesCleartextTraffic="true"
+        tools:ignore="MissingApplicationIcon" />
+
+</manifest>

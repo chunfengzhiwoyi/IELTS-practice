@@ -16,6 +16,13 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // MOBILE-04B §9：Lingxi 后端 Base URL（BuildConfig 注入，禁止 hardcode 到 Composable）。
+        // debug 默认指向本机 dev server（Android 模拟器 10.0.2.2）；生产构建必须通过
+        // gradle property LINGXI_BACKEND_BASE_URL 覆盖为 HTTPS 域名。
+        val lingxiBackendUrl = providers.gradleProperty("LINGXI_BACKEND_BASE_URL")
+            .orElse("http://10.0.2.2:3000").get()
+        buildConfigField("String", "LINGXI_BACKEND_BASE_URL", "\"$lingxiBackendUrl\"")
     }
 
     signingConfigs {
@@ -49,6 +56,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -83,6 +91,9 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
+    // MOBILE-04B §8：统一 Lingxi 后端 HTTP 栈（唯一 auth-aware stack）
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -91,4 +102,6 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.12.2")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.20.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:1.6.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }
