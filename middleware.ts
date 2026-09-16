@@ -37,16 +37,29 @@ const REPORT_ALLOWED_EXACT = new Set([
 ]);
 
 /**
+ * MOBILE-04B：移动端 Auth 端点（精确放行，不放宽 /api/auth 全量）。
+ * Contract §10：/api/auth/mobile/login|session|logout 三个精确路径。
+ */
+const MOBILE_AUTH_ALLOWED_EXACT = new Set([
+  "/api/auth/mobile/login",
+  "/api/auth/mobile/session",
+  "/api/auth/mobile/logout",
+]);
+
+/**
  * dashboard-only 白名单（仅 DASHBOARD-DEPLOY-ISOLATION-02 分支生效）。
  * 允许：根(→/dashboard)、/dashboard、/api/dashboard 及其子路由、
  * supabase 登录所需 /login /reset-password /auth/callback、Next 运行时资源、
- * Learning Report 自身路由（/report 与 /api/report /api/goal /api/learning/stats）。
+ * Learning Report 自身路由（/report 与 /api/report /api/goal /api/learning/stats）、
+ * MOBILE-04B 移动端 Auth 端点（精确 3 条）与 Speaking API 前缀（鉴权由 requireUser 负责）。
  * 其余一切页面/API 返回 404，不暴露原 IELTS 产品。
  */
-function isDashboardOnlyAllowed(pathname: string): boolean {
+export function isDashboardOnlyAllowed(pathname: string): boolean {
   if (DASHBOARD_ALLOWED_EXACT.has(pathname)) return true;
   if (REPORT_ALLOWED_EXACT.has(pathname)) return true; // LEARNING-REPORT-ONLINE-02
+  if (MOBILE_AUTH_ALLOWED_EXACT.has(pathname)) return true; // MOBILE-04B：移动 Auth 精确端点
   if (pathname.startsWith("/api/dashboard")) return true; // 主 API + bad-cases/lifecycle/modules/traces
+  if (pathname === "/api/speaking" || pathname.startsWith("/api/speaking/")) return true; // MOBILE-04B：Speaking API（auth 由 requireUser 负责）
   if (pathname.startsWith("/_next/")) return true; // Next 运行时资源（静态已由 matcher 排除）
   if (pathname.startsWith("/__nextjs")) return true; // dev overlay / stack frame
   return false;
