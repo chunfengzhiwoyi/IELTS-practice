@@ -26,11 +26,18 @@ import com.ielts.app.nav.AppNavHost
 import com.ielts.app.nav.BottomBar
 import com.ielts.app.nav.Routes
 import com.ielts.app.screens.SpeakingResultScreen
+import com.ielts.app.speaking.FakePlayer
+import com.ielts.app.speaking.FakeRecorder
 import com.ielts.app.speaking.ResultSummaryModel
+import com.ielts.app.speaking.SpeakingAudioFactory
+import com.ielts.app.speaking.SpeakingAudioSession
 import com.ielts.app.speaking.SpeakingResultFixtures
 import com.ielts.app.theme.IeltsTheme
 import com.ielts.app.theme.Paper
 import com.ielts.app.viewmodel.StudyViewModel
+import java.nio.file.Files
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +63,29 @@ class SpeakingResultAppShellTest {
     val composeTestRule = createComposeRule()
 
     private val outDir = "D:/Codex/IELTS-practice/docs/evidence/mobile-03d-today-pilot"
+
+    /** MOBILE-04A：真实 VOICE 流程测试注入 Fake 会话（Robolectric 无真实 MediaRecorder）。 */
+    @Before
+    fun setUpAudio() {
+        // Robolectric 默认拒绝运行时权限；授予 RECORD_AUDIO 走真实权限 GRANTED 分支
+        org.robolectric.Shadows.shadowOf(app())
+            .grantPermissions(android.Manifest.permission.RECORD_AUDIO)
+        val dir = Files.createTempDirectory("speaking_fake_shell").toFile()
+        SpeakingAudioFactory.createSession = { _ ->
+            SpeakingAudioSession(FakeRecorder(), FakePlayer(), dir)
+        }
+    }
+
+    @After
+    fun tearDownAudio() {
+        SpeakingAudioFactory.createSession = { context ->
+            SpeakingAudioSession(
+                com.ielts.app.speaking.AndroidRecorder(context),
+                com.ielts.app.speaking.AndroidMediaPlayer(),
+                java.io.File(context.cacheDir, "speaking"),
+            )
+        }
+    }
 
     private fun app(): Application = ApplicationProvider.getApplicationContext()
 
@@ -241,12 +271,13 @@ class SpeakingResultAppShellTest {
 
     /**
      * 真实 AppNavHost 下的真实用户路径（VOICE 主流程，与 PILOT-02 六状态机一致）：
-     * IDLE → 点击开始录音 → RECORDING（looper 推进计时 ≥4s，避开 Mock 失败规则）
-     * → 结束回答 → RECORDED → 提交分析 → SUBMITTING → looper 推进 Mock 延迟 → SUCCESS
+     * IDLE → 点击开始录音 → RECORDING（Fake 会话；真实 timer 以 elapsedRealtime 为准）
+     * → 结束回答 → RECORDED → 提交分析 → SUBMITTING → mainClock 推进 Mock 延迟 → SUCCESS
      * → 查看结果（真实导航）→ Result Summary。
      *
+     * MOBILE-04A：VOICE 提交不再读取录音时长判失败（D4 解耦，REAL_AUDIO=YES / MOCK_ANALYSIS=YES）。
      * 注：TEXT 模式提交后 UI 恒渲染 TextPanel（SUBMITTING/SUCCESS 态仅在 VOICE 面板展示），
-     * 属 V1 既有行为、非 V2 范围；此处以 VOICE 主流程验证真实路径。
+     * 属 V1 既有行为、独立于 Recorder（TEXT_MODE_ISSUE_RELATION = INDEPENDENT，DEFER）。
      */
     @Test
     fun realFlowVoiceSubmitToResult() {
@@ -258,7 +289,7 @@ class SpeakingResultAppShellTest {
             composeTestRule.onNodeWithContentDescription("开始录音").performClick()
             composeTestRule.waitForIdle()
             composeTestRule.onNodeWithText("结束回答").assertExists()
-            // 推进录音计时 ≥4s（Mock：录音 <4s → ERROR）——mainClock 驱动 LaunchedEffect delay
+            // 推进会话计时（驱动 RECORDING 计时 effect；提交成功不依赖录音时长）
             composeTestRule.mainClock.advanceTimeBy(5_000)
             composeTestRule.waitForIdle()
 

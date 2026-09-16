@@ -1,0 +1,15 @@
+﻿MOBILE-04A PRE-DEVICE TEST RESULTS
+Command: .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest
+Date: 2026-09-16
+TOTAL=69 FAIL=0 NEW_FAIL=0
+
+com.ielts.app.speaking.SpeakingAudioSessionDeepTest: 12 tests, 0 failures
+com.ielts.app.speaking.SpeakingAudioSessionTest: 12 tests, 0 failures
+com.ielts.app.speaking.SpeakingMicPermissionTest: 5 tests, 0 failures
+com.ielts.app.SpeakingRecorderComposeTest: 7 tests, 0 failures
+com.ielts.app.SpeakingResultAppShellTest: 10 tests, 0 failures
+com.ielts.app.SpeakingResultV2ScreenshotTest: 8 tests, 0 failures
+com.ielts.app.SpeakingScreenshotTest: 12 tests, 0 failures
+com.ielts.app.TodayScreenScreenshotTest: 3 tests, 0 failures
+
+BUILD: PASS (assembleDebug)

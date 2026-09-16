@@ -23,13 +23,20 @@ import com.ielts.app.nav.Routes
 import com.ielts.app.screens.SpeakingResultDetailScreen
 import com.ielts.app.screens.SpeakingResultScreen
 import com.ielts.app.screens.SpeakingScreen
+import com.ielts.app.speaking.FakePlayer
+import com.ielts.app.speaking.FakeRecorder
 import com.ielts.app.speaking.QuestionSlot
+import com.ielts.app.speaking.SpeakingAudioFactory
+import com.ielts.app.speaking.SpeakingAudioSession
 import com.ielts.app.speaking.SpeakingInputMode
 import com.ielts.app.speaking.SpeakingRecordingState
 import com.ielts.app.speaking.SpeakingUiState
 import com.ielts.app.theme.IeltsTheme
 import com.ielts.app.viewmodel.StudyViewModel
 import com.ielts.core.service.SeedData
+import java.nio.file.Files
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +59,29 @@ class SpeakingScreenshotTest {
     val composeTestRule = createComposeRule()
 
     private val outDir = "D:/Codex/IELTS-practice/docs/evidence/mobile-03d-today-pilot"
+
+    /** MOBILE-04A：测试注入 Fake 会话（Robolectric 无真实 MediaRecorder）。 */
+    @Before
+    fun setUpAudio() {
+        // Robolectric 默认拒绝运行时权限；授予 RECORD_AUDIO 走真实权限 GRANTED 分支
+        org.robolectric.Shadows.shadowOf(ApplicationProvider.getApplicationContext<Application>())
+            .grantPermissions(android.Manifest.permission.RECORD_AUDIO)
+        val dir = Files.createTempDirectory("speaking_fake_screen").toFile()
+        SpeakingAudioFactory.createSession = { _ ->
+            SpeakingAudioSession(FakeRecorder(), FakePlayer(), dir)
+        }
+    }
+
+    @After
+    fun tearDownAudio() {
+        SpeakingAudioFactory.createSession = { context ->
+            SpeakingAudioSession(
+                com.ielts.app.speaking.AndroidRecorder(context),
+                com.ielts.app.speaking.AndroidMediaPlayer(),
+                java.io.File(context.cacheDir, "speaking"),
+            )
+        }
+    }
 
     private fun slot(index: Int = 0, part: String = "P1"): QuestionSlot {
         val pool = SeedData.questions.filter { it.part == part }

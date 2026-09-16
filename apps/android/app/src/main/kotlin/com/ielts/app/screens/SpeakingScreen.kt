@@ -1,5 +1,13 @@
 package com.ielts.app.screens
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.SystemClock
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -18,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -27,20 +36,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.ielts.app.components.GhostButton
 import com.ielts.app.components.PrimaryButton
 import com.ielts.app.nav.Routes
+import com.ielts.app.speaking.AudioSessionState
+import com.ielts.app.speaking.MicPermissionDecision
+import com.ielts.app.speaking.SpeakingAudioFactory
+import com.ielts.app.speaking.SpeakingAudioSession
 import com.ielts.app.speaking.SpeakingEvents
 import com.ielts.app.speaking.SpeakingInputMode
 import com.ielts.app.speaking.SpeakingMock
 import com.ielts.app.speaking.SpeakingRecordingState
 import com.ielts.app.speaking.SpeakingUiState
+import com.ielts.app.speaking.resolveMicPermission
 import com.ielts.app.theme.Accent
 import com.ielts.app.theme.AccentContrast
 import com.ielts.app.theme.AccentWash
@@ -70,15 +88,18 @@ private val PARTS = listOf(
     "P3" to "P3 讨论",
 )
 
-private fun formatSeconds(s: Int): String = "%02d:%02d".format(s / 60, s % 60)
+/** mm:ss 格式化（internal：长时长逻辑测试复用，验证 600s 无溢出）。 */
+internal fun formatSpeakingSeconds(s: Int): String = "%02d:%02d".format(s / 60, s % 60)
 
 /**
  * 口语练习（PILOT-02 Speaking Frontend Shell · 语音优先）。
  *
- * 严格按 Approved Speaking State Board 施工：
- * IDLE / RECORDING / RECORDED / SUBMITTING / SUCCESS / ERROR + 文字输入辅助模式。
- * 数据使用现有真实口语题库（SeedData.questions），不写回任何业务存储；
- * 录音与分析全部为本地 Mock（SpeakingMock），UI 与 Mock 状态源分离。
+ * MOBILE-04A：真实本地 Recorder Loop（MediaRecorder → m4a + MediaPlayer 播放闭环）。
+ * - REAL_RECORDING = YES / REAL_PLAYBACK = YES / MOCK_ANALYSIS = YES / REAL_ANALYSIS = NO
+ * - 权限：首次点击请求；拒绝 → IDLE 非技术提示；永久拒绝 → 系统设置入口
+ * - 真实 timer：以 recorder session / elapsedRealtime 为准，重组不重置
+ * - 提交分析仍走 Mock 结果链（不读真实音频时长/内容）；<4s 旧规则已解除
+ * - 生命周期：ON_STOP 安全停止录音并保留有效录音；dispose 停止一切并清理 temp
  *
  * @param initialState 仅测试/预览注入；生产调用不传（默认 null 走完整状态机）。
  */
@@ -92,6 +113,12 @@ fun SpeakingScreen(
     // ---------------- 真实题库（只读，不写回） ----------------
     val poolOf = { part: String -> SeedData.questions.filter { it.part == part } }
 
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val session: SpeakingAudioSession = remember {
+        SpeakingAudioFactory.createSession(context)
+    }
+
     var part by remember { mutableStateOf(initialState?.part ?: "P1") }
     var slotIndex by remember { mutableIntStateOf((initialState?.slot?.index ?: 0).coerceIn(0, (poolOf(initialState?.part ?: "P1").size - 1).coerceAtLeast(0))) }
     var hintOpen by remember { mutableStateOf(initialState?.hintOpen ?: false) }
@@ -100,8 +127,6 @@ fun SpeakingScreen(
     var timerSeconds by remember { mutableIntStateOf(initialState?.timerSeconds ?: 0) }
     var recordedSeconds by remember { mutableIntStateOf(initialState?.recordedSeconds ?: 0) }
     var text by remember { mutableStateOf(initialState?.text ?: "") }
-
-    val scope = rememberCoroutineScope()
 
     fun slot(): SpeakingUiState {
         val list = poolOf(part)
@@ -119,21 +144,87 @@ fun SpeakingScreen(
         )
     }
 
-    // RECORDING 计时（Mock 视觉计时）
-    LaunchedEffect(recording, part, slotIndex) {
-        if (recording == SpeakingRecordingState.RECORDING) {
-            while (isActive) {
-                delay(1_000)
-                timerSeconds += 1
+    // ---------------- 麦克风权限（MOBILE-04A） ----------------
+    var hasRequestedMic by remember { mutableStateOf(false) }
+    var micDenied by remember { mutableStateOf(initialState?.micPermissionDenied ?: false) }
+    var micPermanent by remember { mutableStateOf(initialState?.micPermissionPermanentlyDenied ?: false) }
+    var micError by remember { mutableStateOf(initialState?.recordingError) }
+
+    fun startSessionRecording() {
+        if (session.startRecording()) {
+            recording = SpeakingRecordingState.RECORDING
+            timerSeconds = 0
+            micDenied = false
+            micPermanent = false
+            micError = null
+        } else {
+            // 录音启动失败：留在 IDLE + 产品级提示（不暴露技术原因）
+            recording = SpeakingRecordingState.IDLE
+            micError = session.lastError ?: "录音启动失败，请重试"
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        hasRequestedMic = true
+        // shouldShowRequestPermissionRationale=false 不能单独视为永久拒绝（首次请求前也可能 false）；
+        // 仅当「已请求过」且「系统不再建议理由」时才视为永久拒绝（见 resolveMicPermission）。
+        val rational = (context as? android.app.Activity)
+            ?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
+            ?: true
+        when (resolveMicPermission(granted, hasRequestedMic, rational)) {
+            MicPermissionDecision.START_RECORDING -> startSessionRecording()
+            MicPermissionDecision.DENIED_LIGHT -> {
+                micDenied = true
+                micPermanent = false
+            }
+            MicPermissionDecision.DENIED_PERMANENT -> {
+                micDenied = true
+                micPermanent = true
             }
         }
     }
 
-    // SUBMITTING 模拟提交
+    val settingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        // 返回后重新检查权限
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            micDenied = false
+            micPermanent = false
+        } else {
+            micDenied = true
+        }
+    }
+
+    // ---------------- 真实 session 计时（E 节：以 elapsedRealtime 为准） ----------------
+    LaunchedEffect(recording, part, slotIndex) {
+        if (recording == SpeakingRecordingState.RECORDING) {
+            while (isActive) {
+                delay(250)
+                if (session.state == AudioSessionState.RECORDING) {
+                    val elapsed = SystemClock.elapsedRealtime() - session.startedAtElapsed
+                    timerSeconds = (elapsed / 1_000L).toInt()
+                } else {
+                    // preview/initialState 注入路径：无真实 session，沿用视觉递增
+                    timerSeconds += 1
+                }
+            }
+        }
+    }
+
+    // ---------------- 提交（MOCK_ANALYSIS=YES：不读真实音频时长/内容） ----------------
     LaunchedEffect(recording, slotIndex, text) {
         if (recording == SpeakingRecordingState.SUBMITTING) {
             SpeakingMock.submitDelay()
-            val fail = SpeakingMock.shouldFail(recordedSeconds, text.length, mode)
+            val fail = if (mode == SpeakingInputMode.TEXT) {
+                SpeakingMock.textTooShort(text.length)
+            } else {
+                SpeakingMock.voiceSubmitFails()
+            }
             recording = if (fail) SpeakingRecordingState.ERROR else SpeakingRecordingState.SUCCESS
         }
     }
@@ -145,43 +236,132 @@ fun SpeakingScreen(
         }
     }
 
+    // ---------------- 生命周期（J 节） ----------------
+    DisposableEffect(lifecycleOwner, session) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> {
+                    // 后台：RECORDING → 安全停止并保留已生成的有效录音；播放停止
+                    if (session.state == AudioSessionState.RECORDING) {
+                        if (session.finishRecording()) {
+                            recordedSeconds = (session.lastRecording?.durationMs ?: 0L)
+                                .div(1_000L).toInt().coerceAtLeast(1)
+                            recording = SpeakingRecordingState.RECORDED
+                        } else {
+                            recording = SpeakingRecordingState.IDLE
+                            micError = session.lastError
+                        }
+                    }
+                    session.stopPlayback()
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            // 离开页面：停止录音/播放、release native、删除未交付 temp（A 节 LEAVE SCREEN）
+            session.release()
+        }
+    }
+
     val events = SpeakingEvents(
         selectPart = { p ->
             if (p != part) {
+                // 切 Part 视为放弃当前会话：停止录音/播放、删除未移交 temp（A 节），防止偷偷录音
+                session.rerecord()
                 part = p
                 slotIndex = 0
                 hintOpen = false
                 recording = SpeakingRecordingState.IDLE
                 timerSeconds = 0
                 recordedSeconds = 0
+                micError = null
             }
         },
         toggleHint = { hintOpen = !hintOpen },
         switchMode = { m ->
-            mode = m
+            if (m != mode) {
+                // 切模式同样放弃当前音频会话（与 selectPart 一致）
+                session.rerecord()
+                mode = m
+                recording = SpeakingRecordingState.IDLE
+                timerSeconds = 0
+                recordedSeconds = 0
+                micError = null
+            }
+        },
+        startRecording = {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                startSessionRecording()
+            } else {
+                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        },
+        finishRecording = {
+            if (session.finishRecording()) {
+                recordedSeconds = (session.lastRecording?.durationMs ?: 0L)
+                    .div(1_000L).toInt().coerceAtLeast(1)
+                recording = SpeakingRecordingState.RECORDED
+            } else {
+                recording = SpeakingRecordingState.IDLE
+                micError = session.lastError
+            }
+        },
+        cancelRecording = {
+            session.cancelRecording()
+            recording = SpeakingRecordingState.IDLE
+            timerSeconds = 0
+            micError = null
+        },
+        reRecord = {
+            session.rerecord()
             recording = SpeakingRecordingState.IDLE
             timerSeconds = 0
             recordedSeconds = 0
+            micError = null
         },
-        startRecording = { recording = SpeakingRecordingState.RECORDING; timerSeconds = 0 },
-        finishRecording = {
-            recordedSeconds = timerSeconds.coerceAtLeast(1)
-            recording = SpeakingRecordingState.RECORDED
-        },
-        cancelRecording = { recording = SpeakingRecordingState.IDLE; timerSeconds = 0 },
-        reRecord = { recording = SpeakingRecordingState.IDLE; timerSeconds = 0; recordedSeconds = 0 },
         submit = {
+            // 提交前停止本地播放（录音与播放互斥；PLAYING 态不允许带着播放进分析）
+            session.stopPlayback()
             if (mode == SpeakingInputMode.TEXT) {
                 recordedSeconds = 0
             }
             recording = SpeakingRecordingState.SUBMITTING
         },
-        retrySubmit = { recording = SpeakingRecordingState.SUBMITTING },
+        retrySubmit = {
+            session.stopPlayback()
+            recording = SpeakingRecordingState.SUBMITTING
+        },
         goResult = { navController.navigate(Routes.SPEAKING_RESULT) },
         onTextChange = { if (it.length <= 1000) text = it },
+        togglePlayback = {
+            if (session.state == AudioSessionState.PLAYING) {
+                session.stopPlayback()
+            } else {
+                session.play()
+            }
+        },
+        openMicSettings = {
+            settingsLauncher.launch(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", context.packageName, null),
+                ),
+            )
+        },
     )
 
-    SpeakingShell(state = slot(), events = events, modifier = Modifier.padding(innerPadding))
+    val uiState = slot().copy(
+        // 测试注入 initialState 时以注入值为准（session 未启动）；生产路径读真实 session 播放态
+        isPlaying = initialState?.isPlaying ?: (session.state == AudioSessionState.PLAYING),
+        micPermissionDenied = micDenied,
+        micPermissionPermanentlyDenied = micPermanent,
+        recordingError = micError,
+    )
+    SpeakingShell(state = uiState, events = events, modifier = Modifier.padding(innerPadding))
 }
 
 // =====================================================================
@@ -363,7 +543,7 @@ private fun ModePill(
 @Composable
 private fun VoicePanel(state: SpeakingUiState, events: SpeakingEvents) {
     when (state.recording) {
-        SpeakingRecordingState.IDLE -> IdleState(events)
+        SpeakingRecordingState.IDLE -> IdleState(state, events)
         SpeakingRecordingState.RECORDING -> RecordingState(state, events)
         SpeakingRecordingState.RECORDED -> RecordedState(state, events)
         SpeakingRecordingState.SUBMITTING -> SubmittingState()
@@ -372,10 +552,10 @@ private fun VoicePanel(state: SpeakingUiState, events: SpeakingEvents) {
     }
 }
 
-// ---- IDLE ----
+// ---- IDLE（含权限/启动失败轻提示） ----
 
 @Composable
-private fun IdleState(events: SpeakingEvents) {
+private fun IdleState(state: SpeakingUiState, events: SpeakingEvents) {
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -400,6 +580,31 @@ private fun IdleState(events: SpeakingEvents) {
         Text("点击开始录音", style = IdleMain)
         Spacer(Modifier.height(4.dp))
         Text("建议 40–80 秒", style = IdleSub)
+        if (state.micPermissionDenied || state.recordingError != null) {
+            Spacer(Modifier.height(14.dp))
+            Text(
+                when {
+                    state.micPermissionPermanentlyDenied -> "麦克风权限已关闭，请在系统设置中开启后重试"
+                    state.micPermissionDenied -> "需要麦克风权限才能录音，请允许后重试"
+                    else -> state.recordingError.orEmpty()
+                },
+                style = Type.uiLabel.copy(fontSize = 13.sp, color = InkSoft),
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            if (state.micPermissionPermanentlyDenied) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Paper2)
+                        .clickable(onClick = events.openMicSettings)
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("前往系统设置", style = Type.uiLabel.copy(fontSize = 13.sp, color = Accent))
+                }
+            }
+        }
         Spacer(Modifier.height(20.dp))
         Box(
             Modifier
@@ -435,7 +640,7 @@ private val IdleSub = TextStyle(
 private fun RecordingState(state: SpeakingUiState, events: SpeakingEvents) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(8.dp))
-        Text(formatSeconds(state.timerSeconds), style = TimerBig)
+        Text(formatSpeakingSeconds(state.timerSeconds), style = TimerBig)
         Spacer(Modifier.height(16.dp))
         Waveform()
         Spacer(Modifier.height(24.dp))
@@ -453,7 +658,7 @@ private val TimerBig = TextStyle(
     color = Ink,
 )
 
-/** 视觉动画波形（非真实音频波形，仅状态氛围） */
+/** 视觉动画波形（MOBILE-04A：非真实音频振幅；maxAmplitude 登记为 future enhancement） */
 @Composable
 private fun Waveform() {
     val transition = rememberInfiniteTransition(label = "wave")
@@ -484,30 +689,33 @@ private fun Waveform() {
     }
 }
 
-// ---- RECORDED ----
+// ---- RECORDED（含真实本地播放闭环） ----
 
 @Composable
 private fun RecordedState(state: SpeakingUiState, events: SpeakingEvents) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(8.dp))
-        Text(formatSeconds(state.recordedSeconds), style = TimerBig)
+        Text(formatSpeakingSeconds(state.recordedSeconds), style = TimerBig)
         Spacer(Modifier.height(10.dp))
-        // 播放录音：UI placeholder，不制造假音频文件
+        // 本地播放闭环：播放 / 停止（MediaPlayer，MOBILE-04A）
         Row(
             Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .clickable { /* placeholder：MOBILE-04 接入真实播放 */ }
+                .clickable(onClick = events.togglePlayback)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Filled.PlayArrow,
+                imageVector = if (state.isPlaying) Icons.Filled.Stop else Icons.Filled.PlayArrow,
                 contentDescription = "播放录音",
                 tint = Accent,
                 modifier = Modifier.size(22.dp),
             )
             Spacer(Modifier.width(6.dp))
-            Text("播放录音", style = Type.uiLabel.copy(fontSize = 14.sp, color = Ink))
+            Text(
+                if (state.isPlaying) "停止播放" else "播放录音",
+                style = Type.uiLabel.copy(fontSize = 14.sp, color = Ink),
+            )
         }
         Spacer(Modifier.height(20.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
