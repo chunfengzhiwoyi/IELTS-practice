@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.ielts.app.nav.AppNavHost
 import com.ielts.app.theme.IeltsTheme
+import com.ielts.app.viewmodel.AuthViewModel
 import com.ielts.app.viewmodel.StudyViewModel
 
 class MainActivity : ComponentActivity() {
@@ -16,7 +17,8 @@ class MainActivity : ComponentActivity() {
             IeltsTheme {
                 val navController = rememberNavController()
                 val vm: StudyViewModel = viewModel()
-                AppNavHost(navController, vm)
+                val authVm: AuthViewModel = viewModel()
+                AppNavHost(navController, vm, authVm)
             }
         }
     }

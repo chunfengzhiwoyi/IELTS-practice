@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   },
   createServerClient: vi.fn(),
   getCurrentUser: vi.fn(),
+  requireUser: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -32,13 +33,29 @@ vi.mock("@/lib/db/server", () => ({
 
 vi.mock("@/lib/auth/session", () => ({
   getCurrentUser: () => mocks.getCurrentUser(),
-  requireUser: vi.fn(),
+  requireUser: () => mocks.requireUser(),
+}));
+
+// speaking/session route 依赖：server-only + repository-factory
+// （smoke 测试只验证 Auth Gate，业务依赖用最小 stub，避免真实 DB 副作用）
+vi.mock("server-only", () => ({}));
+
+vi.mock("@/lib/repository-factory", () => ({
+  getLearningRepository: () => ({
+    getAllUserItemStates: async () => [],
+    getUserEventsInRange: async () => [],
+  }),
+  getSpeakingRepository: () => ({
+    createSession: async () => {},
+  }),
 }));
 
 import { isDashboardOnlyAllowed } from "@/middleware";
 import { POST as loginPost } from "@/app/api/auth/mobile/login/route";
 import { GET as sessionGet } from "@/app/api/auth/mobile/session/route";
 import { POST as logoutPost } from "@/app/api/auth/mobile/logout/route";
+import { POST as speakingSessionPost } from "@/app/api/speaking/session/route";
+import { AppError } from "@/lib/observability/errors";
 
 const jsonReq = (body: unknown): Request =>
   new Request("http://localhost/api/auth/mobile/login", {
@@ -219,5 +236,32 @@ describe("middleware allowlist（MOBILE-04B §10）", () => {
     expect(isDashboardOnlyAllowed("/dashboard")).toBe(true);
     expect(isDashboardOnlyAllowed("/login")).toBe(true);
     expect(isDashboardOnlyAllowed("/api/dashboard/stats")).toBe(true);
+  });
+});
+
+describe("SPEAKING_AUTH_GATE smoke（MOBILE-04B §24）", () => {
+  const speakingReq = (): Request =>
+    new Request("http://localhost/api/speaking/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ part: "P1" }),
+    });
+
+  it("无认证 session → requireUser 拒绝（AUTH_REQUIRED 401），不再因 middleware 404 阻塞", async () => {
+    mocks.requireUser.mockRejectedValue(new AppError("AUTH_REQUIRED", "请先登录"));
+    const res = await speakingSessionPost(speakingReq());
+    expect(res.status).not.toBe(404); // middleware 已放行该路由
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(JSON.stringify(body)).toContain("AUTH_REQUIRED");
+  });
+
+  it("带认证 session（真实 user）→ 通过 Auth Gate 进入业务逻辑，不因 AUTH_REQUIRED 失败", async () => {
+    mocks.requireUser.mockResolvedValue({ id: "u-real-1", email: "a@example.com" });
+    const res = await speakingSessionPost(speakingReq());
+    expect(res.status).not.toBe(401); // Auth Gate 通过
+    expect(res.status).toBe(200); // 业务逻辑到达（memory stub 创建 session）
+    const body = await res.json();
+    expect(body.session.userId).toBe("u-real-1");
   });
 });
