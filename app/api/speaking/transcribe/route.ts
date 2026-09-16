@@ -1,18 +1,22 @@
 /**
  * POST /api/speaking/transcribe
  * -------------------------------------------------------
- * 接收音频 blob → 调 Whisper API → 返回 transcript + audioMetadata
+ * 接收音频 blob → 调 STT Provider（DashScope/Qwen ASR PRIMARY，OpenAI Whisper FALLBACK）
+ * → 返回 transcript + audioMetadata
  *
  * 输入：multipart/form-data，field "audio" 为音频文件
  * 输出：TranscribeResponse { transcript, duration, audioMetadata }
  *
- * Whisper 配置：
- *   - model: whisper-1
- *   - response_format: verbose_json（获取 word-level timestamps）
- *   - language: en（强制英文识别）
+ * Provider 契约（MOBILE-04D-FIX）：
+ *   - STT_PROVIDER=dashscope → DashScope ASR（qwen-audio-3.0-asr-flash）
+ *     m4a → Base64 Data URI 直发 provider（不上传 Supabase Storage、不落盘、不写日志）
+ *   - STT_PROVIDER=openai / 未设置 → OpenAI Whisper（whisper-1，verbose_json + word timestamps）
+ *   - DEEPSEEK_API_KEY 永远不作为 STT credential
+ *   - 缺配置 → 503 CONFIG_ERROR（结构化，只报缺失键名）
+ *   - word timestamps 为 optional（DashScope 同步 ASR 不返回 → []，消费端不依赖）
  *
  * M2（M2-P3B 补全）：接入 Trace（Contract §1.3 transcribe 行）
- *   - request.received + llm.attempt(provider=whisper, prompt 字段 null, §1.6 特例)
+ *   - request.received + llm.attempt(provider 动态, prompt 字段 null, §1.6 特例)
  *   - response.sent 错误路径带 ui_fallback_offered（Case 034 前端文字回退）
  *   - 隐私：绝不记录音频字节，只记 metadata 指标（duration/wpm/pause）
  *
@@ -29,12 +33,14 @@ import { traceIdFromHeaders } from "@/lib/observability/trace";
 import { logger } from "@/lib/observability/logger";
 import { startTrace, endTraceSuccess } from "@/lib/observability/trace-api-helper";
 import { requireUser } from "@/lib/auth/session";
-import type { AudioMetadata, PauseInfo, TranscribeResponse, WordTimestamp } from "@/lib/speaking/audio-types";
+import type { AudioMetadata, PauseInfo, TranscribeResponse } from "@/lib/speaking/audio-types";
 import type { RequestReceivedPayload } from "@/lib/observability/trace-contract";
+import { resolveSttProvider } from "@/lib/stt/provider";
+import { SttProviderError, type SttProvider } from "@/lib/stt/types";
 
 export const runtime = "nodejs";
 
-// Whisper API 支持的最大文件大小：25MB
+// STT provider 支持的最大文件大小：25MB
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 /** 结构化音频元数据摘要（BC-034；不落音频字节/文件名原文）。导出供单测覆盖边界（如空 filename）。 */
@@ -79,14 +85,17 @@ export async function POST(request: Request) {
     ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
   });
 
+  // 当前 provider 信息（解析后填充；Trace llm.attempt 动态使用）
+  let activeProvider: SttProvider | null = null;
+
   // 失败路径统一出口：错误响应 + ui_fallback_offered（前端可回退文字输入）
   function fail(httpStatus: number, kind: string, message: string, llmErrorCode: string | null = null) {
     if (llmErrorCode) {
       tctx.trace.emitLlmAttempt(
         {
           attempt_purpose: "primary",
-          provider: "whisper",
-          model_name: "whisper-1",
+          provider: activeProvider?.traceProvider ?? "whisper",
+          model_name: activeProvider?.model ?? "whisper-1",
           tier: "fast",
           prompt_key: null, // §1.6 whisper 特例：prompt 字段允许 null
           prompt_version: null,
@@ -138,50 +147,30 @@ export async function POST(request: Request) {
       return fail(400, "INVALID_INPUT", "音频文件超过 25MB 限制");
     }
 
-    // 2. 调用 Whisper API
-    //    STT credential 契约（MOBILE-04C）：只接受专用 WHISPER_API_KEY；
-    //    兼容 OPENAI_API_KEY（同为 OpenAI Whisper 兼容端点）。
-    //    禁止 DEEPSEEK_API_KEY —— DeepSeek chat key 不是 OpenAI Whisper key。
-    const whisperApiKey = process.env.WHISPER_API_KEY ?? process.env.OPENAI_API_KEY;
-    const whisperBaseUrl = process.env.WHISPER_BASE_URL ?? "https://api.openai.com/v1";
-
-    if (!whisperApiKey) {
-      return fail(503, "CONFIG_ERROR", "未配置 STT API Key（WHISPER_API_KEY）", "CONFIG_ERROR");
+    // 2. 解析 STT provider 配置（MOBILE-04D-FIX）
+    //    STT_PROVIDER=dashscope → DASHSCOPE_API_KEY/BASE_URL/ASR_MODEL
+    //    否则 → WHISPER_API_KEY ?? OPENAI_API_KEY（禁止 DEEPSEEK）
+    const config = resolveSttProvider(process.env);
+    if (!config.ok) {
+      return fail(503, "CONFIG_ERROR", config.message, "CONFIG_ERROR");
     }
+    activeProvider = config.provider;
 
-    // 构造 Whisper 请求
-    const whisperForm = new FormData();
-    whisperForm.append("file", audioFile, audioFile.name || "recording.webm");
-    whisperForm.append("model", "whisper-1");
-    whisperForm.append("language", "en");
-    whisperForm.append("response_format", "verbose_json");
-    whisperForm.append("timestamp_granularities[]", "word");
-
-    const whisperRes = await fetch(`${whisperBaseUrl}/audio/transcriptions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${whisperApiKey}`,
+    // 3. 调用 provider（音频字节只进内存 → Base64 Data URI / multipart，不落盘、不写日志）
+    const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
+    const result = await activeProvider.transcribe(
+      {
+        buffer: audioBuffer,
+        mimeType: audioFile.type || "audio/mp4",
+        filename: audioFile.name || "recording.m4a",
       },
-      body: whisperForm,
-    });
+      traceId,
+    );
 
-    if (!whisperRes.ok) {
-      const errBody = await whisperRes.text().catch(() => "unknown");
-      logger.error("whisper.api.failed", {
-        trace_id: traceId,
-        status: whisperRes.status,
-        body: errBody.slice(0, 200),
-        ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
-      });
-      return fail(502, "MODEL_ERROR", `语音识别失败 (${whisperRes.status})`, "MODEL_ERROR");
-    }
-
-    const whisperData = await whisperRes.json() as WhisperVerboseResponse;
-
-    // 3. 解析 Whisper 响应，构造 audioMetadata
-    const transcript = whisperData.text?.trim() ?? "";
-    const duration = whisperData.duration ?? 0;
-    const wordTimestamps = extractWordTimestamps(whisperData);
+    // 4. 构造 audioMetadata（word timestamps optional：provider 不返回时 pauses 为空）
+    const transcript = result.transcript;
+    const duration = result.duration;
+    const wordTimestamps = result.wordTimestamps;
     const pauses = computePauses(wordTimestamps, duration);
     const wordCount = transcript.split(/\s+/).filter(Boolean).length;
     const speakingTime = Math.max(0, duration - pauses.totalPauseDuration);
@@ -192,7 +181,7 @@ export async function POST(request: Request) {
       speakingTime,
       wpm,
       pauses,
-      wordTimestamps,
+      wordTimestamps: wordTimestamps.length > 0 ? wordTimestamps : undefined,
     };
 
     const response: TranscribeResponse = {
@@ -201,12 +190,12 @@ export async function POST(request: Request) {
       audioMetadata,
     };
 
-    // 4. Trace: llm.attempt（whisper，prompt null 特例；raw 只存 transcript 摘要）
+    // 5. Trace: llm.attempt（provider 动态；raw 只存 transcript 摘要）
     const transcriptTruncated = transcript.length > 512;
     tctx.trace.emitLlmAttempt({
       attempt_purpose: "primary",
-      provider: "whisper",
-      model_name: "whisper-1",
+      provider: activeProvider.traceProvider,
+      model_name: activeProvider.model,
       tier: "fast",
       prompt_key: null,
       prompt_version: null,
@@ -219,6 +208,8 @@ export async function POST(request: Request) {
 
     logger.info("speaking.transcribe.success", {
       trace_id: traceId,
+      provider: activeProvider.name,
+      model: activeProvider.model,
       duration,
       wordCount,
       wpm,
@@ -233,55 +224,38 @@ export async function POST(request: Request) {
     });
     return endTraceSuccess(tctx, resp, `transcript=${transcript.slice(0, 200)}, duration=${duration}, wpm=${wpm}`, false);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "transcribe failed";
+    let message: string;
+    let httpStatus = 500;
+    let kind = "INTERNAL";
+    let llmCode: string | null = "MODEL_ERROR";
+
+    if (err instanceof SttProviderError) {
+      // provider 上游错误：产品级文案，不泄漏 provider 内部细节/响应原文
+      httpStatus = 502;
+      kind = "MODEL_ERROR";
+      llmCode = "MODEL_ERROR";
+      message = `语音识别失败${err.status ? ` (${err.status})` : ""}`;
+    } else {
+      message = err instanceof Error ? err.message : "transcribe failed";
+    }
+
     logger.error("speaking.transcribe.error", {
       trace_id: traceId,
+      http_status: httpStatus,
+      kind,
       error: message,
       ...(audioMetadataSummary ? { audio_metadata: audioMetadataSummary } : {}),
     });
-    return fail(500, "INTERNAL", message, "MODEL_ERROR");
+    return fail(httpStatus, kind, message, llmCode);
   }
-}
-
-// =============================================================
-// Whisper Response Types
-// =============================================================
-
-interface WhisperWord {
-  word: string;
-  start: number;
-  end: number;
-}
-
-interface WhisperVerboseResponse {
-  text?: string;
-  duration?: number;
-  words?: WhisperWord[];
-  segments?: Array<{
-    text: string;
-    start: number;
-    end: number;
-  }>;
 }
 
 // =============================================================
 // Helpers
 // =============================================================
 
-function extractWordTimestamps(data: WhisperVerboseResponse): WordTimestamp[] {
-  if (data.words && data.words.length > 0) {
-    return data.words.map((w) => ({
-      word: w.word.trim(),
-      start: w.start,
-      end: w.end,
-    }));
-  }
-  // Fallback: 无词级时间戳
-  return [];
-}
-
-/** 计算停顿信息（将 >0.8 秒的词间间隔视为停顿） */
-function computePauses(words: WordTimestamp[], totalDuration: number): PauseInfo {
+/** 计算停顿信息（将 >0.8 秒的词间间隔视为停顿）；无词级时间戳时返回空停顿 */
+export function computePauses(words: { start: number; end: number }[], totalDuration: number): PauseInfo {
   const PAUSE_THRESHOLD = 0.8; // 秒
   const pauses: number[] = [];
 
