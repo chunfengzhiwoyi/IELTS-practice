@@ -468,9 +468,16 @@ internal fun SpeakingShell(state: SpeakingUiState, events: SpeakingEvents, modif
             Spacer(Modifier.height(16.dp))
             ModeSwitch(state.mode, events.switchMode)
             Spacer(Modifier.height(12.dp))
-            when (state.mode) {
-                SpeakingInputMode.VOICE -> VoicePanel(state, events)
-                SpeakingInputMode.TEXT -> TextPanel(state, events)
+            // MOBILE-05 real-device: TEXT 与 VOICE 共享提交态覆盖层。
+            // 此前 TextPanel 无条件渲染，TEXT 提交后端全链成功后 UI 仍停在输入页（结果页不可达）。
+            when {
+                state.recording == SpeakingRecordingState.SUBMITTING -> SubmittingState()
+                state.recording == SpeakingRecordingState.SUCCESS -> SuccessState(events)
+                state.recording == SpeakingRecordingState.ERROR -> ErrorState(state, events)
+                else -> when (state.mode) {
+                    SpeakingInputMode.VOICE -> VoicePanel(state, events)
+                    SpeakingInputMode.TEXT -> TextPanel(state, events)
+                }
             }
         }
     }

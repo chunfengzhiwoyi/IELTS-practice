@@ -38,7 +38,9 @@ object LingxiApiClient {
         val built = OkHttpClient.Builder()
             .cookieJar(jar)
             .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            // MOBILE-05 real-device E2E: canonical analyze 实测 ~20s（DeepSeek 服务端上限 30s），
+            // 20s readTimeout 会在服务端已完成时客户端超时 → 误报“网络不可用”。放宽到 90s。
+            .readTimeout(90, TimeUnit.SECONDS)
             .build()
         cachedClient = built
         cachedJar = jar
