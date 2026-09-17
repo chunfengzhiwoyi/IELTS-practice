@@ -80,6 +80,9 @@ export class SupabaseSpeakingRepository implements SpeakingRepository {
       .update({
         first_answer: answer,
         first_analysis: analysis as unknown as Record<string, unknown>,
+        // legacy main_issue column (0001 schema; dashboard real-repository still reads it).
+        // MOBILE-04D real E2E: was never written back -> row main_issue stayed NULL.
+        main_issue: analysis.mainIssue as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
       })
       .eq("id", sessionId)

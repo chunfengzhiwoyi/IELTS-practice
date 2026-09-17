@@ -1,4 +1,3 @@
-"use client";
 /**
  * Evaluation Builder
  * -------------------------------------------------------
@@ -6,6 +5,9 @@
  *
  * 纯确定性逻辑，不调用 LLM。
  * 比较 firstAnalysis vs secondAnalysis 的维度等级和 issues。
+ * 服务端（app/api/speaking/analyze/route.ts）与客户端均可调用，
+ * 因此不声明 "use client"（此前声明导致服务端调用被 Next 拦截，
+ * speaking_evaluations 永不落库 —— MOBILE-04D 真实 E2E 暴露）。
  */
 
 import type { SpeakingSession, SpeakingAnalysisResult, DimensionAnalysis } from "@/lib/speaking/types";
