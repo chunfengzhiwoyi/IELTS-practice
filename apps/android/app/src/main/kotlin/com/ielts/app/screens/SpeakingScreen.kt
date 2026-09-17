@@ -336,6 +336,9 @@ fun SpeakingScreen(
 
     val events = SpeakingEvents(
         selectPart = { p ->
+            // MOBILE-04E：SUBMITTING 期间禁止切 Part/模式——避免 rerecord() 删除
+            // 正在上传/分析的音频导致本次分析丢失并误报错误（提交是原子阶段）。
+            if (recording == SpeakingRecordingState.SUBMITTING) return@SpeakingEvents
             if (p != part) {
                 // 切 Part 视为放弃当前会话：停止录音/播放、删除未移交 temp（A 节），防止偷偷录音
                 session.rerecord()
@@ -352,6 +355,8 @@ fun SpeakingScreen(
         },
         toggleHint = { hintOpen = !hintOpen },
         switchMode = { m ->
+            // MOBILE-04E：SUBMITTING 期间禁止切换（同 selectPart 原子阶段保护）
+            if (recording == SpeakingRecordingState.SUBMITTING) return@SpeakingEvents
             if (m != mode) {
                 // 切模式同样放弃当前音频会话（与 selectPart 一致）
                 session.rerecord()

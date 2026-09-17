@@ -45,6 +45,25 @@ android {
         }
     }
 
+    // MOBILE-04E（Final Product QA）：release 构建禁止默认指向本机/明文地址。
+    // debug 默认 http://10.0.2.2:3000（本机 dev server，仅 debug 明文放行）；
+    // release 必须在构建时显式提供 HTTPS 后端地址，否则直接构建失败。
+    // 使用 taskGraph 判定：普通 assembleDebug / 测试不受影响。
+    gradle.taskGraph.whenReady {
+        val buildingRelease = allTasks.any {
+            it.project == project && it.name.contains("Release", ignoreCase = true)
+        }
+        if (buildingRelease) {
+            val u = providers.gradleProperty("LINGXI_BACKEND_BASE_URL").orNull
+            if (u == null || !u.startsWith("https://")) {
+                throw GradleException(
+                    "MOBILE-04E: release build requires -PLINGXI_BACKEND_BASE_URL=https://... " +
+                        "(got: ${u ?: "unset"})",
+                )
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

@@ -166,6 +166,22 @@ class SpeakingRecorderComposeTest {
         composeTestRule.onNodeWithText("停止播放").assertIsDisplayed()
     }
 
+    // ---------------- 提交中原子性（MOBILE-04E：SUBMITTING 期间禁止切 Part/模式） ----------------
+
+    @Test
+    fun partSwitchIgnoredDuringSubmitting() {
+        render(state(recording = SpeakingRecordingState.SUBMITTING), "speaking-submitting-guard.png")
+        // 提交中：题目与加载提示可见
+        composeTestRule.onNodeWithText("正在分析你的回答…").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Do you usually have a busy day? What do you typically do?").assertIsDisplayed()
+
+        // 点击 P2 不得切走：避免 rerecord() 删除正在分析的音频
+        composeTestRule.onNodeWithText("P2 独白").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("正在分析你的回答…").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Do you usually have a busy day? What do you typically do?").assertIsDisplayed()
+    }
+
     // ---------------- 真实点击流（Fake 会话）：录音 → 播放 → 停止 → 重录 ----------------
 
     @Test
