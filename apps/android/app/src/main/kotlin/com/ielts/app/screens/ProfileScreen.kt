@@ -1,230 +1,260 @@
 package com.ielts.app.screens
 
-import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.ielts.app.auth.AuthStatus
-import com.ielts.app.components.*
+import com.ielts.app.auth.AuthUser
+import com.ielts.app.components.Monogram
+import com.ielts.app.components.PagePadding
+import com.ielts.app.components.PrimaryButton
+import com.ielts.app.components.ProgressRule
+import com.ielts.app.components.RadiusLarge
+import com.ielts.app.components.RadiusMedium
+import com.ielts.app.components.ScreenScaffold
+import com.ielts.app.components.SectionLabel
 import com.ielts.app.nav.Routes
 import com.ielts.app.theme.*
 import com.ielts.app.viewmodel.AuthViewModel
 import com.ielts.app.viewmodel.StudyViewModel
 import com.ielts.core.client.formatCNDate
-import com.ielts.core.llm.getApiConfig
+import com.ielts.core.model.MiniReport
+import com.ielts.core.model.ProfileData
 import com.ielts.core.service.generateReport
-import com.ielts.core.service.generateReportNarrative
 import com.ielts.core.service.getProfile
-import kotlinx.coroutines.launch
+import com.ielts.core.service.getWeeklyGoal
 
+private fun monogramColorOf(key: String) = when (key) {
+    "accent" -> Accent
+    "bronze" -> Bronze
+    else -> Ink
+}
+
+/**
+ * MOBILE-06 §4/§5/§6/§7/§11 — 我的页（视觉稿 v2.0）。
+ * 职责：「我是谁 + 我学到哪里了 + 常用个人工具」。
+ *  - 顶部身份卡（点击整卡 → 账号资料页；不出现重复「账号信息」入口）
+ *  - 我的学习：本周 7 天轻量轨迹 + 累计学习 / 连续学习 / 口语练习 + 本周目标进度条（真实数据）
+ *  - 下方：工具与设置 → AI 服务配置（BELOW_THE_FOLD）
+ *  - 无右上角 gear 图标
+ */
 @Composable
 fun ProfileScreen(
-    vm: StudyViewModel,
+    studyVm: StudyViewModel?,
     authVm: AuthViewModel?,
     navController: NavController,
     innerPadding: PaddingValues,
 ) {
     val date = remember { formatCNDate() }
-    val profile = remember(vm.version) { getProfile() }
-    val report = remember(vm.version) { generateReport() }
-    var showClear by remember { mutableStateOf(false) }
-    var showLogout by remember { mutableStateOf(false) }
-    val ctx = LocalContext.current
+    val dataVersion = studyVm?.version
+    val profile = remember(dataVersion) { getProfile() }
+    val report = remember(dataVersion) { generateReport() }
+    val goal = remember(dataVersion) { getWeeklyGoal() }
+    val user = authVm?.state?.user
 
-    val authState = authVm?.state
-    val isAuthed = authState?.status == AuthStatus.AUTHENTICATED
-    val userEmail = authState?.user?.email
+    ScreenScaffold(date = date, innerPadding = innerPadding) {
+        Spacer(Modifier.height(4.dp))
+        Text("我的", style = Type.displayTitle, color = Ink)
+        Spacer(Modifier.height(18.dp))
 
-    val scope = rememberCoroutineScope()
-    var aiNarrative by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(vm.version) {
-        if (getApiConfig().isValid) {
-            scope.launch { aiNarrative = generateReportNarrative() }
-        } else {
-            aiNarrative = null
-        }
-    }
-
-    val monoColor = when (profile.monogramColor) {
-        "accent" -> Accent
-        "bronze" -> Bronze
-        else -> Ink
-    }
-    val initial = (profile.nickname.firstOrNull() ?: '灵').toString()
-
-    ScreenScaffold(date, innerPadding) {
-        Spacer(Modifier.height(16.dp))
-
-        // 身份行
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable { navController.navigate(Routes.PROFILE_EDIT) }
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Monogram(initial, monoColor, size = 52.dp)
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Text(profile.nickname.ifBlank { "未命名学习者" }, style = Type.heading)
-                Spacer(Modifier.height(4.dp))
-                Text("查看档案 ›", style = Type.uiLabel)
-            }
-        }
+        IdentityCard(profile, user, onClick = { navController.navigate(Routes.ACCOUNT_PROFILE) })
         Spacer(Modifier.height(22.dp))
 
-        WeeklyAchievementCard(report = report, onGoalClick = { navController.navigate(Routes.REPORT) })
+        LearningSection(report, goal)
         Spacer(Modifier.height(22.dp))
 
-        SectionLabel("最近掌握")
-        if (report.recentMastered.isEmpty()) {
-            Note("还没有独立掌握的单词，多来几次复习吧。", variant = NoteVariant.BRONZE)
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                report.recentMastered.forEach { m ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Text(m.term, style = Type.body.copy(color = Ink), modifier = Modifier.weight(1f))
-                        Text(m.meaning, style = Type.bodySmall, modifier = Modifier.weight(1.2f))
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(22.dp))
+        ToolsSection(onApiConfigClick = { navController.navigate(Routes.API_CONFIG) })
+        Spacer(Modifier.height(28.dp))
 
-        if (aiNarrative != null) {
-            SectionLabel("学习手记")
-            Note(aiNarrative!!, variant = NoteVariant.BRONZE)
-            Spacer(Modifier.height(22.dp))
-        }
-
-        SectionLabel("设置")
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // 登录/登出行（MOBILE-04B §11）：真实账号态 → 显示邮箱 + 退出登录
-            if (isAuthed) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { showLogout = true }
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "已登录：${userEmail ?: "灵犀账号"}",
-                        style = Type.ui.copy(color = Ink, fontWeight = FontWeight.SemiBold),
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text("退出登录 ›", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
-                }
-            } else {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { navController.navigate(Routes.LOGIN) }
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("登录灵犀账号", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
-                    Spacer(Modifier.weight(1f))
-                    Text("三端统一身份 ›", style = Type.ui.copy(color = InkMeta))
-                }
-            }
-            SettingRow("备考目标", onClick = { navController.navigate(Routes.GOAL) })
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { navController.navigate(Routes.REPORT) }
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("学习报告", style = Type.ui.copy(color = Ink, fontWeight = FontWeight.SemiBold))
-                Spacer(Modifier.weight(1f))
-                Text("›", style = Type.ui.copy(color = InkMeta))
-            }
-            SettingRow("编辑档案", onClick = { navController.navigate(Routes.PROFILE_EDIT) })
-            SettingRow("隐私保护", onClick = { navController.navigate(Routes.PRIVACY) })
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { navController.navigate(Routes.API_CONFIG) }
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("API 配置", style = Type.ui.copy(color = Ink, fontWeight = FontWeight.SemiBold))
-                Spacer(Modifier.weight(1f))
-                ModelStatusBadge(remember(vm.version) { getApiConfig().status() })
-                Spacer(Modifier.width(10.dp))
-                Text("›", style = Type.ui.copy(color = InkMeta))
-            }
-            SettingRow("清空学习数据", danger = true, onClick = { showClear = true })
-        }
-        Spacer(Modifier.height(20.dp))
-
-        Note("下一步 · ${report.nextStep.title} —— ${report.nextStep.body}", variant = NoteVariant.BRONZE)
-        Spacer(Modifier.height(20.dp))
-    }
-
-    if (showClear) {
-        AlertDialog(
-            onDismissRequest = { showClear = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    showClear = false
-                    vm.clearAll { navController.navigate(Routes.TODAY) }
-                }) { Text("清空", color = Accent) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClear = false }) { Text("取消") }
-            },
-            title = { Text("清空学习数据？", style = Type.subHeading) },
-            text = { Text("所有学习进度、复习排程与口语记录都会被删除，且无法恢复。", style = Type.bodySmall) },
-        )
-    }
-
-    if (showLogout) {
-        AlertDialog(
-            onDismissRequest = { showLogout = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    showLogout = false
-                    authVm?.logout()
-                    Toast.makeText(ctx, "已退出当前设备", Toast.LENGTH_SHORT).show()
-                }) { Text("退出登录", color = Accent) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogout = false }) { Text("取消") }
-            },
-            title = { Text("退出登录？", style = Type.subHeading) },
-            text = { Text("退出后本机将清除登录状态，下次需要重新登录。", style = Type.bodySmall) },
+        Text("关于灵犀 IELTS", style = Type.uiLabel, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "灵犀 IELTS · A smaller step, a brighter you.",
+            style = Type.uiLabel,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
+// ----------------------------- 顶部身份卡 -----------------------------
 @Composable
-private fun SettingRow(label: String, danger: Boolean = false, onClick: () -> Unit) {
+private fun IdentityCard(profile: ProfileData, user: AuthUser?, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(RadiusLarge))
+            .background(Paper2)
+            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            label,
-            style = Type.ui.copy(
-                color = if (danger) Accent else Ink,
-                fontWeight = FontWeight.SemiBold,
-            ),
+        Monogram(
+            (profile.nickname.firstOrNull() ?: '灵').toString(),
+            monogramColorOf(profile.monogramColor),
+            size = 56.dp,
         )
-        Spacer(Modifier.weight(1f))
-        Text("›", style = Type.ui.copy(color = InkMeta))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                profile.nickname.ifBlank { user?.email?.substringBefore("@") ?: "灵犀用户" },
+                style = Type.heading,
+                color = Ink,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(user?.email ?: profile.nickname.ifBlank { "——" }, style = Type.bodySmall)
+            Spacer(Modifier.height(6.dp))
+            Text("持续学习，遇见更好的自己", style = Type.uiLabel.copy(color = InkMeta))
+        }
+        Text("›", style = Type.heading.copy(color = Bronze))
+    }
+}
+
+// ----------------------------- 我的学习 -----------------------------
+@Composable
+private fun LearningSection(report: MiniReport, goal: Int) {
+    SectionLabel("我的学习")
+    Spacer(Modifier.height(8.dp))
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(Paper2)
+            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge))
+            .padding(16.dp),
+    ) {
+        if (report.totalItems == 0 && report.speakingCompleted == 0 && report.streak == 0) {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(16.dp))
+                Text("还没有学习记录", style = Type.subHeading, color = Ink)
+                Spacer(Modifier.height(6.dp))
+                Text("去「今日」开始第一次练习吧", style = Type.bodySmall)
+                Spacer(Modifier.height(18.dp))
+            }
+        } else {
+            Column {
+                // 本周轨迹：一二三四五六日 + 圆点
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("本周 ${report.daysActiveThisWeek}/7 天", style = Type.ui.copy(color = InkSoft, fontWeight = FontWeight.SemiBold))
+                    Text("连续学习 ${report.streak} 天", style = Type.uiLabel)
+                }
+                Spacer(Modifier.height(10.dp))
+                WeekDots(report)
+                Spacer(Modifier.height(16.dp))
+
+                // 三项真实指标
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MiniStat("${report.totalItems}", "累计学习（词/表达）", Modifier.weight(1f))
+                    MiniStat("${report.streak}", "连续学习（天）", Modifier.weight(1f))
+                    MiniStat("${report.speakingCompleted}", "口语练习（次）", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(18.dp))
+
+                // 本周目标 / 周进度
+                val done = report.newThisWeek + report.reviewedThisWeek
+                val pct = if (goal > 0) (done * 100 / goal).coerceAtMost(999) else 0
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("本周目标 $goal 词", style = Type.ui.copy(color = InkSoft))
+                    Text("$pct%", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
+                }
+                Spacer(Modifier.height(6.dp))
+                ProgressRule(progress = pct / 100f)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    if (pct >= 100) "继续加油！你已经完成了本周的学习目标。" else "已学习 $done 词，继续加油！",
+                    style = Type.uiLabel,
+                    color = InkMeta,
+                )
+            }
+        }
+    }
+}
+
+/** 7 天圆点轨迹（● 有活动 / ○ 无活动；今日高亮） */
+@Composable
+private fun WeekDots(report: MiniReport) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        report.weeklyActivity.forEach { d ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(
+                            when {
+                                d.isToday -> Accent
+                                d.hasActivity -> Bronze
+                                else -> LineStrong.copy(alpha = 0.5f)
+                            },
+                        ),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    d.label.replace("周", ""),
+                    style = Type.uiLabel.copy(
+                        fontSize = 10.sp,
+                        color = if (d.isToday) Accent else InkMeta,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniStat(num: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .border(BorderStroke(1.dp, LineStrong), RoundedCornerShape(RadiusMedium))
+            .background(Paper)
+            .padding(10.dp, 12.dp),
+    ) {
+        Text(num, style = Type.word.copy(fontSize = 26.sp, color = Ink))
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = Type.uiLabel.copy(fontSize = 10.sp, color = InkMeta))
+    }
+}
+
+// ----------------------------- 工具与设置 -----------------------------
+@Composable
+private fun ToolsSection(onApiConfigClick: () -> Unit) {
+    SectionLabel("工具与设置")
+    Spacer(Modifier.height(8.dp))
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(RadiusLarge))
+            .background(Paper2)
+            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge)),
+    ) {
+        Column {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onApiConfigClick)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("AI 服务配置", style = Type.body, color = Ink, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(2.dp))
+                    Text("配置你的 API Key", style = Type.bodySmall)
+                }
+                Text("›", style = Type.heading.copy(color = Bronze))
+            }
+        }
     }
 }

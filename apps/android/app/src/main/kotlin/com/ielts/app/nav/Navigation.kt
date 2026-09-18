@@ -46,6 +46,9 @@ object Routes {
     const val SPEAKING_RESULT_DETAIL = "speaking_result_detail"
     const val GOAL = "goal"
     const val LOGIN = "login"
+    const val REGISTER = "register"
+    const val FORGOT_PASSWORD = "forgot_password"
+    const val ACCOUNT_PROFILE = "account_profile"
 }
 
 data class TabItem(val route: String, val label: String, val icon: Int, val iconActive: Int)
@@ -73,6 +76,17 @@ val protectedRoutes = setOf(
     Routes.API_CONFIG,
     Routes.REPORT,
     Routes.GOAL,
+    Routes.ACCOUNT_PROFILE,
+)
+
+/**
+ * MOBILE-06 §15 — 未认证可停留的 Auth 子路由（不被 Auth Gate 强制弹回 LOGIN）。
+ * 登录成功后这些页面同样会被导向 TODAY。
+ */
+private val authSubRoutes = setOf(
+    Routes.LOGIN,
+    Routes.REGISTER,
+    Routes.FORGOT_PASSWORD,
 )
 
 private val mainTabRoutes = setOf(
@@ -153,7 +167,7 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
         if (current == null) return@LaunchedEffect // NavHost graph 尚未就绪，等首帧 current 出现
         when (authState.status) {
             AuthStatus.AUTHENTICATED -> {
-                if (current == Routes.AUTH || current == Routes.LOGIN) {
+                if (current == Routes.AUTH || current in authSubRoutes) {
                     navController.navigate(Routes.TODAY) {
                         popUpTo(0)
                         launchSingleTop = true
@@ -162,7 +176,8 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
             }
 
             AuthStatus.UNAUTHENTICATED -> {
-                if (current != Routes.LOGIN) {
+                // 未认证：只允许停留在 Login / Register / ForgotPassword；其余一律回 Login
+                if (current !in authSubRoutes) {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0)
                         launchSingleTop = true
@@ -201,6 +216,8 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
                 AuthBootstrapScreen(authState, onRetry = authVm::restoreSession)
             }
             composable(Routes.LOGIN) { LoginScreen(authVm, navController, innerPadding) }
+            composable(Routes.REGISTER) { RegisterScreen(authVm, navController, innerPadding) }
+            composable(Routes.FORGOT_PASSWORD) { ForgotPasswordScreen(authVm, navController, innerPadding) }
             composable(Routes.TODAY) { TodayScreen(vm, navController, innerPadding) }
             composable(Routes.LEARN) { LearnScreen(vm, navController, innerPadding) }
             composable(Routes.REVIEW) { ReviewScreen(vm, navController, innerPadding) }
@@ -208,6 +225,7 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
             composable(Routes.SPEAKING_RESULT) { SpeakingResultScreen(navController, innerPadding) }
             composable(Routes.SPEAKING_RESULT_DETAIL) { SpeakingResultDetailScreen(navController, innerPadding) }
             composable(Routes.PROFILE) { ProfileScreen(vm, authVm, navController, innerPadding) }
+            composable(Routes.ACCOUNT_PROFILE) { AccountProfileScreen(vm, authVm, navController, innerPadding) }
             composable(Routes.PROFILE_EDIT) { ProfileEditScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.IDENTITY) { IdentityScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.PRIVACY) { PrivacyScreen(navController, innerPadding) { navController.popBackStack() } }
