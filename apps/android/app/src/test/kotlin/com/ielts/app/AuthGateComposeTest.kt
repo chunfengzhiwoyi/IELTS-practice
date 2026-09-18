@@ -1,11 +1,11 @@
-package com.ielts.app
+﻿package com.ielts.app
 
 import android.app.Application
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -33,7 +33,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * MOBILE-04B §22 — Auth Gate Compose / Navigation 测试（Robolectric，非真实设备）
+ * MOBILE-04B §22 + MOBILE-06 — Auth Gate Compose / Navigation 测试（Robolectric，非真实设备）。
  * 验证：cold start restoring / unauth → Login / login loading+error / login success → Today /
  *       authed cold start → Today / restore network error → retry / logout → Login / 主路由不绕过 Auth Gate。
  */
@@ -86,12 +86,18 @@ class AuthGateComposeTest {
         }
     }
 
+    private fun typeEmailPassword(email: String, password: String) {
+        composeTestRule.onNodeWithTag("email_field").performTextInput(email)
+        composeTestRule.onNodeWithTag("password_field").performTextInput(password)
+        composeTestRule.waitForIdle()
+    }
+
     @Test
     fun `unauthenticated cold start goes to Login and main routes are blocked`() {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"authenticated":false}"""))
         render(AuthViewModel(app))
 
-        waitForText("邮箱密码登录")
+        waitForText("灵犀 IELTS")
         // 主路由未绕过 Auth Gate：不会闪 Today
         org.junit.Assert.assertTrue(composeTestRule.onAllNodesWithText("今日").fetchSemanticsNodes().isEmpty())
     }
@@ -111,7 +117,7 @@ class AuthGateComposeTest {
         render(AuthViewModel(app))
 
         waitForText("重试")
-        org.junit.Assert.assertTrue(composeTestRule.onAllNodesWithText("邮箱密码登录").fetchSemanticsNodes().isEmpty())
+        org.junit.Assert.assertTrue(composeTestRule.onAllNodesWithText("灵犀 IELTS").fetchSemanticsNodes().isEmpty())
 
         // 网络恢复后重试成功 → Today
         LingxiApiClient.baseUrlOverride = server.url("/").toString().trimEnd('/')
@@ -124,15 +130,11 @@ class AuthGateComposeTest {
     fun `login success navigates from Login to Today`() {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"authenticated":false}"""))
         render(AuthViewModel(app))
-        waitForText("邮箱密码登录")
+        waitForText("灵犀 IELTS")
 
         server.enqueue(MockResponse().setResponseCode(200).setBody(jsonUser("u2", "b@c.d")))
-        composeTestRule.onAllNodes(hasSetTextAction() and isEnabled() and hasText("邮箱", substring = true))[0]
-            .performTextInput("b@c.d")
-        composeTestRule.onAllNodes(hasSetTextAction() and isEnabled() and hasText("密码", substring = true))[0]
-            .performTextInput("secret1")
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("邮箱密码登录").performClick()
+        typeEmailPassword("b@c.d", "secret1")
+        composeTestRule.onNodeWithText("登录").performScrollTo().performClick()
 
         waitForText("今日")
     }
@@ -141,39 +143,38 @@ class AuthGateComposeTest {
     fun `login invalid credentials shows product error on Login`() {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"authenticated":false}"""))
         render(AuthViewModel(app))
-        waitForText("邮箱密码登录")
+        waitForText("灵犀 IELTS")
 
         server.enqueue(
             MockResponse()
                 .setResponseCode(401)
-                .setBody("""{"authenticated":false,"error":{"code":"INVALID_CREDENTIALS","message":"邮箱或密码错误"}}"""),
+                .setBody("""{"authenticated":false,"error":{"code":"INVALID_CREDENTIALS","message":"邮箱或密码不正确"}}"""),
         )
-        composeTestRule.onAllNodes(hasSetTextAction() and isEnabled() and hasText("邮箱", substring = true))[0]
-            .performTextInput("a@b.c")
-        composeTestRule.onAllNodes(hasSetTextAction() and isEnabled() and hasText("密码", substring = true))[0]
-            .performTextInput("wrong1")
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("邮箱密码登录").performClick()
+        typeEmailPassword("a@b.c", "wrong1")
+        composeTestRule.onNodeWithText("登录").performScrollTo().performClick()
 
-        waitForText("邮箱或密码错误")
+        waitForText("邮箱或密码不正确")
     }
 
     @Test
-    fun `logout returns to Login and session cannot restore`() {
+    fun `logout via account profile returns to Login and session cannot restore`() {
         server.enqueue(MockResponse().setResponseCode(200).setBody(jsonUser("u1", "a@b.c")))
         render(AuthViewModel(app))
         waitForText("今日")
 
         composeTestRule.onNodeWithText("我的").performClick()
-        waitForText("退出登录 ›")
-        composeTestRule.onNodeWithText("退出登录 ›").performScrollTo().performClick()
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("退出登录").performClick()
+        waitForText("我的")
+        // 点击身份卡（邮箱文本所在卡片）→ 账号资料页
+        composeTestRule.onNodeWithText("a@b.c").performScrollTo().performClick()
+        waitForText("账号资料")
+        // 先 enqueue logout 响应，再点击（repo.logout 立即发请求，避免挂起）
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"authenticated":false}"""))
+        composeTestRule.onNodeWithText("退出登录").performScrollTo().performClick()
         composeTestRule.waitForIdle()
 
-        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"authenticated":false}"""))
-        waitForText("邮箱密码登录")
+        waitForText("灵犀 IELTS")
         // 登出后主路由不可达
         org.junit.Assert.assertTrue(composeTestRule.onAllNodesWithText("今日").fetchSemanticsNodes().isEmpty())
     }
 }
+

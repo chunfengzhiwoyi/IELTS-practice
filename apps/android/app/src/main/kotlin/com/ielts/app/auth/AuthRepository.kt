@@ -77,6 +77,93 @@ class AuthRepository(
         client.clearCookies()
     }
 
+    /**
+     * MOBILE-06 §2 — 注册：POST /api/auth/mobile/register。
+     * 响应契约：
+     *   200 {authenticated:true, user:{id,email}}          → 自动登录（SSR cookie 已写入）
+     *   200 {authenticated:false, requiresEmailConfirmation:true, user} → 需先收确认邮件
+     *   400/401 {authenticated:false, error}                → 产品级错误
+     */
+    suspend fun register(email: String, password: String, nickname: String): RegisterResult =
+        withContext(Dispatchers.IO) {
+            val payload = buildString {
+                append("{\"email\":${jsonQuoted(email)}, \"password\":${jsonQuoted(password)}")
+                if (nickname.isNotBlank()) append(", \"nickname\":${jsonQuoted(nickname)}")
+                append("}")
+            }
+            try {
+                client.postJson(REGISTER_PATH, payload).use { resp ->
+                    when (resp.code) {
+                        200 -> {
+                            val body = resp.body?.string().orEmpty()
+                            val dto = try {
+                                json.decodeFromString<RegisterResponseDto>(body)
+                            } catch (_: Exception) {
+                                return@withContext RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+                            }
+                            val u = dto.user
+                            when {
+                                dto.authenticated && u != null && u.id.isNotBlank() ->
+                                    RegisterResult.SignedIn(AuthUser(u.id, u.email))
+                                dto.requiresEmailConfirmation ->
+                                    RegisterResult.EmailConfirmationRequired(dto.user?.email ?: email)
+                                else -> RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+                            }
+                        }
+                        401 -> RegisterResult.Failed(AuthErrorCode.INVALID_CREDENTIALS)
+                        400 -> RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+                        else -> RegisterResult.Failed(AuthErrorCode.SERVER_UNAVAILABLE)
+                    }
+                }
+            } catch (e: IOException) {
+                RegisterResult.Failed(AuthErrorCode.NETWORK_UNAVAILABLE)
+            } catch (_: Exception) {
+                RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+            }
+        }
+
+    /**
+     * MOBILE-06 §3-A — 发送密码重置邮件：POST /api/auth/mobile/recovery。
+     * 无论账号是否存在均返回 sent（防枚举）。
+     */
+    suspend fun sendRecoveryEmail(email: String): MailSendResult = withContext(Dispatchers.IO) {
+        val payload = "{\"email\":${jsonQuoted(email)}}"
+        try {
+            client.postJson(RECOVERY_PATH, payload).use { resp ->
+                when (resp.code) {
+                    200 -> MailSendResult.Sent
+                    400 -> MailSendResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+                    else -> MailSendResult.Failed(AuthErrorCode.SERVER_UNAVAILABLE)
+                }
+            }
+        } catch (e: IOException) {
+            MailSendResult.Failed(AuthErrorCode.NETWORK_UNAVAILABLE)
+        } catch (_: Exception) {
+            MailSendResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+        }
+    }
+
+    /**
+     * MOBILE-06 §3-B — 发送邮箱登录链接：POST /api/auth/mobile/magic-link。
+     * 无论账号是否存在均返回 sent（防枚举）。
+     */
+    suspend fun sendMagicLink(email: String): MailSendResult = withContext(Dispatchers.IO) {
+        val payload = "{\"email\":${jsonQuoted(email)}}"
+        try {
+            client.postJson(MAGIC_LINK_PATH, payload).use { resp ->
+                when (resp.code) {
+                    200 -> MailSendResult.Sent
+                    400 -> MailSendResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+                    else -> MailSendResult.Failed(AuthErrorCode.SERVER_UNAVAILABLE)
+                }
+            }
+        } catch (e: IOException) {
+            MailSendResult.Failed(AuthErrorCode.NETWORK_UNAVAILABLE)
+        } catch (_: Exception) {
+            MailSendResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+        }
+    }
+
     private fun parseAuthenticated(resp: Response): AuthResult {
         val body = resp.body?.string().orEmpty()
         val dto = try {
@@ -99,8 +186,31 @@ class AuthRepository(
         const val LOGIN_PATH = "/api/auth/mobile/login"
         const val SESSION_PATH = "/api/auth/mobile/session"
         const val LOGOUT_PATH = "/api/auth/mobile/logout"
+        const val REGISTER_PATH = "/api/auth/mobile/register"
+        const val RECOVERY_PATH = "/api/auth/mobile/recovery"
+        const val MAGIC_LINK_PATH = "/api/auth/mobile/magic-link"
     }
 }
+
+/** MOBILE-06 §2 — 注册结果：自动登录 / 需邮件确认 / 失败 */
+sealed interface RegisterResult {
+    data class SignedIn(val user: AuthUser) : RegisterResult
+    data class EmailConfirmationRequired(val email: String) : RegisterResult
+    data class Failed(val code: AuthErrorCode) : RegisterResult
+}
+
+/** MOBILE-06 §3 — 邮件发送结果（重置密码 / 邮箱登录链接） */
+sealed interface MailSendResult {
+    data object Sent : MailSendResult
+    data class Failed(val code: AuthErrorCode) : MailSendResult
+}
+
+@Serializable
+private data class RegisterResponseDto(
+    val authenticated: Boolean = false,
+    val requiresEmailConfirmation: Boolean = false,
+    val user: UserDto? = null,
+)
 
 @Serializable
 private data class LoginResponseDto(

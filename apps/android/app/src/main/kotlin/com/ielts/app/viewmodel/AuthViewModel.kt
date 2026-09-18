@@ -10,6 +10,8 @@ import com.ielts.app.auth.AuthRepository
 import com.ielts.app.auth.AuthResult
 import com.ielts.app.auth.AuthState
 import com.ielts.app.auth.AuthStatus
+import com.ielts.app.auth.MailSendResult
+import com.ielts.app.auth.RegisterResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,6 +74,27 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    /**
+     * MOBILE-06 §2 — 注册：server-mediated（自动登录或需邮件确认）。
+     * SignedIn → 直接进入 AUTHENTICATED（SSR cookie 已随注册响应写入）。
+     * EmailConfirmationRequired → 不宣称登录，返回给 UI 展示确认指引。
+     */
+    suspend fun register(email: String, password: String, nickname: String): RegisterResult {
+        val r = withContext(Dispatchers.IO) { repo.register(email.trim(), password, nickname.trim()) }
+        if (r is RegisterResult.SignedIn) {
+            state = AuthState(AuthStatus.AUTHENTICATED, user = r.user)
+        }
+        return r
+    }
+
+    /** MOBILE-06 §3-A — 发送密码重置邮件 */
+    suspend fun sendRecoveryEmail(email: String): MailSendResult =
+        withContext(Dispatchers.IO) { repo.sendRecoveryEmail(email.trim()) }
+
+    /** MOBILE-06 §3-B — 发送邮箱登录链接 */
+    suspend fun sendMagicLink(email: String): MailSendResult =
+        withContext(Dispatchers.IO) { repo.sendMagicLink(email.trim()) }
 
     /**
      * 登出：server 尽力撤销 + 无条件清空本地加密 CookieJar。

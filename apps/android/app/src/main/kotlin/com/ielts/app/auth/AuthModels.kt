@@ -29,10 +29,10 @@ enum class AuthStatus {
 }
 
 enum class AuthErrorCode(val message: String) {
-    INVALID_CREDENTIALS("邮箱或密码错误"),
-    NETWORK_UNAVAILABLE("网络不可用，请检查网络后重试"),
+    INVALID_CREDENTIALS("邮箱或密码不正确"),
+    NETWORK_UNAVAILABLE("当前网络不可用，请检查网络后重试"),
     SESSION_EXPIRED("登录已过期，请重新登录"),
-    SERVER_UNAVAILABLE("服务暂时不可用，请稍后重试"),
+    SERVER_UNAVAILABLE("暂时无法连接服务，请稍后重试"),
     UNKNOWN_RECOVERABLE("出错了，请重试"),
 }
 
