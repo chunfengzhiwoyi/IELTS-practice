@@ -535,7 +535,7 @@ private fun QuestionCard(state: SpeakingUiState, toggleHint: () -> Unit) {
             .padding(16.dp),
     ) {
         Text(
-            "Question ${state.slot.index} / ${state.slot.total}",
+            "第 ${state.slot.index} 题 · 共 ${state.slot.total} 题",
             style = Type.uiLabel.copy(color = Bronze, fontSize = 12.sp),
         )
         Spacer(Modifier.height(8.dp))
@@ -920,12 +920,15 @@ private fun TextPanel(state: SpeakingUiState, events: SpeakingEvents) {
                 },
             )
         }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "${state.text.length} / 1000",
-            style = Type.uiLabel.copy(fontSize = 12.sp, color = InkMeta),
-            modifier = Modifier.align(Alignment.End),
-        )
+        // 字数统计降权：不做视觉主体，仅在接近上限时提示
+        if (state.text.length >= 900) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "已输入 ${state.text.length} 字，最多 1000 字",
+                style = Type.uiLabel.copy(fontSize = 12.sp, color = InkMeta),
+                modifier = Modifier.align(Alignment.End),
+            )
+        }
         Spacer(Modifier.height(14.dp))
         PrimaryButton(
             text = "分析一下",

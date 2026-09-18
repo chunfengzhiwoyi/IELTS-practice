@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,6 +62,9 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
             baseUrl = p.baseUrl
             model = p.model
             protocol = p.protocol.name
+        } else {
+            // 自定义服务商需要用户自行填写 Endpoint，自动展开高级选项，避免空 URL 静默无法验证
+            advanced = true
         }
         testMsg = null
     }
@@ -136,7 +142,11 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
             visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { showKey = !showKey }) {
-                    Text(if (showKey) "🙈" else "👁", style = Type.bodySmall)
+                    Icon(
+                        imageVector = if (showKey) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showKey) "隐藏密钥" else "显示密钥",
+                        tint = InkMeta,
+                    )
                 }
             },
             textStyle = Type.body,
@@ -177,11 +187,16 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                     testing = false
                     if (r != null) {
                         lastTestOk = true
-                        testMsg = "连接成功 当前配置可正常使用"
+                        testMsg = "连接正常，当前配置可以使用。"
                         saveApiConfig(cfg.copy(lastTestOk = true))
                     } else {
                         lastTestOk = false
-                        testMsg = "验证失败：请检查密钥与所选服务是否匹配"
+                        // callUserModel 仅返回成败，不暴露 HTTP/异常；按可判定的配置问题给产品化中文原因
+                        testMsg = if (!baseUrl.trim().startsWith("http")) {
+                            "配置地址不完整，请检查接口地址后重试"
+                        } else {
+                            "无法连接服务或密钥无效，请核对密钥与所选服务后重试"
+                        }
                         saveApiConfig(cfg.copy(lastTestOk = false))
                     }
                 }
@@ -191,10 +206,10 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
 
         // 状态
         when {
-            testing -> StatusLine(Pos, "验证中…")
-            apiKey.isBlank() -> StatusLine(InkMeta, "未配置")
-            lastTestOk -> StatusLine(Pos, "连接成功 当前配置可正常使用")
-            else -> StatusLine(Amber, if (testMsg != null) "验证失败" else "已保存 未验证")
+            testing -> StatusLine(Bronze, "正在验证连接…")
+            apiKey.isBlank() || baseUrl.isBlank() -> StatusLine(InkMeta, "尚未配置")
+            lastTestOk -> StatusLine(Pos, "连接正常")
+            else -> StatusLine(Amber, if (testMsg != null) "连接未通过，可查看下方提示" else "密钥已保存，可进行连接测试")
         }
         if (testMsg != null) {
             Spacer(Modifier.height(8.dp))
@@ -232,7 +247,14 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                 Note("协议 · ${protocolEnum.label}（选择厂商已自动设定）", variant = NoteVariant.PLAIN)
                 Spacer(Modifier.height(12.dp))
             }
-            ApiField("API Base URL", baseUrl, { baseUrl = it; testMsg = null }, "https://api.deepseek.com/v1")
+            if (isCustom) {
+                ApiField("接口地址 Endpoint URL", baseUrl, { baseUrl = it; testMsg = null }, "https://api.example.com/v1")
+            } else {
+                Note(
+                    "接口地址 · ${baseUrl.ifBlank { "选择自定义服务商后可设置" }}（由所选服务商自动设定）",
+                    variant = NoteVariant.PLAIN,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             ApiField("模型名", model, { model = it; testMsg = null }, "deepseek-chat")
             Spacer(Modifier.height(12.dp))
