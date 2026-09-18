@@ -36,6 +36,21 @@ val RadiusMedium = 7.dp
 val RadiusLarge = 12.dp
 val TopBarHeight = 44.dp
 
+/**
+ * MOBILE-07 统一间距令牌（克制 7 档）。
+ * 不做机械全局替换；仅在本轮收敛的页面逐步采用，避免已批准页面（Today/Learn/Review）视觉漂移。
+ * page 与 [PagePadding] 对齐（学习/复习主操作页）；Today Hero / Auth 品牌页刻意用 20dp，不强行回改。
+ */
+object Space {
+    val xs = 4.dp      // 元素内紧凑（图标与文字、单位与数值）
+    val sm = 8.dp      // 相关小间距
+    val md = 12.dp     // 卡片内分组
+    val lg = 16.dp     // 卡片内边距 / 卡片间
+    val xl = 24.dp     // 区块内留白
+    val section = 22.dp // 区块之间
+    val page = 14.dp   // 页面左右安全边距（= PagePadding）
+}
+
 // ----------------------------- 顶部导航栏（复刻小程序 NavBar：印章 + 中文日期） -----------------------------
 @Composable
 fun TopBar(date: String, modifier: Modifier = Modifier) {
