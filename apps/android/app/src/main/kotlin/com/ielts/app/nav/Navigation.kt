@@ -37,7 +37,6 @@ object Routes {
     const val REVIEW = "review"
     const val SPEAKING = "speaking"
     const val PROFILE = "profile"
-    const val PROFILE_EDIT = "profile_edit"
     const val IDENTITY = "identity"
     const val PRIVACY = "privacy"
     const val API_CONFIG = "api_config"
@@ -73,7 +72,6 @@ val protectedRoutes = setOf(
     Routes.SPEAKING_RESULT,
     Routes.SPEAKING_RESULT_DETAIL,
     Routes.PROFILE,
-    Routes.PROFILE_EDIT,
     Routes.IDENTITY,
     Routes.PRIVACY,
     Routes.API_CONFIG,
@@ -232,7 +230,6 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
             composable(Routes.SPEAKING_RESULT_DETAIL) { SpeakingResultDetailScreen(navController, innerPadding) }
             composable(Routes.PROFILE) { ProfileScreen(vm, authVm, navController, innerPadding) }
             composable(Routes.ACCOUNT_PROFILE) { AccountProfileScreen(vm, authVm, navController, innerPadding) }
-            composable(Routes.PROFILE_EDIT) { ProfileEditScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.IDENTITY) { IdentityScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.PRIVACY) { PrivacyScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.API_CONFIG) { ApiConfigScreen(innerPadding) { navController.popBackStack() } }
@@ -264,7 +261,6 @@ private fun LegacyMainShell(navController: NavHostController, vm: StudyViewModel
             composable(Routes.SPEAKING_RESULT) { SpeakingResultScreen(navController, innerPadding) }
             composable(Routes.SPEAKING_RESULT_DETAIL) { SpeakingResultDetailScreen(navController, innerPadding) }
             composable(Routes.PROFILE) { ProfileScreen(vm, null, navController, innerPadding) }
-            composable(Routes.PROFILE_EDIT) { ProfileEditScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.IDENTITY) { IdentityScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.PRIVACY) { PrivacyScreen(navController, innerPadding) { navController.popBackStack() } }
             composable(Routes.API_CONFIG) { ApiConfigScreen(innerPadding) { navController.popBackStack() } }
