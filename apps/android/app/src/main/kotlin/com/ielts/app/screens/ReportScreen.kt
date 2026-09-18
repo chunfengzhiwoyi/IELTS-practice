@@ -245,14 +245,37 @@ private fun OverviewTile(num: String, unit: String, label: String, delta: Int?, 
     }
 }
 
+/**
+ * MOBILE-P0-REPORT-CRASH-FIX: mastery segments.
+ * Only buckets with value > 0 are kept; weights are exact real-count fractions.
+ * All-zero returns an empty list and MasteryStack renders a safe empty track.
+ * No epsilon is injected into zero buckets and no statistic is fabricated.
+ */
+internal fun masterySegments(dist: StatusDistribution): List<Pair<Color, Float>> {
+    val raw = listOf(
+        dist.new to LineStrong,
+        dist.learning to Bronze,
+        dist.reviewing to AccentDeep,
+        dist.mastered to Accent,
+    ).filter { it.first > 0 }
+    if (raw.isEmpty()) return emptyList()
+    val total = raw.sumOf { it.first }.toFloat()
+    return raw.map { (value, color) -> color to (value / total) }
+}
+
 @Composable
-private fun MasteryStack(dist: StatusDistribution, modifier: Modifier = Modifier) {
-    val total = (dist.new + dist.learning + dist.reviewing + dist.mastered).toFloat().coerceAtLeast(1f)
-    Row(modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(6.dp))) {
-        Box(Modifier.weight(dist.new / total).fillMaxHeight().background(LineStrong))
-        Box(Modifier.weight(dist.learning / total).fillMaxHeight().background(Bronze))
-        Box(Modifier.weight(dist.reviewing / total).fillMaxHeight().background(AccentDeep))
-        Box(Modifier.weight(dist.mastered / total).fillMaxHeight().background(Accent))
+internal fun MasteryStack(dist: StatusDistribution, modifier: Modifier = Modifier) {
+    val segments = masterySegments(dist)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .height(26.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Line),
+    ) {
+        segments.forEach { (color, fraction) ->
+            Box(Modifier.weight(fraction).fillMaxHeight().background(color))
+        }
     }
 }
 
