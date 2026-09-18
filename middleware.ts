@@ -39,11 +39,15 @@ const REPORT_ALLOWED_EXACT = new Set([
 /**
  * MOBILE-04B：移动端 Auth 端点（精确放行，不放宽 /api/auth 全量）。
  * Contract §10：/api/auth/mobile/login|session|logout 三个精确路径。
+ * MOBILE-06 §2/§3：注册 / 密码重置邮件 / 邮箱登录链接（精确追加，不放开全量）。
  */
 const MOBILE_AUTH_ALLOWED_EXACT = new Set([
   "/api/auth/mobile/login",
   "/api/auth/mobile/session",
   "/api/auth/mobile/logout",
+  "/api/auth/mobile/register",
+  "/api/auth/mobile/recovery",
+  "/api/auth/mobile/magic-link",
 ]);
 
 /**
