@@ -47,6 +47,7 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
     var agreed by remember { mutableStateOf(false) }
     var submitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var failedCode by remember { mutableStateOf<AuthErrorCode?>(null) }
     var confirmationSent by remember { mutableStateOf(false) }
 
     val canSubmit = !submitting &&
@@ -72,7 +73,7 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
         Spacer(Modifier.height(10.dp))
 
         Row(
-            Modifier.fillMaxWidth().clickable { agreed = !agreed },
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
@@ -89,9 +90,15 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
                 style = Type.bodySmall,
                 color = InkSoft,
             )
-            Text("《用户协议》", style = Type.bodySmall.copy(color = Accent))
-            Text("和", style = Type.bodySmall, color = InkSoft)
-            Text("《隐私政策》", style = Type.bodySmall.copy(color = Accent))
+            // USER_AGREEMENT_CONTENT_REQUIRED：仓库暂无《用户协议》正式内容，本轮不编造法律文本；
+            // 仅连接已有真实内容的《隐私政策》。
+            Text(
+                "《隐私政策》",
+                style = Type.bodySmall.copy(color = Accent, fontWeight = FontWeight.SemiBold),
+                modifier = Modifier
+                    .clickable { navController.navigate(Routes.PRIVACY) }
+                    .padding(vertical = 6.dp),
+            )
         }
         Spacer(Modifier.height(18.dp))
 
@@ -104,6 +111,7 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
             onClick = {
                 if (authVm == null) return@PrimaryButton
                 errorMessage = null
+                failedCode = null
                 submitting = true
                 scope.launch {
                     val result = authVm.register(email.trim(), password, nickname)
@@ -119,10 +127,9 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
                             errorMessage = "注册成功，请前往邮箱完成验证后登录"
                         }
                         is RegisterResult.Failed -> {
-                            errorMessage = when (result.code) {
-                                AuthErrorCode.INVALID_CREDENTIALS -> "邮箱已被注册或密码不正确"
-                                else -> result.code.message
-                            }
+                            // 产品级细分：邮箱已注册 / 邮箱格式 / 密码规则 / 服务 / 网络，均不含技术码
+                            failedCode = result.code
+                            errorMessage = result.code.message
                         }
                     }
                 }
@@ -139,6 +146,10 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
             errorMessage != null -> {
                 Spacer(Modifier.height(12.dp))
                 Note(errorMessage.orEmpty(), variant = NoteVariant.BRONZE)
+                if (failedCode == AuthErrorCode.EMAIL_ALREADY_REGISTERED) {
+                    Spacer(Modifier.height(10.dp))
+                    GhostButton("去登录", onClick = { navController.popBackStack() })
+                }
             }
         }
         Spacer(Modifier.height(16.dp))

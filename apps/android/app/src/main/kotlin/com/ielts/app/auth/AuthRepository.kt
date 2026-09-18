@@ -110,9 +110,7 @@ class AuthRepository(
                                 else -> RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
                             }
                         }
-                        401 -> RegisterResult.Failed(AuthErrorCode.INVALID_CREDENTIALS)
-                        400 -> RegisterResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
-                        else -> RegisterResult.Failed(AuthErrorCode.SERVER_UNAVAILABLE)
+                        else -> RegisterResult.Failed(mapRegisterError(resp))
                     }
                 }
             } catch (e: IOException) {
@@ -189,7 +187,62 @@ class AuthRepository(
         const val REGISTER_PATH = "/api/auth/mobile/register"
         const val RECOVERY_PATH = "/api/auth/mobile/recovery"
         const val MAGIC_LINK_PATH = "/api/auth/mobile/magic-link"
+        const val CHANGE_PASSWORD_PATH = "/api/auth/mobile/change-password"
     }
+
+    /**
+     * MOBILE-07 — 已登录修改密码：POST /api/auth/mobile/change-password（server-mediated）。
+     * 身份由当前有效登录 cookie 授权；不下发/不读取任何 token。
+     */
+    suspend fun changePassword(newPassword: String): ChangePasswordResult = withContext(Dispatchers.IO) {
+        val payload = "{\"newPassword\":${jsonQuoted(newPassword)}}"
+        try {
+            client.postJson(CHANGE_PASSWORD_PATH, payload).use { resp ->
+                when (resp.code) {
+                    200 -> ChangePasswordResult.Success
+                    401 -> ChangePasswordResult.Failed(AuthErrorCode.SESSION_EXPIRED)
+                    else -> {
+                        val code = errorCodeOf(resp)
+                        ChangePasswordResult.Failed(
+                            when (code) {
+                                "WEAK_PASSWORD" -> AuthErrorCode.WEAK_PASSWORD
+                                "SESSION_EXPIRED" -> AuthErrorCode.SESSION_EXPIRED
+                                else -> AuthErrorCode.SERVER_UNAVAILABLE
+                            },
+                        )
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            ChangePasswordResult.Failed(AuthErrorCode.NETWORK_UNAVAILABLE)
+        } catch (_: Exception) {
+            ChangePasswordResult.Failed(AuthErrorCode.UNKNOWN_RECOVERABLE)
+        }
+    }
+
+    /** 从 {error:{code}} 响应中提取产品级 code（解析失败返回空串）。 */
+    private fun errorCodeOf(resp: Response): String = runCatching {
+        json.decodeFromString<ErrorEnvelopeDto>(resp.body?.string().orEmpty()).error?.code.orEmpty()
+    }.getOrDefault("")
+
+    /** 注册失败：HTTP + 服务端产品 code 双重映射，区分邮箱已注册 / 格式 / 密码规则 / 服务。 */
+    private fun mapRegisterError(resp: Response): AuthErrorCode {
+        val code = errorCodeOf(resp)
+        return when {
+            resp.code == 409 || code == "EMAIL_ALREADY_REGISTERED" -> AuthErrorCode.EMAIL_ALREADY_REGISTERED
+            code == "INVALID_EMAIL" -> AuthErrorCode.INVALID_EMAIL
+            code == "WEAK_PASSWORD" -> AuthErrorCode.WEAK_PASSWORD
+            resp.code == 401 -> AuthErrorCode.INVALID_CREDENTIALS
+            resp.code in 500..599 -> AuthErrorCode.SERVER_UNAVAILABLE
+            else -> AuthErrorCode.UNKNOWN_RECOVERABLE
+        }
+    }
+}
+
+/** MOBILE-07 — 已登录改密结果 */
+sealed interface ChangePasswordResult {
+    data object Success : ChangePasswordResult
+    data class Failed(val code: AuthErrorCode) : ChangePasswordResult
 }
 
 /** MOBILE-06 §2 — 注册结果：自动登录 / 需邮件确认 / 失败 */
@@ -222,4 +275,15 @@ private data class LoginResponseDto(
 private data class UserDto(
     val id: String = "",
     val email: String? = null,
+)
+
+@Serializable
+internal data class ErrorEnvelopeDto(
+    val error: ErrorBodyDto? = null,
+)
+
+@Serializable
+internal data class ErrorBodyDto(
+    val code: String = "",
+    val message: String? = null,
 )

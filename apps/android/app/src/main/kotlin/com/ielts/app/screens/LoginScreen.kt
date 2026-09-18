@@ -63,6 +63,9 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
     val errorMessage = authState?.errorMessage
         ?.takeIf { authState.status == AuthStatus.UNAUTHENTICATED }
 
+    // MOBILE-07：进入登录页即清掉上一次失败残留（错误只在本次会话内、离开后不残留）。
+    LaunchedEffect(Unit) { authVm?.clearError() }
+
     AuthPage(innerPadding = innerPadding) {
         Spacer(Modifier.height(32.dp))
         // Logo（篆刻印章）
@@ -77,7 +80,7 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
         Text("灵犀 IELTS", style = Type.displayTitle, color = Ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(10.dp))
         Text(
-            "更聪明地准备，更从容地表达",
+            "让每一次学习影响下一次学习",
             style = Type.body,
             color = InkSoft,
             textAlign = TextAlign.Center,
@@ -93,9 +96,9 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
         )
         Spacer(Modifier.height(44.dp))
 
-        AuthField("邮箱", email, { email = it }, "请输入邮箱", isPassword = false, tag = "email_field")
+        AuthField("邮箱", email, { email = it; authVm?.clearError() }, "请输入邮箱", isPassword = false, tag = "email_field")
         Spacer(Modifier.height(14.dp))
-        AuthField("密码", password, { password = it }, "请输入密码", isPassword = true, tag = "password_field")
+        AuthField("密码", password, { password = it; authVm?.clearError() }, "请输入密码", isPassword = true, tag = "password_field")
         Spacer(Modifier.height(8.dp))
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -142,7 +145,7 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text("还没有账号？", style = Type.bodySmall, color = InkSoft)
             Text(
-                "注册",
+                "创建账号",
                 style = Type.bodySmall.copy(color = Accent, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 modifier = Modifier
                     .clickable { navController.navigate(Routes.REGISTER) }

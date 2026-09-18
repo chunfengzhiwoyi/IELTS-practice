@@ -10,6 +10,7 @@ import com.ielts.app.auth.AuthRepository
 import com.ielts.app.auth.AuthResult
 import com.ielts.app.auth.AuthState
 import com.ielts.app.auth.AuthStatus
+import com.ielts.app.auth.ChangePasswordResult
 import com.ielts.app.auth.MailSendResult
 import com.ielts.app.auth.RegisterResult
 import kotlinx.coroutines.Dispatchers
@@ -121,4 +122,16 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             state = AuthState(AuthStatus.UNAUTHENTICATED)
         }
     }
+
+    /**
+     * MOBILE-07 — 清除错误提示但不改变登录态。
+     * 用于在进入登录页 / 用户重新输入时清掉上一次失败残留（错误只在正确生命周期出现）。
+     */
+    fun clearError() {
+        if (state.errorCode != null) state = state.copy(errorCode = null)
+    }
+
+    /** MOBILE-07 — 已登录修改密码（server-mediated，成功后保留登录态）。 */
+    suspend fun changePassword(newPassword: String): ChangePasswordResult =
+        withContext(Dispatchers.IO) { repo.changePassword(newPassword) }
 }

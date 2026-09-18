@@ -34,6 +34,9 @@ enum class AuthErrorCode(val message: String) {
     SESSION_EXPIRED("登录已过期，请重新登录"),
     SERVER_UNAVAILABLE("暂时无法连接服务，请稍后重试"),
     UNKNOWN_RECOVERABLE("出错了，请重试"),
+    EMAIL_ALREADY_REGISTERED("该邮箱已注册，直接登录即可"),
+    INVALID_EMAIL("邮箱格式不正确"),
+    WEAK_PASSWORD("密码至少 6 位"),
 }
 
 data class AuthUser(val id: String, val email: String?)
