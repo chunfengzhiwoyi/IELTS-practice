@@ -45,6 +45,7 @@ fun AccountProfileScreen(
     val profile = remember(dataVersion) { getProfile() }
     val user = authVm?.state?.user
     var logoutSending by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     SubPage("账号资料", { navController.popBackStack() }, innerPadding) {
         // 头像 + 昵称 + 邮箱（点击昵称区 → 编辑昵称/头像颜色）
@@ -103,14 +104,14 @@ fun AccountProfileScreen(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate(Routes.FORGOT_PASSWORD) }
+                    .clickable { navController.navigate(Routes.CHANGE_PASSWORD) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
                     Text("修改密码", style = Type.body, color = Ink)
                     Spacer(Modifier.height(2.dp))
-                    Text("发送密码重置链接到邮箱", style = Type.bodySmall)
+                    Text("为当前账号设置新密码", style = Type.bodySmall)
                 }
                 Text("›", style = Type.heading.copy(color = Bronze))
             }
@@ -122,17 +123,66 @@ fun AccountProfileScreen(
             Note("正在退出登录…", variant = NoteVariant.PLAIN)
             Spacer(Modifier.height(12.dp))
         } else {
-            PrimaryButton(
-                text = "退出登录",
-                onClick = {
-                    if (authVm != null) {
-                        logoutSending = true
-                        authVm.logout()
-                    }
-                },
-            )
+            PrimaryButton(text = "退出登录", onClick = { showLogoutDialog = true })
         }
         Spacer(Modifier.height(20.dp))
+    }
+
+    if (showLogoutDialog) {
+        LogoutConfirmDialog(
+            sending = logoutSending,
+            onCancel = { if (!logoutSending) showLogoutDialog = false },
+            onConfirm = {
+                if (authVm != null) {
+                    logoutSending = true
+                    showLogoutDialog = false
+                    authVm.logout()
+                }
+            },
+        )
+    }
+}
+
+/** MOBILE-07 — 品牌化退出登录确认弹窗：不再一键即登出。 */
+@Composable
+private fun LogoutConfirmDialog(
+    sending: Boolean,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = { if (!sending) onCancel() }) {
+        Column(
+            Modifier
+                .clip(RoundedCornerShape(RadiusLarge))
+                .background(Paper)
+                .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge))
+                .padding(20.dp),
+        ) {
+            Text("退出登录", style = Type.subHeading, color = Ink)
+            Spacer(Modifier.height(8.dp))
+            Text("确定退出当前账号吗？退出后需要重新登录。", style = Type.bodySmall)
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(RadiusMedium))
+                        .border(BorderStroke(1.dp, LineStrong), RoundedCornerShape(RadiusMedium))
+                        .clickable(enabled = !sending, onClick = onCancel),
+                    contentAlignment = Alignment.Center,
+                ) { Text("取消", style = Type.uiButton, color = Ink) }
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(RadiusMedium))
+                        .background(Accent)
+                        .clickable(enabled = !sending, onClick = onConfirm),
+                    contentAlignment = Alignment.Center,
+                ) { Text("退出登录", style = Type.uiButton, color = AccentContrast) }
+            }
+        }
     }
 }
 

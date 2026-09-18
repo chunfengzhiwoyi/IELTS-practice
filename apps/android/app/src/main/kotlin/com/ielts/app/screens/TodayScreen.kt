@@ -257,7 +257,7 @@ private data class QuickEntry(
 private val quickEntries = listOf(
     QuickEntry("新词学习", "探索新表达", Routes.LEARN, Icons.AutoMirrored.Outlined.MenuBook),
     QuickEntry("口语练习", "开口说英语", Routes.SPEAKING, Icons.Outlined.Mic),
-    QuickEntry("学习手记", "记录与回顾", Routes.LEARN, Icons.Outlined.EditNote),
+    QuickEntry("学习手记", "记录与回顾", Routes.NOTES, Icons.Outlined.EditNote),
     QuickEntry("学习报告", "本周进步", Routes.REPORT, Icons.Outlined.BarChart),
 )
 

@@ -49,6 +49,9 @@ object Routes {
     const val REGISTER = "register"
     const val FORGOT_PASSWORD = "forgot_password"
     const val ACCOUNT_PROFILE = "account_profile"
+    const val ABOUT = "about"
+    const val CHANGE_PASSWORD = "change_password"
+    const val NOTES = "notes"
 }
 
 data class TabItem(val route: String, val label: String, val icon: Int, val iconActive: Int)
@@ -77,6 +80,9 @@ val protectedRoutes = setOf(
     Routes.REPORT,
     Routes.GOAL,
     Routes.ACCOUNT_PROFILE,
+    Routes.ABOUT,
+    Routes.CHANGE_PASSWORD,
+    Routes.NOTES,
 )
 
 /**
@@ -232,6 +238,9 @@ fun AppNavHost(navController: NavHostController, vm: StudyViewModel, authVm: Aut
             composable(Routes.API_CONFIG) { ApiConfigScreen(innerPadding) { navController.popBackStack() } }
             composable(Routes.REPORT) { ReportScreen(vm, navController, innerPadding) }
             composable(Routes.GOAL) { GoalScreen(vm, navController, innerPadding) }
+            composable(Routes.ABOUT) { AboutScreen(navController, innerPadding) }
+            composable(Routes.CHANGE_PASSWORD) { ChangePasswordScreen(authVm, navController, innerPadding) }
+            composable(Routes.NOTES) { NotesScreen(vm, navController, innerPadding) }
         }
     }
 }
@@ -261,6 +270,9 @@ private fun LegacyMainShell(navController: NavHostController, vm: StudyViewModel
             composable(Routes.API_CONFIG) { ApiConfigScreen(innerPadding) { navController.popBackStack() } }
             composable(Routes.REPORT) { ReportScreen(vm, navController, innerPadding) }
             composable(Routes.GOAL) { GoalScreen(vm, navController, innerPadding) }
+            composable(Routes.ABOUT) { AboutScreen(navController, innerPadding) }
+            composable(Routes.CHANGE_PASSWORD) { ChangePasswordScreen(null, navController, innerPadding) }
+            composable(Routes.NOTES) { NotesScreen(vm, navController, innerPadding) }
             composable(Routes.LOGIN) { LoginScreen(null, navController, innerPadding) }
         }
     }

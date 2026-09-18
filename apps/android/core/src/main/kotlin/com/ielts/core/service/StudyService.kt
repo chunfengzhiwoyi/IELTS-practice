@@ -231,6 +231,49 @@ fun getTodaySummary(): TodaySummary {
     )
 }
 
+// ---------------- 学习手记（真实学习行为时间线，只读现有 events/sessions，不新增 schema） ----------------
+data class TimelineEntry(
+    val id: String,
+    val kind: String,        // "LEARN" | "REVIEW" | "SPEAKING"
+    val title: String,
+    val detail: String,
+    val createdAt: String,
+    val dayKey: String,      // yyyy-MM-dd（本地）
+)
+
+fun getLearningTimeline(limit: Int = 300): List<TimelineEntry> {
+    val seedById = SeedData.items.associateBy { it.itemId }
+    val learn = getEvents().map { e ->
+        val term = seedById[e.itemId]?.term ?: e.itemId
+        val isNew = e.eventType == "NEW"
+        val outcome = when (e.correctness) {
+            EventCorrectness.INDEPENDENT -> "独立回忆"
+            EventCorrectness.HINTED -> "借助提示"
+            EventCorrectness.FAIL -> "未回忆出"
+            EventCorrectness.SKIPPED -> "已跳过"
+        }
+        TimelineEntry(
+            id = e.id,
+            kind = if (isNew) "LEARN" else "REVIEW",
+            title = term,
+            detail = if (isNew) "新学" else "复习 · $outcome",
+            createdAt = e.createdAt,
+            dayKey = localDayKey(e.createdAt),
+        )
+    }
+    val speak = getSessions().filter { it.status == "COMPLETED" }.map { s ->
+        TimelineEntry(
+            id = s.id,
+            kind = "SPEAKING",
+            title = "完成一次口语练习",
+            detail = listOf(s.part, s.topic.ifBlank { s.question }).filter { it.isNotBlank() }.joinToString(" · "),
+            createdAt = s.updatedAt,
+            dayKey = localDayKey(s.updatedAt),
+        )
+    }
+    return (learn + speak).sortedByDescending { parseIso(it.createdAt).time }.take(limit)
+}
+
 // ---------------- 学习（单卡主动回忆） ----------------
 fun getLearnDeck(): List<LearnCard> {
     val states = getStates()

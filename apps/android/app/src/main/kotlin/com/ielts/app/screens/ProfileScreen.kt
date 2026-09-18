@@ -73,20 +73,14 @@ fun ProfileScreen(
         IdentityCard(profile, user, onClick = { navController.navigate(Routes.ACCOUNT_PROFILE) })
         Spacer(Modifier.height(22.dp))
 
-        LearningSection(report, goal)
+        LearningSection(report, goal, onGoalClick = { navController.navigate(Routes.GOAL) })
         Spacer(Modifier.height(22.dp))
 
-        ToolsSection(onApiConfigClick = { navController.navigate(Routes.API_CONFIG) })
-        Spacer(Modifier.height(28.dp))
-
-        Text("关于灵犀 IELTS", style = Type.uiLabel, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "灵犀 IELTS · A smaller step, a brighter you.",
-            style = Type.uiLabel,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+        ToolsSection(
+            onApiConfigClick = { navController.navigate(Routes.API_CONFIG) },
+            onAboutClick = { navController.navigate(Routes.ABOUT) },
         )
+        Spacer(Modifier.height(28.dp))
     }
 }
 
@@ -126,7 +120,7 @@ private fun IdentityCard(profile: ProfileData, user: AuthUser?, onClick: () -> U
 
 // ----------------------------- 我的学习 -----------------------------
 @Composable
-private fun LearningSection(report: MiniReport, goal: Int) {
+private fun LearningSection(report: MiniReport, goal: Int, onGoalClick: () -> Unit) {
     SectionLabel("我的学习")
     Spacer(Modifier.height(8.dp))
     Box(
@@ -163,21 +157,23 @@ private fun LearningSection(report: MiniReport, goal: Int) {
                 }
                 Spacer(Modifier.height(18.dp))
 
-                // 本周目标 / 周进度
+                // 本周目标 / 周进度（整块可点 → Goal，与 Report 入口同一个 GoalScreen）
                 val done = report.newThisWeek + report.reviewedThisWeek
                 val pct = if (goal > 0) (done * 100 / goal).coerceAtMost(999) else 0
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("本周目标 $goal 词", style = Type.ui.copy(color = InkSoft))
-                    Text("$pct%", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
+                Column(Modifier.fillMaxWidth().clickable(onClick = onGoalClick)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("本周目标 $goal 词", style = Type.ui.copy(color = InkSoft))
+                        Text("$pct%", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    ProgressRule(progress = pct / 100f)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (pct >= 100) "继续加油！你已经完成了本周的学习目标。" else "已学习 $done 词，点击查看或调整目标",
+                        style = Type.uiLabel,
+                        color = InkMeta,
+                    )
                 }
-                Spacer(Modifier.height(6.dp))
-                ProgressRule(progress = pct / 100f)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    if (pct >= 100) "继续加油！你已经完成了本周的学习目标。" else "已学习 $done 词，继续加油！",
-                    style = Type.uiLabel,
-                    color = InkMeta,
-                )
             }
         }
     }
@@ -230,7 +226,28 @@ private fun MiniStat(num: String, label: String, modifier: Modifier = Modifier) 
 
 // ----------------------------- 工具与设置 -----------------------------
 @Composable
-private fun ToolsSection(onApiConfigClick: () -> Unit) {
+private fun ToolRow(title: String, subtitle: String, onClick: () -> Unit, showDivider: Boolean) {
+    Column {
+        if (showDivider) androidx.compose.material3.HorizontalDivider(color = Line, thickness = 1.dp)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = Type.body, color = Ink, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(2.dp))
+                Text(subtitle, style = Type.bodySmall)
+            }
+            Text("›", style = Type.heading.copy(color = Bronze))
+        }
+    }
+}
+
+@Composable
+private fun ToolsSection(onApiConfigClick: () -> Unit, onAboutClick: () -> Unit) {
     SectionLabel("工具与设置")
     Spacer(Modifier.height(8.dp))
     Box(
@@ -241,20 +258,8 @@ private fun ToolsSection(onApiConfigClick: () -> Unit) {
             .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge)),
     ) {
         Column {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onApiConfigClick)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("AI 服务配置", style = Type.body, color = Ink, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(2.dp))
-                    Text("配置你的 API Key", style = Type.bodySmall)
-                }
-                Text("›", style = Type.heading.copy(color = Bronze))
-            }
+            ToolRow("AI 服务配置", "配置你的 API Key", onApiConfigClick, showDivider = false)
+            ToolRow("关于灵犀 IELTS", "版本与产品理念", onAboutClick, showDivider = true)
         }
     }
 }
