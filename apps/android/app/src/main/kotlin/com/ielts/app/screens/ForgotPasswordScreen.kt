@@ -37,9 +37,9 @@ fun ForgotPasswordScreen(authVm: AuthViewModel?, navController: NavController, i
     var resetMessage by remember { mutableStateOf<String?>(null) }
     var linkMessage by remember { mutableStateOf<String?>(null) }
 
-    AuthPage(innerPadding = innerPadding, onBack = { navController.popBackStack() }) {
-        Spacer(Modifier.height(16.dp))
-        Text("找回账号", style = Type.displayTitle, color = Ink)
+    AuthPage(innerPadding = innerPadding, onBack = { navController.popBackStack() }, brandRidge = true) {
+        Spacer(Modifier.height(20.dp))
+        Text("找回账号", style = Type.editorTitle, color = Ink)
         Spacer(Modifier.height(6.dp))
         Text("输入你的邮箱，我们会发送相应的链接到你的邮箱。", style = Type.bodySmall)
         Spacer(Modifier.height(28.dp))

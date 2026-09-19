@@ -56,9 +56,9 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
         password == confirm &&
         agreed
 
-    AuthPage(innerPadding = innerPadding, onBack = { navController.popBackStack() }) {
-        Spacer(Modifier.height(16.dp))
-        Text("创建你的灵犀账号", style = Type.displayTitle, color = Ink)
+    AuthPage(innerPadding = innerPadding, onBack = { navController.popBackStack() }, brandRidge = true) {
+        Spacer(Modifier.height(20.dp))
+        Text("创建你的灵犀账号", style = Type.editorTitle, color = Ink)
         Spacer(Modifier.height(6.dp))
         Text("开启更高效的 IELTS 学习之旅", style = Type.bodySmall)
         Spacer(Modifier.height(28.dp))
@@ -164,13 +164,5 @@ fun RegisterScreen(authVm: AuthViewModel?, navController: NavController, innerPa
             )
         }
 
-        Spacer(Modifier.weight(1f))
-        Text(
-            "专注 IELTS · 让每一次练习，都离理想更近",
-            style = Type.italic,
-            color = InkMeta,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp),
-        )
     }
 }

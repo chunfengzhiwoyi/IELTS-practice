@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MOBILE-08 Auth 品牌山景（仅 Auth 家族使用，不扩散到学习操作页）。
+  克制的三层暖墨远山 + 一枚淡铜晨光，全部低对比，服务于品牌留白。
+  viewport 360x150 按手机宽等比铺开。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="150dp"
+    android:viewportWidth="360"
+    android:viewportHeight="150">
+
+    <!-- 淡铜晨光 -->
+    <path
+        android:pathData="M262,46 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0"
+        android:fillColor="#E7D2B2" />
+
+    <!-- 最远山脊 -->
+    <path
+        android:pathData="M0,86 C34,64 64,70 96,78 C132,87 150,66 184,72 C214,77 232,88 262,80 C296,71 322,66 360,78 L360,150 L0,150 Z"
+        android:fillColor="#EFE6D8" />
+
+    <!-- 中山脊 -->
+    <path
+        android:pathData="M0,104 C30,92 66,98 98,96 C132,94 156,84 190,92 C226,100 250,108 286,98 C314,90 338,92 360,100 L360,150 L0,150 Z"
+        android:fillColor="#E2D8C8" />
+
+    <!-- 近山脊 -->
+    <path
+        android:pathData="M0,124 C40,114 78,122 118,120 C160,118 196,112 238,118 C282,124 320,120 360,116 L360,150 L0,150 Z"
+        android:fillColor="#D2C5AE" />
+</vector>
