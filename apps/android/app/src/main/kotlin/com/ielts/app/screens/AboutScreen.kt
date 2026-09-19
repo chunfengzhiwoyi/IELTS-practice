@@ -38,7 +38,7 @@ fun AboutScreen(navController: NavController, innerPadding: PaddingValues) {
                 modifier = Modifier.size(64.dp),
             )
             Spacer(Modifier.height(14.dp))
-            Text("灵犀 IELTS", style = Type.displayTitle, color = Ink)
+            Text("灵犀 IELTS", style = Type.editorTitle, color = Ink)
             Spacer(Modifier.height(6.dp))
             Text("版本 ${BuildConfig.VERSION_NAME}", style = Type.bodySmall, color = InkMeta)
         }

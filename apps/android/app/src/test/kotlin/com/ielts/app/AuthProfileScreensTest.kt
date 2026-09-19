@@ -128,7 +128,7 @@ class AuthProfileScreensTest {
     @Test
     fun `login navigates to forgot password page with magic link entry`() {
         openLogin()
-        composeTestRule.onNodeWithText("忘记密码？").performClick()
+        composeTestRule.onNodeWithText("忘记密码？").performScrollTo().performClick()
         waitForText("找回账号")
         // 重置密码场景
         Assert.assertTrue(composeTestRule.onAllNodesWithText("发送重置链接").fetchSemanticsNodes().isNotEmpty())
@@ -156,21 +156,18 @@ class AuthProfileScreensTest {
         for (tab in listOf("今日", "学习", "复习", "口语", "我的")) {
             Assert.assertTrue("底部导航应有：$tab", composeTestRule.onAllNodesWithText(tab).fetchSemanticsNodes().isNotEmpty())
         }
-        // 身份卡（点击 → 账号资料页）
+        // MOBILE-08：旧身份卡标语「持续学习，遇见更好的自己」已由 Personal Learning Portrait 取代。
+        // 身份行可点击 → 账号资料页由下方 identity card 用例（a@b.c）专门断言。
         Assert.assertTrue(
-            composeTestRule.onAllNodesWithText("持续学习，遇见更好的自己").fetchSemanticsNodes().isNotEmpty(),
+            composeTestRule.onAllNodesWithText("累计学习 · 词").fetchSemanticsNodes().isNotEmpty(),
         )
         // 无重复「账号信息」入口
         Assert.assertTrue(composeTestRule.onAllNodesWithText("账号信息").fetchSemanticsNodes().isEmpty())
         // 无右上角 gear / 设置图标
         Assert.assertTrue(composeTestRule.onAllNodes(androidx.compose.ui.test.hasContentDescription("设置")).fetchSemanticsNodes().isEmpty())
         Assert.assertTrue(composeTestRule.onAllNodes(androidx.compose.ui.test.hasContentDescription("gear")).fetchSemanticsNodes().isEmpty())
-        // 学习可视化（真实数据源 generateReport；空数据 → empty state）
-        Assert.assertTrue(composeTestRule.onAllNodesWithText("我的学习").fetchSemanticsNodes().isNotEmpty())
-        Assert.assertTrue(
-            composeTestRule.onAllNodesWithText("还没有学习记录").fetchSemanticsNodes().isNotEmpty() ||
-                composeTestRule.onAllNodesWithText("本周", substring = true).fetchSemanticsNodes().isNotEmpty(),
-        )
+        // 学习可视化（Portrait 长期数字 + 本周轨迹）；空数据也以克制 0 值呈现而非崩溃
+        Assert.assertTrue(composeTestRule.onAllNodesWithText("本周", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test
@@ -205,13 +202,13 @@ class AuthProfileScreensTest {
         val apiEntry = composeTestRule.onNodeWithText("AI 服务配置")
         apiEntry.performScrollTo()
         apiEntry.performClick()
-        waitForText("启用更强大的 AI 能力")
+        waitForText("AI 服务状态")
 
         Assert.assertTrue(composeTestRule.onAllNodesWithText("服务提供商").fetchSemanticsNodes().isNotEmpty())
         Assert.assertTrue(composeTestRule.onAllNodesWithText("API Key").fetchSemanticsNodes().isNotEmpty())
         Assert.assertTrue(composeTestRule.onAllNodesWithText("保存并验证").fetchSemanticsNodes().isNotEmpty())
-        // 使用说明（Key 仅保存在本设备）
-        Assert.assertTrue(composeTestRule.onAllNodesWithText("使用说明").fetchSemanticsNodes().isNotEmpty())
+        // MOBILE-08：说明精简为一行，但仍须告知 Key 仅保存在本设备、不上传
+        Assert.assertTrue(composeTestRule.onAllNodesWithText("仅保存在这台设备", substring = true).fetchSemanticsNodes().isNotEmpty())
         // API Key 不明文持久展示：初始为空且输入框为密码变换（无明文 Key 文本节点）
         Assert.assertTrue(composeTestRule.onAllNodesWithText("sk-").fetchSemanticsNodes().isEmpty())
     }

@@ -570,8 +570,8 @@ fun SubPage(
                 .padding(horizontal = PagePadding)
                 .padding(bottom = 28.dp),
         ) {
-            androidx.compose.material3.Text(title, style = Type.displayTitle)
-            Spacer(Modifier.height(10.dp))
+            androidx.compose.material3.Text(title, style = Type.editorTitle)
+            Spacer(Modifier.height(14.dp))
             content()
         }
     }

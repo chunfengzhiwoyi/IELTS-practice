@@ -67,6 +67,16 @@ object Type {
     val uiLabel = TextStyle(fontFamily = UiFont, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, letterSpacing = 0.08.em, color = InkMeta)
     val statNum = TextStyle(fontFamily = DisplayFont, fontWeight = FontWeight.Medium, fontSize = 32.sp, color = Ink)
     val statLabel = TextStyle(fontFamily = UiFont, fontSize = 12.sp, letterSpacing = 0.04.em, color = InkMeta)
+
+    // ---- MOBILE-08 编辑式标题体系（仅本轮 touched screens 采用，不回改 Today/Learn/Review）----
+    // 中文回退在 Medium/SemiBold 下会显得过黑；用 Normal 让中文走常规体，英文 Fraunces 仍保持衬线气质。
+    // 编辑式标题：Fraunces 只打包了单一静态字重，且 serif 字族的中文回退偏粗黑。
+    // 页面大标题以中文为主 → 用 Instrument Sans 常规，中文回退常规黑体，得到克制的编辑式标题；
+    // 含英文/人名的小标题保留 Newsreader 细衬线。
+    val editorTitle = TextStyle(fontFamily = UiFont, fontWeight = FontWeight.Normal, fontSize = 27.sp, lineHeight = 35.sp, color = Ink)
+    val editorTitleSmall = TextStyle(fontFamily = TextFont, fontWeight = FontWeight.Normal, fontSize = 22.sp, lineHeight = 28.sp, color = Ink)
+    val editorKicker = TextStyle(fontFamily = UiFont, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, letterSpacing = 0.14.em, color = Bronze)
+    val heroNum = TextStyle(fontFamily = DisplayFont, fontWeight = FontWeight.Medium, fontSize = 40.sp, lineHeight = 42.sp, color = Ink)
 }
 
 private val LightColorScheme = lightColorScheme(
