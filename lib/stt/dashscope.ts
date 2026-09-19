@@ -41,7 +41,7 @@ export function createDashScopeAsrProvider(cfg: DashScopeAsrConfig): SttProvider
     name: "dashscope",
     traceProvider: "dashscope",
     model,
-    async transcribe(input: SttAudioInput, traceId: string): Promise<SttTranscriptResult> {
+    async transcribe(input: SttAudioInput, _traceId: string): Promise<SttTranscriptResult> {
       const durationMs = parseM4aDurationMs(input.buffer);
       const duration = durationMs > 0 ? durationMs / 1000 : 0;
 

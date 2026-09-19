@@ -35,7 +35,7 @@ export function createOpenAiWhisperProvider(cfg: OpenAiWhisperConfig): SttProvid
     name: "openai",
     traceProvider: "whisper", // 历史 trace 契约标签（badcase-034 冻结）
     model: "whisper-1",
-    async transcribe(input: SttAudioInput, traceId: string): Promise<SttTranscriptResult> {
+    async transcribe(input: SttAudioInput, _traceId: string): Promise<SttTranscriptResult> {
       const form = new FormData();
       form.append("file", new Blob([Uint8Array.from(input.buffer)]), input.filename || "recording.webm");
       form.append("model", "whisper-1");
