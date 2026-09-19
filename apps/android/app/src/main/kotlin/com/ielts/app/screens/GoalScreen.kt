@@ -72,35 +72,32 @@ fun GoalScreen(vm: StudyViewModel, navController: NavController, innerPadding: P
     val dateState = rememberDatePickerState(initialSelectedDateMillis = examMillis(examDate))
 
     SubPage(title = "备考目标", onBack = { navController.popBackStack() }, innerPadding = innerPadding) {
-        // 1. 备考背景
-        SectionLabel("备考背景")
-        Spacer(Modifier.height(10.dp))
+        Text("设定你想去的方向，灵犀会据此安排每周的学习节奏。", style = Type.bodySmall, color = InkSoft)
+        Spacer(Modifier.height(Space.lg))
 
-        // 考试日期
-        Column(
+        // 考试日期（编辑式行，不再是灰卡）
+        Row(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(RadiusLarge))
-                .background(Paper2)
-                .border(1.dp, Line, RoundedCornerShape(RadiusLarge))
                 .clickable { showDatePicker = true }
-                .padding(16.dp),
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("考试日期", style = Type.uiLabel.copy(color = InkSoft))
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("考试日期", style = Type.ui.copy(color = InkSoft, fontSize = 14.sp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     examDate ?: "未设定",
-                    style = Type.ui.copy(color = if (examDate != null) Ink else InkMeta, fontSize = 17.sp),
+                    style = Type.editorTitleSmall.copy(fontSize = 19.sp, color = if (examDate != null) Ink else InkMeta),
                 )
-                Text("›", style = Type.ui.copy(color = Bronze, fontSize = 20.sp))
+                if (weeksUntil != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Text("距今约 $weeksUntil 周", style = Type.uiLabel.copy(color = Bronze, fontSize = 11.sp))
+                }
             }
-            if (weeksUntil != null) {
-                Spacer(Modifier.height(4.dp))
-                Text("距今约 $weeksUntil 周", style = Type.uiLabel.copy(color = Bronze, fontSize = 12.sp))
-            }
+            Text("›", style = Type.ui.copy(color = Bronze, fontSize = 20.sp))
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(Space.sm))
 
         // 目标总分
         Text("目标总分", style = Type.uiLabel.copy(color = InkSoft))
@@ -131,44 +128,42 @@ fun GoalScreen(vm: StudyViewModel, navController: NavController, innerPadding: P
         Text("凭感觉选即可，用于估算词汇缺口", style = Type.uiLabel.copy(color = Bronze, fontSize = 12.sp))
         Spacer(Modifier.height(14.dp))
 
-        // 每日可投入时间
+        // 每日可投入时间（节奏选择，弱化为一组 chip，不再是 4 个独立表单框）
         Text("每日可投入时间", style = Type.uiLabel.copy(color = InkSoft))
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             MIN_PRESETS.forEach { (min, note) ->
                 val on = dailyMinutes == min
-                Box(
+                Column(
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(RadiusMedium))
-                        .border(1.dp, if (on) Accent else LineStrong, RoundedCornerShape(RadiusMedium))
-                        .background(if (on) AccentWash else Paper)
+                        .background(if (on) AccentWash else Color.Transparent)
                         .clickable { dailyMinutes = min }
-                        .padding(10.dp, 12.dp),
+                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column {
-                        Text("${min} 分钟", style = Type.ui.copy(color = if (on) Accent else Ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
-                        Spacer(Modifier.height(3.dp))
-                        Text(note, style = Type.uiLabel.copy(color = if (on) Accent else InkMeta, fontSize = 10.sp))
-                    }
+                    Text("${min} 分钟", style = Type.ui.copy(color = if (on) Accent else Ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp))
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        note,
+                        style = Type.uiLabel.copy(color = if (on) Accent else InkMeta, fontSize = 9.sp),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(Space.xl))
 
-        // 2. 当前情况
-        SectionLabel("当前情况")
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Stat(learned.toString(), "已学词数", Modifier.weight(1f))
-            Stat("$masteryPct%", "掌握率", Modifier.weight(1f))
-            Stat(avgDailyMin.toString(), "近4周日均(分)", Modifier.weight(1f))
+        // 当前情况（编辑式无框数据，不再是 3 张带顶线卡片）
+        Text("当前情况", style = Type.editorKicker, modifier = Modifier.padding(bottom = Space.sm))
+        Row(Modifier.fillMaxWidth()) {
+            GoalInlineStat(learned.toString(), "已学词数", Modifier.weight(1f))
+            GoalInlineStat("$masteryPct%", "掌握率", Modifier.weight(1f))
+            GoalInlineStat(avgDailyMin.toString(), "近4周日均(分)", Modifier.weight(1f))
         }
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(Space.xl))
 
-        // 3. 智能建议
-        SectionLabel("智能建议")
-        Spacer(Modifier.height(10.dp))
         PrimaryButton(
             text = "生成我的计划",
             onClick = {
@@ -315,15 +310,31 @@ private fun PillRow(items: List<String>, selectedIndex: Int, onSelect: (Int) -> 
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(RadiusMedium))
-                    .border(1.dp, if (on) Accent else LineStrong, RoundedCornerShape(RadiusMedium))
-                    .background(if (on) AccentWash else Paper)
+                    .background(if (on) AccentWash else Color.Transparent)
                     .clickable { onSelect(i) }
-                    .padding(vertical = 10.dp),
+                    .padding(vertical = 13.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(label, style = Type.ui.copy(color = if (on) Accent else Ink, fontWeight = FontWeight.SemiBold, fontSize = 15.sp))
+                Text(
+                    label,
+                    style = Type.ui.copy(
+                        color = if (on) Accent else InkMeta,
+                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 16.sp,
+                    ),
+                )
             }
         }
+    }
+}
+
+/** Goal 页编辑式无框小数据。 */
+@Composable
+private fun GoalInlineStat(num: String, label: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(num, style = Type.heading.copy(fontSize = 26.sp), color = Ink)
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = Type.statLabel)
     }
 }
 
