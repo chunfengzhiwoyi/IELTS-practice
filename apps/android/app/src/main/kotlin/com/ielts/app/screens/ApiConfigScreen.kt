@@ -13,21 +13,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ielts.app.components.*
 import com.ielts.app.theme.*
 import com.ielts.core.llm.*
 import kotlinx.coroutines.launch
 
 /**
- * MOBILE-06 §9/§10 — AI 服务配置页（视觉稿 v2.0）。
- *  - 服务提供商（DeepSeek 推荐）+ API Key（掩码 + 👁）+ [保存并验证] + 状态
- *  - 真实 BYOK 逻辑保留：DataStore 本地存储（getApiConfig/saveApiConfig），验证走 callUserModel ping
- *  - Key 仅保存在本设备；不展示完整 Key；日志不输出；不上传 analytics
- *  - 边界：本页配置的是「用户自己的 API Key」（客户端 LLM 能力）；与 Lingxi server-side
- *    DashScope/DeepSeek service key 是两回事，绝不把服务端 key 下发 Android，也不影响 Speaking backend E2E
+ * MOBILE-08 §6 — AI 服务配置视觉重构（逻辑冻结）。
+ * 视觉 Hero = 顶部「AI 服务状态」状态卡，强于下方表单；说明精简；清除配置降为低层级。
+ * BYOK 安全边界不变：Key 仅本机 DataStore，不显示/上传/打日志，与 Lingxi 服务端 key 隔离。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,19 +70,53 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
         testMsg = null
     }
 
-    SubPage("AI 服务配置", onBack = { onDone() }, innerPadding = innerPadding) {
-        Spacer(Modifier.height(12.dp))
-        Text("启用更强大的 AI 能力", style = Type.subHeading, color = Ink)
-        Spacer(Modifier.height(6.dp))
-        Note(
-            "配置你自己的 API Key，即可调用你选择的 AI 模型进行口语评分、写作批改等功能。",
-            variant = NoteVariant.PLAIN,
-        )
-        Spacer(Modifier.height(20.dp))
+    // —— 当前状态（视觉主角）——
+    val configured = apiKey.isNotBlank() && baseUrl.isNotBlank()
+    val stateColor: Color = when {
+        testing -> Bronze
+        !configured -> InkMeta
+        lastTestOk -> Pos
+        else -> Amber
+    }
+    val stateTitle = when {
+        testing -> "正在验证连接…"
+        !configured -> "尚未配置"
+        lastTestOk -> "连接正常"
+        testMsg != null -> "连接异常"
+        else -> "密钥已保存 · 待验证"
+    }
+    val stateSub = when {
+        testing -> "正在向所选服务发起一次测试请求，请稍候。"
+        !configured -> "配置你自己的 API Key 后，可在口语与写作中调用更强的模型。"
+        lastTestOk -> "密钥有效，当前可以使用你配置的模型。"
+        testMsg != null -> testMsg.orEmpty()
+        else -> "密钥已保存在本机，尚未通过连接测试。"
+    }
 
-        // 服务提供商（DeepSeek 推荐）
+    SubPage("AI 服务配置", onBack = { onDone() }, innerPadding = innerPadding) {
+        // 01 —— 状态 Hero（强于表单）
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(RadiusLarge))
+                .background(stateColor.copy(alpha = 0.08f))
+                .padding(18.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(stateColor))
+                Spacer(Modifier.width(7.dp))
+                Text("AI 服务状态", style = Type.editorKicker.copy(color = stateColor))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(stateTitle, style = Type.editorTitleSmall, color = stateColor)
+            Spacer(Modifier.height(4.dp))
+            Text(stateSub, style = Type.bodySmall, color = InkSoft)
+        }
+        Spacer(Modifier.height(Space.xl))
+
+        // 服务提供商
         Text("服务提供商", style = Type.uiLabel)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
             OutlinedTextField(
                 value = search,
@@ -128,11 +163,11 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Space.lg))
 
-        // API Key（掩码 + 👁）
+        // API Key
         Text("API Key", style = Type.uiLabel)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = apiKey,
             onValueChange = { apiKey = it; testMsg = null },
@@ -160,15 +195,12 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                 focusedLabelColor = Accent,
             ),
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Space.lg))
 
         // 保存并验证
         val valid = baseUrl.isNotBlank() && apiKey.isNotBlank() && model.isNotBlank()
         PrimaryButton(
-            text = when {
-                testing -> "验证中…"
-                else -> "保存并验证"
-            },
+            text = if (testing) "正在验证连接…" else "保存并验证",
             enabled = valid && !testing,
             onClick = {
                 if (!valid) return@PrimaryButton
@@ -187,7 +219,7 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                     testing = false
                     if (r != null) {
                         lastTestOk = true
-                        testMsg = "连接正常，当前配置可以使用。"
+                        testMsg = null
                         saveApiConfig(cfg.copy(lastTestOk = true))
                     } else {
                         lastTestOk = false
@@ -202,36 +234,24 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                 }
             },
         )
-        Spacer(Modifier.height(12.dp))
 
-        // 状态
-        when {
-            testing -> StatusLine(Bronze, "正在验证连接…")
-            apiKey.isBlank() || baseUrl.isBlank() -> StatusLine(InkMeta, "尚未配置")
-            lastTestOk -> StatusLine(Pos, "连接正常")
-            else -> StatusLine(Amber, if (testMsg != null) "连接未通过，可查看下方提示" else "密钥已保存，可进行连接测试")
-        }
-        if (testMsg != null) {
-            Spacer(Modifier.height(8.dp))
-            Note(testMsg.orEmpty(), variant = if (lastTestOk) NoteVariant.ACCENT else NoteVariant.BRONZE)
-        }
-        Spacer(Modifier.height(16.dp))
-
-        // 高级选项（Base URL / 模型名 / 协议）——默认折叠，视觉稿不展示
+        // 高级选项（Base URL / 模型名 / 协议）——默认折叠
+        Spacer(Modifier.height(Space.md))
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable { advanced = !advanced },
+                .clickable { advanced = !advanced }
+                .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("高级选项", style = Type.uiLabel)
             Text(if (advanced) "收起" else "展开", style = Type.uiLabel.copy(color = Accent))
         }
         if (advanced) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Space.sm))
             if (isCustom) {
                 Text("接口协议", style = Type.uiLabel)
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     LlmProtocol.entries.forEach { pr ->
                         GhostButton(
@@ -242,61 +262,45 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
                         )
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-            } else {
-                Note("协议 · ${protocolEnum.label}（选择厂商已自动设定）", variant = NoteVariant.PLAIN)
-                Spacer(Modifier.height(12.dp))
-            }
-            if (isCustom) {
+                Spacer(Modifier.height(Space.md))
                 ApiField("接口地址 Endpoint URL", baseUrl, { baseUrl = it; testMsg = null }, "https://api.example.com/v1")
-            } else {
-                Note(
-                    "接口地址 · ${baseUrl.ifBlank { "选择自定义服务商后可设置" }}（由所选服务商自动设定）",
-                    variant = NoteVariant.PLAIN,
-                )
+                Spacer(Modifier.height(Space.md))
             }
-            Spacer(Modifier.height(12.dp))
             ApiField("模型名", model, { model = it; testMsg = null }, "deepseek-chat")
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Space.md))
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Space.lg))
 
-        GhostButton("清除配置（回退离线）", onClick = {
-            saveApiConfig(ApiConfig())
-            selectedKey = ""
-            search = ""
-            baseUrl = ""
-            apiKey = ""
-            model = ""
-            protocol = LlmProtocol.OPENAI.name
-            lastTestOk = false
-            testing = false
-            testMsg = null
-        })
-        Spacer(Modifier.height(20.dp))
+        // 清除配置（降为低风险层级，不像主操作）
+        Text(
+            "清除配置，回退离线",
+            style = Type.uiLabel.copy(color = InkMeta),
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    saveApiConfig(ApiConfig())
+                    selectedKey = ""
+                    search = ""
+                    baseUrl = ""
+                    apiKey = ""
+                    model = ""
+                    protocol = LlmProtocol.OPENAI.name
+                    lastTestOk = false
+                    testing = false
+                    testMsg = null
+                }
+                .padding(vertical = 10.dp),
+        )
+        Spacer(Modifier.height(Space.lg))
 
-        // 使用说明
-        SectionLabel("使用说明")
-        Spacer(Modifier.height(8.dp))
-        Note(
-            buildString {
-                appendLine("· 你的 API Key 仅保存在本设备")
-                appendLine("· 不会上传到我们的服务器")
-                appendLine("· 建议使用官方渠道的 API Key")
-                append("· 如遇问题可在关于页面查看帮助")
-            },
-            variant = NoteVariant.PLAIN,
+        // 使用说明（精简两句话，不做文字墙）
+        Text(
+            "你的 API Key 仅保存在这台设备，不会上传到灵犀服务器；口语评测的内置通道不受影响。",
+            style = Type.uiLabel.copy(fontSize = 11.sp, color = InkMeta),
+            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(20.dp))
-    }
-}
-
-@Composable
-private fun StatusLine(color: androidx.compose.ui.graphics.Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(6.dp))
-        Text(text, style = Type.bodySmall.copy(color = color))
     }
 }
 
@@ -309,7 +313,7 @@ private fun ApiField(
 ) {
     Column(Modifier.fillMaxWidth()) {
         Text(label, style = Type.uiLabel)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
