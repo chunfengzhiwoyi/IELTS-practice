@@ -27,7 +27,7 @@
 param(
     [int]$Port = 3000,
     [switch]$SkipBuild,
-    [switch]$InstallOnly,
+    [switch]$InstallOnly
 )
 
 $ErrorActionPreference = "Stop"
