@@ -1,6 +1,7 @@
 package com.ielts.app.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,16 +20,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.ielts.app.components.*
 import com.ielts.app.theme.*
 import com.ielts.core.llm.*
 import kotlinx.coroutines.launch
 
+/** AI 服务的四种产品化状态（视觉用，不映射任何工程错误码）。 */
+internal enum class ApiStatusMode { UNCONFIGURED, VALIDATING, CONNECTED, SAVED_PENDING, FAILED }
+
 /**
- * MOBILE-08 §6 — AI 服务配置视觉重构（逻辑冻结）。
- * 视觉 Hero = 顶部「AI 服务状态」状态卡，强于下方表单；说明精简；清除配置降为低层级。
- * BYOK 安全边界不变：Key 仅本机 DataStore，不显示/上传/打日志，与 Lingxi 服务端 key 隔离。
+ * MOBILE-08F §11–17 — AI 服务配置最后收口（逻辑冻结）。
+ * STATUS-FIRST：顶部状态 Hero（徽标 + 大状态标题 + 产品化副文案，连接态附 已验证/服务商）明显强于下方表单；
+ * 表单归入「服务配置」次级分组；高级默认折叠；清除降为底部酒红 text-style；说明收敛为两行小字。
+ * BYOK 安全边界不变：Key 仅本机 DataStore，不回显完整值/不上传/不打日志，与 Lingxi 服务端 key 隔离。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,47 +78,41 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
 
     // —— 当前状态（视觉主角）——
     val configured = apiKey.isNotBlank() && baseUrl.isNotBlank()
-    val stateColor: Color = when {
-        testing -> Bronze
-        !configured -> InkMeta
-        lastTestOk -> Pos
-        else -> Amber
+    val mode = when {
+        testing -> ApiStatusMode.VALIDATING
+        !configured -> ApiStatusMode.UNCONFIGURED
+        lastTestOk -> ApiStatusMode.CONNECTED
+        testMsg != null -> ApiStatusMode.FAILED
+        else -> ApiStatusMode.SAVED_PENDING
     }
-    val stateTitle = when {
-        testing -> "正在验证连接…"
-        !configured -> "尚未配置"
-        lastTestOk -> "连接正常"
-        testMsg != null -> "连接异常"
-        else -> "密钥已保存 · 待验证"
+    val stateTitle = when (mode) {
+        ApiStatusMode.VALIDATING -> "正在验证连接…"
+        ApiStatusMode.UNCONFIGURED -> "尚未连接"
+        ApiStatusMode.CONNECTED -> "连接正常"
+        ApiStatusMode.FAILED -> "连接异常"
+        ApiStatusMode.SAVED_PENDING -> "密钥已保存 · 待验证"
     }
-    val stateSub = when {
-        testing -> "正在向所选服务发起一次测试请求，请稍候。"
-        !configured -> "配置你自己的 API Key 后，可在口语与写作中调用更强的模型。"
-        lastTestOk -> "密钥有效，当前可以使用你配置的模型。"
-        testMsg != null -> testMsg.orEmpty()
-        else -> "密钥已保存在本机，尚未通过连接测试。"
+    val stateSub = when (mode) {
+        ApiStatusMode.VALIDATING -> "正在向所选服务发起一次测试请求，请稍候。"
+        ApiStatusMode.UNCONFIGURED -> "配置你的个人 AI 服务后，即可在口语与写作中启用相关 AI 能力。"
+        ApiStatusMode.CONNECTED -> "密钥有效，当前可以使用你配置的模型。"
+        ApiStatusMode.FAILED -> testMsg ?: "暂时无法连接服务，请稍后再试。"
+        ApiStatusMode.SAVED_PENDING -> "密钥已保存在本机，尚未通过连接测试。"
     }
 
     SubPage("AI 服务配置", onBack = { onDone() }, innerPadding = innerPadding) {
-        // 01 —— 状态 Hero（强于表单）
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(RadiusLarge))
-                .background(stateColor.copy(alpha = 0.08f))
-                .padding(18.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(stateColor))
-                Spacer(Modifier.width(7.dp))
-                Text("AI 服务状态", style = Type.editorKicker.copy(color = stateColor))
-            }
-            Spacer(Modifier.height(12.dp))
-            Text(stateTitle, style = Type.editorTitleSmall, color = stateColor)
-            Spacer(Modifier.height(4.dp))
-            Text(stateSub, style = Type.bodySmall, color = InkSoft)
-        }
+        // 01 —— 状态 Hero（页面视觉主角，明显强于表单）
+        ApiStatusHero(
+            mode = mode,
+            title = stateTitle,
+            subtitle = stateSub,
+            providerLabel = if (mode == ApiStatusMode.CONNECTED) search.ifBlank { "自定义端点" } else null,
+        )
         Spacer(Modifier.height(Space.xl))
+
+        // 02 —— 服务配置（次级分组）
+        Text("服务配置", style = Type.editorKicker)
+        Spacer(Modifier.height(Space.sm))
 
         // 服务提供商
         Text("服务提供商", style = Type.uiLabel)
@@ -197,7 +197,7 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
         )
         Spacer(Modifier.height(Space.lg))
 
-        // 保存并验证
+        // 保存并验证（真实验证逻辑不变，仅在输入满足要求时 enabled）
         val valid = baseUrl.isNotBlank() && apiKey.isNotBlank() && model.isNotBlank()
         PrimaryButton(
             text = if (testing) "正在验证连接…" else "保存并验证",
@@ -235,7 +235,7 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
             },
         )
 
-        // 高级选项（Base URL / 模型名 / 协议）——默认折叠
+        // 高级选项（Base URL / 模型名 / 协议）——默认折叠，一行编辑式入口
         Spacer(Modifier.height(Space.md))
         Row(
             Modifier
@@ -269,12 +269,12 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
             ApiField("模型名", model, { model = it; testMsg = null }, "deepseek-chat")
             Spacer(Modifier.height(Space.md))
         }
-        Spacer(Modifier.height(Space.lg))
+        Spacer(Modifier.height(Space.xl))
 
-        // 清除配置（降为低风险层级，不像主操作）
+        // 清除配置（底部 text-style 次级危险操作，不与主 CTA 同级）
         Text(
-            "清除配置，回退离线",
-            style = Type.uiLabel.copy(color = InkMeta),
+            "清除当前配置",
+            style = Type.uiLabel.copy(color = Accent, letterSpacing = 0.04.em),
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -294,13 +294,92 @@ fun ApiConfigScreen(innerPadding: PaddingValues, onDone: () -> Unit) {
         )
         Spacer(Modifier.height(Space.lg))
 
-        // 使用说明（精简两句话，不做文字墙）
+        // 使用说明（两行小字，不做说明文字墙，不暴露工程实现）
         Text(
             "你的 API Key 仅保存在这台设备，不会上传到灵犀服务器；口语评测的内置通道不受影响。",
             style = Type.uiLabel.copy(fontSize = 11.sp, color = InkMeta),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+/**
+ * AI 服务状态 Hero：状态徽标 + 大状态标题 + 产品化副文案；连接态附「已验证」与服务商名。
+ * 抽成独立 composable，便于在确定性截图测试中渲染全部状态（ROBOLECTRIC_ONLY 证据）。
+ */
+@Composable
+internal fun ApiStatusHero(
+    mode: ApiStatusMode,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    providerLabel: String? = null,
+) {
+    val color: Color = when (mode) {
+        ApiStatusMode.VALIDATING -> Bronze
+        ApiStatusMode.UNCONFIGURED -> InkMeta
+        ApiStatusMode.CONNECTED -> Pos
+        ApiStatusMode.SAVED_PENDING -> Amber
+        ApiStatusMode.FAILED -> Amber
+    }
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(RadiusLarge))
+            .background(color.copy(alpha = 0.09f))
+            .padding(horizontal = 20.dp, vertical = 22.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ApiStatusBadge(mode = mode, color = color)
+            Spacer(Modifier.width(12.dp))
+            Text("AI 服务状态", style = Type.editorKicker.copy(color = color))
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(title, style = Type.editorTitle.copy(color = color))
+        Spacer(Modifier.height(5.dp))
+        Text(subtitle, style = Type.bodySmall, color = InkSoft)
+        if (providerLabel != null) {
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Pill("已验证", color = Pos)
+                Spacer(Modifier.width(8.dp))
+                Text(providerLabel, style = Type.uiLabel.copy(color = InkSoft))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApiStatusBadge(mode: ApiStatusMode, color: Color) {
+    Box(
+        Modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .background(color.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        when (mode) {
+            ApiStatusMode.VALIDATING -> CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.5.dp,
+                color = color,
+            )
+            ApiStatusMode.CONNECTED, ApiStatusMode.SAVED_PENDING ->
+                Box(Modifier.size(13.dp).clip(CircleShape).background(color))
+            ApiStatusMode.UNCONFIGURED ->
+                Box(
+                    Modifier
+                        .size(17.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, color, CircleShape),
+                )
+            ApiStatusMode.FAILED ->
+                Text(
+                    "!",
+                    style = Type.uiButton.copy(color = color, fontSize = 20.sp),
+                )
+        }
     }
 }
 
