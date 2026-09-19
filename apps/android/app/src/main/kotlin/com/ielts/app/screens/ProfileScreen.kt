@@ -1,8 +1,6 @@
 package com.ielts.app.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,19 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ielts.app.auth.AuthUser
 import com.ielts.app.components.Monogram
-import com.ielts.app.components.PagePadding
-import com.ielts.app.components.PrimaryButton
 import com.ielts.app.components.ProgressRule
 import com.ielts.app.components.RadiusLarge
-import com.ielts.app.components.RadiusMedium
 import com.ielts.app.components.ScreenScaffold
 import com.ielts.app.components.SectionLabel
+import com.ielts.app.components.Space
 import com.ielts.app.nav.Routes
 import com.ielts.app.theme.*
 import com.ielts.app.viewmodel.AuthViewModel
@@ -44,12 +40,10 @@ private fun monogramColorOf(key: String) = when (key) {
 }
 
 /**
- * MOBILE-06 §4/§5/§6/§7/§11 — 我的页（视觉稿 v2.0）。
- * 职责：「我是谁 + 我学到哪里了 + 常用个人工具」。
- *  - 顶部身份卡（点击整卡 → 账号资料页；不出现重复「账号信息」入口）
- *  - 我的学习：本周 7 天轻量轨迹 + 累计学习 / 连续学习 / 口语练习 + 本周目标进度条（真实数据）
- *  - 下方：工具与设置 → AI 服务配置（BELOW_THE_FOLD）
- *  - 无右上角 gear 图标
+ * MOBILE-08 §5 — 我的页重构为「Personal Learning Portrait」。
+ * 首屏是一整块连续 composition：身份 → 长期数字 → 7 日轨迹 → 本周目标，
+ * 不再是身份卡 + 三个小统计框 + 目标卡 + 设置卡的 Dashboard stacking。
+ * 数据/导航/IA 全部冻结，仅视觉重构。
  */
 @Composable
 fun ProfileScreen(
@@ -66,15 +60,19 @@ fun ProfileScreen(
     val user = authVm?.state?.user
 
     ScreenScaffold(date = date, innerPadding = innerPadding) {
-        Spacer(Modifier.height(4.dp))
-        Text("我的", style = Type.displayTitle, color = Ink)
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(Space.sm))
+        Text("我的", style = Type.editorTitle, color = Ink)
+        Spacer(Modifier.height(Space.lg))
 
-        IdentityCard(profile, user, onClick = { navController.navigate(Routes.ACCOUNT_PROFILE) })
-        Spacer(Modifier.height(22.dp))
-
-        LearningSection(report, goal, onGoalClick = { navController.navigate(Routes.GOAL) })
-        Spacer(Modifier.height(22.dp))
+        LearningPortrait(
+            profile = profile,
+            user = user,
+            report = report,
+            goal = goal,
+            onIdentityClick = { navController.navigate(Routes.ACCOUNT_PROFILE) },
+            onGoalClick = { navController.navigate(Routes.GOAL) },
+        )
+        Spacer(Modifier.height(Space.xl))
 
         ToolsSection(
             onApiConfigClick = { navController.navigate(Routes.API_CONFIG) },
@@ -84,120 +82,152 @@ fun ProfileScreen(
     }
 }
 
-// ----------------------------- 顶部身份卡 -----------------------------
+/**
+ * 一整块个人学习肖像：暖米底、无内部嵌套边框。
+ */
 @Composable
-private fun IdentityCard(profile: ProfileData, user: AuthUser?, onClick: () -> Unit) {
-    Row(
+private fun LearningPortrait(
+    profile: ProfileData,
+    user: AuthUser?,
+    report: MiniReport,
+    goal: Int,
+    onIdentityClick: () -> Unit,
+    onGoalClick: () -> Unit,
+) {
+    Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge))
-            .background(Paper2)
-            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge))
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(Cream)
+            .padding(18.dp),
     ) {
-        Monogram(
-            (profile.nickname.firstOrNull() ?: '灵').toString(),
-            monogramColorOf(profile.monogramColor),
-            size = 56.dp,
-        )
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                profile.nickname.ifBlank { user?.email?.substringBefore("@") ?: "灵犀用户" },
-                style = Type.heading,
-                color = Ink,
+        // —— 身份行（整行可点 → 账号资料）——
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onIdentityClick),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Monogram(
+                (profile.nickname.firstOrNull() ?: '灵').toString(),
+                monogramColorOf(profile.monogramColor),
+                size = 52.dp,
             )
-            Spacer(Modifier.height(2.dp))
-            Text(user?.email ?: profile.nickname.ifBlank { "——" }, style = Type.bodySmall)
-            Spacer(Modifier.height(6.dp))
-            Text("持续学习，遇见更好的自己", style = Type.uiLabel.copy(color = InkMeta))
+            Spacer(Modifier.width(Space.md))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    profile.nickname.ifBlank { user?.email?.substringBefore("@") ?: "灵犀用户" },
+                    style = Type.editorTitleSmall,
+                    color = Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    user?.email ?: "——",
+                    style = Type.uiLabel.copy(fontSize = 11.sp),
+                    color = InkMeta,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text("›", style = Type.heading.copy(color = Bronze))
         }
-        Text("›", style = Type.heading.copy(color = Bronze))
+
+        Spacer(Modifier.height(Space.lg))
+        androidx.compose.material3.HorizontalDivider(color = Line.copy(alpha = 0.7f), thickness = 1.dp)
+        Spacer(Modifier.height(Space.lg))
+
+        // —— 长期学习数字：主数字 + 两个无框次级数字（竖线分隔，不做三个边框框）——
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1.25f)) {
+                Text("${report.totalItems}", style = Type.heroNum, color = Ink)
+                Spacer(Modifier.height(2.dp))
+                Text("累计学习 · 词", style = Type.statLabel)
+            }
+            VerticalRule()
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${report.streak}", style = Type.heading.copy(fontSize = 26.sp), color = Ink)
+                Spacer(Modifier.height(2.dp))
+                Text("连续 · 天", style = Type.statLabel)
+            }
+            VerticalRule()
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${report.speakingCompleted}", style = Type.heading.copy(fontSize = 26.sp), color = Ink)
+                Spacer(Modifier.height(2.dp))
+                Text("口语 · 次", style = Type.statLabel)
+            }
+        }
+
+        Spacer(Modifier.height(Space.xl))
+
+        // —— 7 日轨迹（视觉图形，不是表格）——
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("本周 ${report.daysActiveThisWeek}/7 天", style = Type.uiLabel.copy(color = InkSoft))
+            Text("轨迹", style = Type.uiLabel)
+        }
+        Spacer(Modifier.height(Space.md))
+        WeekDots(report)
+
+        Spacer(Modifier.height(Space.xl))
+
+        // —— 本周目标（整块可点 → Goal）——
+        val done = report.newThisWeek + report.reviewedThisWeek
+        val pct = if (goal > 0) (done * 100 / goal).coerceAtMost(999) else 0
+        Column(Modifier.fillMaxWidth().clickable(onClick = onGoalClick)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("本周目标 $goal 词", style = Type.ui.copy(color = InkSoft))
+                Text("$pct%", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
+            }
+            Spacer(Modifier.height(8.dp))
+            ProgressRule(progress = pct / 100f)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                if (pct >= 100) "已完成本周目标，继续保持。" else "已学习 $done 词 · 点击查看或调整目标",
+                style = Type.uiLabel,
+                color = InkMeta,
+            )
+        }
     }
 }
 
-// ----------------------------- 我的学习 -----------------------------
 @Composable
-private fun LearningSection(report: MiniReport, goal: Int, onGoalClick: () -> Unit) {
-    SectionLabel("我的学习")
-    Spacer(Modifier.height(8.dp))
+private fun VerticalRule() {
     Box(
         Modifier
-            .fillMaxWidth()
-            .background(Paper2)
-            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge))
-            .padding(16.dp),
-    ) {
-        if (report.totalItems == 0 && report.speakingCompleted == 0 && report.streak == 0) {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(16.dp))
-                Text("还没有学习记录", style = Type.subHeading, color = Ink)
-                Spacer(Modifier.height(6.dp))
-                Text("去「今日」开始第一次练习吧", style = Type.bodySmall)
-                Spacer(Modifier.height(18.dp))
-            }
-        } else {
-            Column {
-                // 本周轨迹：一二三四五六日 + 圆点
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("本周 ${report.daysActiveThisWeek}/7 天", style = Type.ui.copy(color = InkSoft, fontWeight = FontWeight.SemiBold))
-                    Text("连续学习 ${report.streak} 天", style = Type.uiLabel)
-                }
-                Spacer(Modifier.height(10.dp))
-                WeekDots(report)
-                Spacer(Modifier.height(16.dp))
-
-                // 三项真实指标
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MiniStat("${report.totalItems}", "累计学习（词/表达）", Modifier.weight(1f))
-                    MiniStat("${report.streak}", "连续学习（天）", Modifier.weight(1f))
-                    MiniStat("${report.speakingCompleted}", "口语练习（次）", Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(18.dp))
-
-                // 本周目标 / 周进度（整块可点 → Goal，与 Report 入口同一个 GoalScreen）
-                val done = report.newThisWeek + report.reviewedThisWeek
-                val pct = if (goal > 0) (done * 100 / goal).coerceAtMost(999) else 0
-                Column(Modifier.fillMaxWidth().clickable(onClick = onGoalClick)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("本周目标 $goal 词", style = Type.ui.copy(color = InkSoft))
-                        Text("$pct%", style = Type.ui.copy(color = Accent, fontWeight = FontWeight.SemiBold))
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    ProgressRule(progress = pct / 100f)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        if (pct >= 100) "继续加油！你已经完成了本周的学习目标。" else "已学习 $done 词，点击查看或调整目标",
-                        style = Type.uiLabel,
-                        color = InkMeta,
-                    )
-                }
-            }
-        }
-    }
+            .padding(horizontal = Space.sm)
+            .width(1.dp)
+            .height(38.dp)
+            .background(Line),
+    )
 }
 
-/** 7 天圆点轨迹（● 有活动 / ○ 无活动；今日高亮） */
+/** 7 天圆点轨迹（● 有活动 / ○ 无活动；今日酒红高亮），作为视觉图形。
+ *  顺序与 Today 母版对齐：周一 → 周日（数据源为周日开头时左移一位）。 */
 @Composable
 private fun WeekDots(report: MiniReport) {
+    val wa = report.weeklyActivity
+    val weekOrder = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+    val ordered = wa.sortedBy { weekOrder.indexOf(it.label) }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        report.weeklyActivity.forEach { d ->
+        ordered.forEach { d ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     Modifier
-                        .size(14.dp)
+                        .size(if (d.isToday) 15.dp else 12.dp)
                         .clip(CircleShape)
                         .background(
                             when {
                                 d.isToday -> Accent
                                 d.hasActivity -> Bronze
-                                else -> LineStrong.copy(alpha = 0.5f)
+                                else -> LineStrong.copy(alpha = 0.45f)
                             },
                         ),
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
                     d.label.replace("周", ""),
                     style = Type.uiLabel.copy(
@@ -210,21 +240,7 @@ private fun WeekDots(report: MiniReport) {
     }
 }
 
-@Composable
-private fun MiniStat(num: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .border(BorderStroke(1.dp, LineStrong), RoundedCornerShape(RadiusMedium))
-            .background(Paper)
-            .padding(10.dp, 12.dp),
-    ) {
-        Text(num, style = Type.word.copy(fontSize = 26.sp, color = Ink))
-        Spacer(Modifier.height(2.dp))
-        Text(label, style = Type.uiLabel.copy(fontSize = 10.sp, color = InkMeta))
-    }
-}
-
-// ----------------------------- 工具与设置 -----------------------------
+// ----------------------------- 工具与设置（编辑式纯行，below the fold） -----------------------------
 @Composable
 private fun ToolRow(title: String, subtitle: String, onClick: () -> Unit, showDivider: Boolean) {
     Column {
@@ -233,13 +249,13 @@ private fun ToolRow(title: String, subtitle: String, onClick: () -> Unit, showDi
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(16.dp),
+                .padding(vertical = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(title, style = Type.body, color = Ink, fontWeight = FontWeight.SemiBold)
+                Text(title, style = Type.ui.copy(fontWeight = FontWeight.SemiBold), color = Ink)
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, style = Type.bodySmall)
+                Text(subtitle, style = Type.uiLabel.copy(fontSize = 11.sp))
             }
             Text("›", style = Type.heading.copy(color = Bronze))
         }
@@ -249,17 +265,8 @@ private fun ToolRow(title: String, subtitle: String, onClick: () -> Unit, showDi
 @Composable
 private fun ToolsSection(onApiConfigClick: () -> Unit, onAboutClick: () -> Unit) {
     SectionLabel("工具与设置")
-    Spacer(Modifier.height(8.dp))
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(RadiusLarge))
-            .background(Paper2)
-            .border(BorderStroke(1.dp, Line), RoundedCornerShape(RadiusLarge)),
-    ) {
-        Column {
-            ToolRow("AI 服务配置", "配置你的 API Key", onApiConfigClick, showDivider = false)
-            ToolRow("关于灵犀 IELTS", "版本与产品理念", onAboutClick, showDivider = true)
-        }
-    }
+    Spacer(Modifier.height(6.dp))
+    // 纯 Paper 上的编辑式列表，不再套灰底卡片。
+    ToolRow("AI 服务配置", "配置你的 API Key", onApiConfigClick, showDivider = false)
+    ToolRow("关于灵犀 IELTS", "版本与产品理念", onAboutClick, showDivider = true)
 }
