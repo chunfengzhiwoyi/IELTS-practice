@@ -49,9 +49,9 @@ private fun saveRememberedEmail(ctx: Context, email: String, remember: Boolean) 
 }
 
 /**
- * MOBILE-08 §4 — 登录页向批准 Auth V3 收敛。
- * 视觉 Hero：暖光留白 + 克制远山（仅 Auth）+ 篆刻 Logo + 品牌句；表单紧凑、无底部死白、无重复标语。
- * 功能冻结：单一邮箱/密码入口，登录是 Auth Root（无返回），不新增登录方式/说明/卡片。
+ * MOBILE-08F §3 — 登录页最后收口（只做 minor polish，结构/IA 冻结）。
+ * 紧密的 Logo → 灵犀 IELTS → 中文品牌句 vertical lockup；中文 slogan 为主，英文句降为淡色 editorial annotation；
+ * 山景保持克制；品牌区与操作区两层保留，表单整体略上移。视觉 Hero = 灵犀品牌 +「进入你的学习空间」。
  */
 @Composable
 fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPadding: PaddingValues) {
@@ -73,7 +73,7 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             LoginBrandHero()
 
-            Column(Modifier.padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 32.dp)) {
+            Column(Modifier.padding(horizontal = 20.dp).padding(top = 2.dp, bottom = 32.dp)) {
                 AuthField("邮箱", email, { email = it; authVm?.clearError() }, "请输入邮箱", isPassword = false, tag = "email_field")
                 Spacer(Modifier.height(14.dp))
                 AuthField("密码", password, { password = it; authVm?.clearError() }, "请输入密码", isPassword = true, tag = "password_field")
@@ -136,14 +136,15 @@ fun LoginScreen(authVm: AuthViewModel?, navController: NavController, innerPaddi
 }
 
 /**
- * Auth 品牌 Hero：暖光渐变 + 底部克制远山 + 篆刻 Logo + 品牌句。山水仅服务 Auth。
+ * Auth 品牌 Hero：暖光渐变 + 底部克制远山 + 紧密 vertical lockup（篆刻 → 灵犀 IELTS → 中文 slogan）。
+ * 山水仅服务 Auth；中文品牌句为主，英文句是淡色 editorial annotation，不与中文争视觉。
  */
 @Composable
 internal fun LoginBrandHero() {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(344.dp)
+            .height(330.dp)
             .background(Brush.verticalGradient(listOf(HeroWarm, Paper))),
     ) {
         Image(
@@ -158,33 +159,36 @@ internal fun LoginBrandHero() {
             Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(top = 44.dp),
+                .padding(top = 42.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // 顶部视觉锚：篆刻 Logo（克制，不巨大化）
             Image(
                 painter = painterResource(R.drawable.seal),
                 contentDescription = "灵犀",
-                modifier = Modifier.size(58.dp),
+                modifier = Modifier.size(56.dp),
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
             Text(
                 "灵犀 IELTS",
                 style = Type.editorTitle,
                 color = Ink,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
+            // 主品牌句：清晰、为主
             Text(
                 "让每一次学习影响下一次学习",
-                style = Type.body.copy(fontSize = 15.sp),
-                color = InkSoft,
+                style = Type.body.copy(fontSize = 16.sp),
+                color = Ink,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(3.dp))
+            // 英文小句：更小、更淡，仅作 editorial annotation
             Text(
                 "A smaller step, a brighter you.",
-                style = Type.italic.copy(fontSize = 12.sp),
-                color = InkMeta,
+                style = Type.italic.copy(fontSize = 11.sp),
+                color = InkMeta.copy(alpha = 0.78f),
                 textAlign = TextAlign.Center,
             )
         }
