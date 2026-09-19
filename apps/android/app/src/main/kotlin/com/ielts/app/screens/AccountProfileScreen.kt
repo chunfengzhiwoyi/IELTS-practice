@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ielts.app.auth.AuthUser
@@ -174,6 +175,7 @@ private fun LogoutConfirmDialog(
                 ) { Text("取消", style = Type.uiButton, color = Ink) }
                 Box(
                     Modifier
+                        .testTag("logout_confirm")
                         .weight(1f)
                         .height(46.dp)
                         .clip(RoundedCornerShape(RadiusMedium))

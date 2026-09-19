@@ -1,4 +1,4 @@
-﻿package com.ielts.app
+package com.ielts.app
 
 import android.app.Application
 import androidx.compose.ui.test.hasSetTextAction
@@ -170,6 +170,12 @@ class AuthGateComposeTest {
         // 先 enqueue logout 响应，再点击（repo.logout 立即发请求，避免挂起）
         server.enqueue(MockResponse().setResponseCode(200).setBody("""{"authenticated":false}"""))
         composeTestRule.onNodeWithText("退出登录").performScrollTo().performClick()
+        // MOBILE-07：退出登录改为品牌确认弹窗，需在弹窗中再次确认才真正登出
+        composeTestRule.waitUntil(8000) {
+            composeTestRule.onAllNodesWithText("确定退出当前账号吗？", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        // 弹窗内确认键（标题与确认键文案相同，用 testTag 精确定位）
+        composeTestRule.onNodeWithTag("logout_confirm").performClick()
         composeTestRule.waitForIdle()
 
         waitForText("灵犀 IELTS")

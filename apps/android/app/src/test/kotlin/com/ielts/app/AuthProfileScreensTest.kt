@@ -107,8 +107,8 @@ class AuthProfileScreensTest {
         )) {
             Assert.assertTrue("Login 不应出现：$banned", composeTestRule.onAllNodesWithText(banned).fetchSemanticsNodes().isEmpty())
         }
-        // Register 入口存在
-        Assert.assertTrue(composeTestRule.onAllNodesWithText("注册").fetchSemanticsNodes().isNotEmpty())
+        // Register 入口存在（MOBILE-07：入口文案为「创建账号」）
+        Assert.assertTrue(composeTestRule.onAllNodesWithText("创建账号").fetchSemanticsNodes().isNotEmpty())
         // Forgot 入口存在
         Assert.assertTrue(composeTestRule.onAllNodesWithText("忘记密码？").fetchSemanticsNodes().isNotEmpty())
     }
@@ -116,11 +116,13 @@ class AuthProfileScreensTest {
     @Test
     fun `login navigates to register page`() {
         openLogin()
-        composeTestRule.onNodeWithText("注册").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("创建账号").performScrollTo().performClick()
         waitForText("创建你的灵犀账号")
         Assert.assertTrue(composeTestRule.onAllNodesWithText("创建账号").fetchSemanticsNodes().isNotEmpty())
         Assert.assertTrue(composeTestRule.onAllNodesWithText("确认密码").fetchSemanticsNodes().isNotEmpty())
-        Assert.assertTrue(composeTestRule.onAllNodesWithText("《用户协议》").fetchSemanticsNodes().isNotEmpty())
+        // MOBILE-07：仅连接真实存在的《隐私政策》；《用户协议》内容缺失（USER_AGREEMENT_CONTENT_REQUIRED），不应展示
+        Assert.assertTrue(composeTestRule.onAllNodesWithText("《隐私政策》").fetchSemanticsNodes().isNotEmpty())
+        Assert.assertTrue(composeTestRule.onAllNodesWithText("《用户协议》").fetchSemanticsNodes().isEmpty())
     }
 
     @Test
