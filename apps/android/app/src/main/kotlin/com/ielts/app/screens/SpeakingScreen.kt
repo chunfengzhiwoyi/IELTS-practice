@@ -648,10 +648,10 @@ private fun IdleState(state: SpeakingUiState, events: SpeakingEvents) {
         Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(30.dp))
         Box(
             Modifier
-                .size(96.dp)
+                .size(112.dp)
                 .clip(CircleShape)
                 .background(AccentWash)
                 .clickable(onClick = events.startRecording),
@@ -661,13 +661,13 @@ private fun IdleState(state: SpeakingUiState, events: SpeakingEvents) {
                 imageVector = Icons.Outlined.Mic,
                 contentDescription = "开始录音",
                 tint = Accent,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(50.dp),
             )
         }
-        Spacer(Modifier.height(16.dp))
-        Text("点击开始录音", style = IdleMain)
+        Spacer(Modifier.height(18.dp))
+        Text("按下开始录音", style = IdleMain)
         Spacer(Modifier.height(4.dp))
-        Text("建议 40–80 秒", style = IdleSub)
+        Text("建议 40–80 秒，说完后结束回答", style = IdleSub)
         if (state.micPermissionDenied || state.recordingError != null) {
             Spacer(Modifier.height(14.dp))
             Text(
@@ -693,17 +693,7 @@ private fun IdleState(state: SpeakingUiState, events: SpeakingEvents) {
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(Paper2)
-                .clickable { events.switchMode(SpeakingInputMode.TEXT) }
-                .padding(horizontal = 20.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("文字输入", style = Type.uiLabel.copy(fontSize = 13.sp, color = InkMeta))
-        }
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -858,7 +848,7 @@ private fun SuccessState(events: SpeakingEvents) {
         Spacer(Modifier.height(14.dp))
         Text("分析完成", style = SubmitMain)
         Spacer(Modifier.height(4.dp))
-        Text("正在为你生成详细报告...", style = IdleSub)
+        Text("正在为你生成详细报告…", style = IdleSub)
         Spacer(Modifier.height(20.dp))
         PrimaryButton(text = "查看结果", onClick = events.goResult)
     }
@@ -907,7 +897,7 @@ private fun TextPanel(state: SpeakingUiState, events: SpeakingEvents) {
                 onValueChange = events.onTextChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 140.dp),
+                    .heightIn(min = 200.dp),
                 textStyle = Type.body.copy(color = Ink),
                 cursorBrush = SolidColor(Accent),
                 decorationBox = { inner ->

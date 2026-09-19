@@ -199,7 +199,7 @@ class SpeakingRecorderComposeTest {
         composeTestRule.waitForIdle()
 
         // IDLE → 点击麦克风 → RECORDING
-        composeTestRule.onNodeWithText("点击开始录音").assertIsDisplayed()
+        composeTestRule.onNodeWithText("按下开始录音").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("开始录音").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("结束回答").assertIsDisplayed()
@@ -223,7 +223,7 @@ class SpeakingRecorderComposeTest {
         // 重新录制 → IDLE（旧文件删除、player release）
         composeTestRule.onNodeWithText("重新录制").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("点击开始录音").assertIsDisplayed()
+        composeTestRule.onNodeWithText("按下开始录音").assertIsDisplayed()
         assertTrue(fakePlayer.released)
     }
 
@@ -245,7 +245,7 @@ class SpeakingRecorderComposeTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("开始录音").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("点击开始录音").assertIsDisplayed()
+        composeTestRule.onNodeWithText("按下开始录音").assertIsDisplayed()
         composeTestRule.onNodeWithText("录音启动失败，请重试").assertIsDisplayed()
     }
 }

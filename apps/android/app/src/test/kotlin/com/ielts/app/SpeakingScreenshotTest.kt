@@ -233,10 +233,10 @@ class SpeakingScreenshotTest {
                 }
             }
         }
-        composeTestRule.onNodeWithText("点击开始录音").assertIsDisplayed()
+        composeTestRule.onNodeWithText("按下开始录音").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("开始录音").performClick()
         composeTestRule.onNodeWithText("结束回答").assertIsDisplayed()
         composeTestRule.onNodeWithText("取消录音").performClick()
-        composeTestRule.onNodeWithText("点击开始录音").assertIsDisplayed()
+        composeTestRule.onNodeWithText("按下开始录音").assertIsDisplayed()
     }
 }
